@@ -1,7 +1,7 @@
 {
 	"id": "obsidian-automatic-linker",
 	"name": "Automatic Linker",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"minAppVersion": "0.15.0",
 	"description": "Demonstrates some of the capabilities of the Obsidian API.",
 	"author": "Obsidian",
