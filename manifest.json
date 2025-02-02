@@ -1,5 +1,5 @@
 {
-	"id": "obsidian-automatic-linker",
+	"id": "automatic-linker",
 	"name": "Automatic Linker",
 	"version": "0.0.3",
 	"minAppVersion": "0.15.0",
