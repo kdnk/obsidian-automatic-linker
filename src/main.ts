@@ -125,6 +125,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
 	let timeout: ReturnType<typeof setTimeout>;
 	return function (this: any, ...args: any[]) {
+		// eslint-disable-next-line @typescript-eslint/no-this-alias
 		const context = this;
 		clearTimeout(timeout);
 		timeout = setTimeout(() => func.apply(context, args), wait);
