@@ -114,6 +114,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				if (this.settings.formatOnSave) {
 					await this.modifyLinks();
 				}
+				save();
 			};
 		}
 	}
