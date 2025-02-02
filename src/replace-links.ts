@@ -3,17 +3,34 @@ export const replaceLinks = async (
 	allFileNames: string[],
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number },
 ) => {
+	// 特殊文字をエスケープする関数
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+	// allFileNames から正規表現パターンを作成
 	const filePathPatterns = allFileNames.map((name) => escapeRegExp(name));
 	const combinedPattern = filePathPatterns.join("|");
+
+	// CJK対応の境界チェック：
+	// ・マッチの直前は行頭または空白（キャプチャグループで保持）
+	// ・マッチの直後は行末または空白
+	//
+	// ※既にリンク化されている場合は ([[...]] の中) にはマッチさせないため、
+	//    (?!\[\[) と (?!\]\]) を利用しています。
 	const regex = new RegExp(
-		`\\b(?!\\[\\[)(${combinedPattern})(?!\\]\\])\\b`,
+		`(^|\\s)(?!\\[\\[)(${combinedPattern})(?!\\]\\])(?=$|\\s)`,
 		"g",
 	);
+
+	// FrontMatterを除いた本文部分で置換する
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
-	const updatedContent = contentWithoutFrontMatter.replace(regex, "[[$1]]");
+	const updatedContent = contentWithoutFrontMatter.replace(
+		regex,
+		(match, preceding, link) => {
+			return `${preceding}[[${link}]]`;
+		},
+	);
 	return updatedContent;
 };
 
@@ -121,10 +138,61 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks(
 					"namespace/tag1 namespace/tag2",
-					["namespace", "namespace/tag1", "namespace/tag2"],
+					["namespace/tag1", "namespace/tag2", "namespace"],
 					getFrontMatterInfo,
 				),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]]");
+		});
+	});
+
+	describe("containing CJK", () => {
+		it("unmatched namespace", async () => {
+			expect(
+				await replaceLinks(
+					"namespace",
+					["namespace/タグ"],
+					getFrontMatterInfo,
+				),
+			).toBe("namespace");
+		});
+		it("multiple namespaces", async () => {
+			expect(
+				await replaceLinks(
+					"namespace/tag1 namespace/tag2 namespace/タグ3",
+					["namespace/tag1", "namespace/tag2", "namespace/タグ3"],
+					getFrontMatterInfo,
+				),
+			).toBe("[[namespace/tag1]] [[namespace/tag2]] [[namespace/タグ3]]");
+		});
+	});
+
+	describe("starting CJK", () => {
+		it("unmatched namespace", async () => {
+			expect(
+				await replaceLinks(
+					"名前空間",
+					["namespace/タグ"],
+					getFrontMatterInfo,
+				),
+			).toBe("名前空間");
+		});
+		it("single namespace", async () => {
+			expect(
+				await replaceLinks(
+					"名前空間/tag1",
+					["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
+					getFrontMatterInfo,
+				),
+			).toBe("[[名前空間/tag1]]");
+		});
+		it("multiple namespaces", async () => {
+			expect(
+				await replaceLinks(
+					"名前空間/tag1 名前空間/tag2 名前空間/タグ3",
+					["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
+					getFrontMatterInfo,
+				),
+			).toBe("[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]");
 		});
 	});
 }
