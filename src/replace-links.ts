@@ -3,7 +3,7 @@ export const replaceLinks = async ({
 	allFileNames,
 	getFrontMatterInfo,
 	// 特別扱いするディレクトリ一覧。省略時は "pages" を特別扱いします。
-	specialDirs = [],
+	specialDirs = ["pages"],
 }: {
 	fileContent: string;
 	allFileNames: string[];
@@ -14,19 +14,18 @@ export const replaceLinks = async ({
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-	// ファイル名候補を長いものが先にマッチするように降順ソート
-	const sortedFileNames = allFileNames.slice().sort((a, b) => b.length - a.length);
+	// 候補ファイル名を長いものが先にマッチするように降順ソート
+	const sortedFileNames = allFileNames
+		.slice()
+		.sort((a, b) => b.length - a.length);
 
-	// 各候補について、もし specialDirs のいずれかで始まっていれば
-	// ディレクトリ部分が省略可能となるように正規表現パターンを作成する
+	// specialDirs に該当する場合、ディレクトリ部分が省略可能になるように正規表現パターンを作成
 	const filePathPatterns = sortedFileNames.map((name) => {
 		for (const specialDir of specialDirs) {
 			const prefix = `${specialDir}/`;
 			if (name.startsWith(prefix)) {
 				// 例："pages/tags" → パターン: (?:pages/)?tags
-				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(
-					name.slice(prefix.length)
-				)}`;
+				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(name.slice(prefix.length))}`;
 			}
 		}
 		return escapeRegExp(name);
@@ -34,19 +33,39 @@ export const replaceLinks = async ({
 
 	// 複数候補を "|" で連結してひとつのパターンにする
 	const combinedPattern = filePathPatterns.join("|");
+	// 候補文字列をマッチさせる正規表現（グローバルフラグ）
+	const candidateRegex = new RegExp(`(${combinedPattern})`, "g");
 
-	// これまで「前後に空白または行頭／行末」という境界チェックをしていましたが、
-	// CJK の連続する文字列（例："ひらがなとひらがな"）も正しく置換できるように、
-	// ネガティブ・ルックビハインド／ルックアヘッドで既にリンク化されている箇所を除外するのみとします。
-	const regex = new RegExp(`(?<!\\[\\[)(${combinedPattern})(?!\\]\\])`, "g");
-
-	// FrontMatter 部分を除いた本文（contentStart 以降）に対して置換を実施
+	// FrontMatter 部分を除いた本文を処理対象とする
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
-	const updatedContent = contentWithoutFrontMatter.replace(regex, (match) => {
-		return `[[${match}]]`;
-	});
-	return updatedContent;
+
+	// 既存のリンク（[[…]]）をそのまま残すため、一度既存リンクでテキストを分割して処理する
+	const existingLinkRegex = /\[\[.*?\]\]/g;
+	let result = "";
+	let lastIndex = 0;
+	let match: RegExpExecArray | null;
+
+	while (
+		(match = existingLinkRegex.exec(contentWithoutFrontMatter)) !== null
+	) {
+		// 現在の既存リンクの直前の部分だけ candidateRegex で置換
+		const segment = contentWithoutFrontMatter.slice(lastIndex, match.index);
+		const replacedSegment = segment.replace(
+			candidateRegex,
+			(m) => `[[${m}]]`,
+		);
+		result += replacedSegment;
+		// 既存リンク部分はそのまま追加
+		result += match[0];
+		lastIndex = match.index + match[0].length;
+	}
+	// 最後の既存リンク以降の部分も candidateRegex で置換
+	result += contentWithoutFrontMatter
+		.slice(lastIndex)
+		.replace(candidateRegex, (m) => `[[${m}]]`);
+
+	return result;
 };
 
 if (import.meta.vitest) {
@@ -267,16 +286,41 @@ if (import.meta.vitest) {
 		});
 	});
 
-	describe("mixed", () => {
-		it("unmatched namespace", async () => {
+	it("multiple links in the same line", async () => {
+		expect(
+			await replaceLinks({
+				fileContent: "サウナ tags pages/tags",
+				allFileNames: ["pages/tags", "サウナ", "tags"],
+				getFrontMatterInfo,
+				specialDirs: ["pages"],
+			}),
+		).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
+	});
+
+	describe("nested links", () => {
+		it("", async () => {
 			expect(
 				await replaceLinks({
-					fileContent: "サウナ tags pages/tags",
-					allFileNames: ["pages/tags", "サウナ", "tags"],
+					fileContent: "アジャイルリーダーコンピテンシーマップ",
+					allFileNames: [
+						"アジャイルリーダーコンピテンシーマップ",
+						"リーダー",
+					],
 					getFrontMatterInfo,
-					specialDirs: ["pages"],
 				}),
-			).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
+			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
+		});
+		it("exsiting links", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "[[アジャイルリーダーコンピテンシーマップ]]",
+					allFileNames: [
+						"アジャイルリーダーコンピテンシーマップ",
+						"リーダー",
+					],
+					getFrontMatterInfo,
+				}),
+			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 		});
 	});
 }
