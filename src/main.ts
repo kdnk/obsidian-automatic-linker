@@ -30,7 +30,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			fileContent,
 			allFileNames: this.allFileNames,
 			getFrontMatterInfo,
-			specialDirs: ["pages"],
+			specialDirs: this.settings.specialDirs,
 		});
 
 		await this.app.vault.modify(activeFile, updatedContent);
@@ -80,19 +80,16 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				loadMarkdownFiles();
 			}),
 		);
-
 		this.registerEvent(
 			this.app.vault.on("delete", () => {
 				loadMarkdownFiles();
 			}),
 		);
-
 		this.registerEvent(
 			this.app.vault.on("create", () => {
 				loadMarkdownFiles();
 			}),
 		);
-
 		this.registerEvent(
 			this.app.vault.on("rename", () => {
 				loadMarkdownFiles();
@@ -107,7 +104,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 		});
 
-		const saveCommandDefinition = (this.app as any).commands?.commands?.[
+		// Override the save command callback if available.
+		const saveCommandDefinition = (this.app as any)?.commands?.commands?.[
 			"editor:save-file"
 		];
 		const save = saveCommandDefinition?.callback;

@@ -3,10 +3,14 @@ import AutomaticLinkerPlugin from "./main";
 
 export type AutomaticLinkerSettings = {
 	formatOnSave: boolean;
+	// List of directories to treat as special.
+	specialDirs: string[];
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	formatOnSave: false,
+	// Default special directories: links can be formatted without the prefix.
+	specialDirs: ["pages"],
 };
 
 export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
@@ -35,6 +39,22 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
-		// You can add additional settings here as needed.
+		// Text area for configuring Special Directories.
+		new Setting(containerEl)
+			.setName("Special Directories")
+			.setDesc(
+				"Enter directories (one per line) that should be treated as special. For example, 'pages' will allow links to be formatted without the 'pages/' prefix.",
+			)
+			.addTextArea((text) => {
+				text.setPlaceholder("e.g. pages\n")
+					.setValue(this.plugin.settings.specialDirs.join("\n"))
+					.onChange(async (value) => {
+						this.plugin.settings.specialDirs = value
+							.split(/\r?\n/)
+							.map((s) => s.trim())
+							.filter((s) => s.length > 0);
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
 	}
 }
