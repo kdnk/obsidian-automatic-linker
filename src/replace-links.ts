@@ -10,17 +10,17 @@ export const replaceLinks = async ({
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 	specialDirs?: string[];
 }): Promise<string> => {
-	// Function to escape special characters for use in regular expressions.
+	// Escape special characters in a string for use in a regular expression.
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-	// Sort candidate filenames in descending order so that longer ones match first.
+	// Sort candidate filenames in descending order so that longer names match first.
 	const sortedFileNames = allFileNames
 		.slice()
 		.sort((a, b) => b.length - a.length);
 
-	// Create regex patterns for each candidate. For names that fall under any of the specialDirs,
-	// make the directory part optional.
+	// Create regex patterns for each candidate.
+	// For names under any of the specialDirs, make the directory part optional.
 	const filePathPatterns = sortedFileNames.map((name) => {
 		for (const specialDir of specialDirs) {
 			const prefix = `${specialDir}/`;
@@ -34,16 +34,19 @@ export const replaceLinks = async ({
 		return escapeRegExp(name);
 	});
 
-	// Concatenate multiple candidate patterns with "|" to form a single pattern.
+	// Concatenate multiple candidate patterns with "|" to form a single regex pattern.
 	const combinedPattern = filePathPatterns.join("|");
-	// Regular expression to match candidate strings (global flag).
+	// Create a regular expression to match candidate strings (global flag).
 	const candidateRegex = new RegExp(`(${combinedPattern})`, "g");
 
-	// Process the text body excluding the FrontMatter section.
+	// Get the starting index of the content (excluding frontmatter).
 	const { contentStart } = getFrontMatterInfo(fileContent);
+	// Preserve the frontmatter portion.
+	const frontmatter = fileContent.slice(0, contentStart);
+	// Extract the content portion without the frontmatter.
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
 
-	// To leave existing links ([[...]]), split the text by existing links and process separately.
+	// Process the content while preserving any existing links ([[...]]).
 	const existingLinkRegex = /\[\[.*?\]\]/g;
 	let result = "";
 	let lastIndex = 0;
@@ -52,7 +55,7 @@ export const replaceLinks = async ({
 	while (
 		(match = existingLinkRegex.exec(contentWithoutFrontMatter)) !== null
 	) {
-		// Replace only the segment immediately preceding the current existing link using candidateRegex.
+		// Process the segment preceding the current existing link.
 		const segment = contentWithoutFrontMatter.slice(lastIndex, match.index);
 		const replacedSegment = segment.replace(
 			candidateRegex,
@@ -63,12 +66,13 @@ export const replaceLinks = async ({
 		result += match[0];
 		lastIndex = match.index + match[0].length;
 	}
-	// Replace the segment after the last existing link using candidateRegex.
+	// Process the remaining content after the last existing link.
 	result += contentWithoutFrontMatter
 		.slice(lastIndex)
 		.replace(candidateRegex, (m) => `[[${m}]]`);
 
-	return result;
+	// Concatenate the preserved frontmatter with the processed content and return.
+	return frontmatter + result;
 };
 
 if (import.meta.vitest) {
