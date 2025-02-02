@@ -110,10 +110,16 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		];
 		const save = saveCommandDefinition?.callback;
 		if (typeof save === "function") {
-			saveCommandDefinition.callback = async () => {
+			// Create a debounced version of modifyLinks with a 300ms delay.
+			const debouncedModifyLinks = debounce(async () => {
 				if (this.settings.formatOnSave) {
 					await this.modifyLinks();
 				}
+			}, 300);
+			saveCommandDefinition.callback = async () => {
+				// Call the debounced modifyLinks function.
+				debouncedModifyLinks();
+				// Then, call the original save function.
 				save();
 			};
 		}
@@ -130,4 +136,14 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
+}
+
+// A simple debounce function
+function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
+	let timeout: ReturnType<typeof setTimeout>;
+	return function (this: any, ...args: any[]) {
+		const context = this;
+		clearTimeout(timeout);
+		timeout = setTimeout(() => func.apply(context, args), wait);
+	} as T;
 }
