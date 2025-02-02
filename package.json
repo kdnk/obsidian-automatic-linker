@@ -23,5 +23,8 @@
 		"tslib": "2.4.0",
 		"typescript": "4.7.4",
 		"vitest": "^3.0.4"
-	}
+	},
+  "optionalDependencies": {
+    "@rollup/rollup-linux-x64-gnu": "4.6.1"
+  }
 }
