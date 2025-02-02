@@ -44,29 +44,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		const loadMarkdownFiles = () => {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
-			const allAlias = [];
-			for (const file of allMarkdownFiles) {
-				const frontmatter =
-					this.app.metadataCache.getFileCache(file)?.frontmatter;
-				if (frontmatter) {
-					const alias = parseFrontMatterAliases(frontmatter);
-					// Create an object combining the file and its aliases as needed.
-					allAlias.push({
-						file,
-						alias,
-					});
-				}
-			}
-
-			// Generate strings for file paths with the .md extension removed.
-			const allFileNames = allMarkdownFiles.map((file) => {
-				const path = file.path;
-				return path.replace(/\.md$/, "");
-			});
-
-			// Sort the filenames in descending order by length so that longer paths match first.
+			// Create an array of file paths with the ".md" extension removed.
+			const allFileNames = allMarkdownFiles.map((file) =>
+				file.path.replace(/\.md$/, ""),
+			);
+			// Sort by descending length so that longer paths match first.
 			allFileNames.sort((a, b) => b.length - a.length);
-
 			this.allFileNames = allFileNames;
 		};
 
