@@ -53,16 +53,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			this.allFileNames = allFileNames;
 		};
 
-		this.registerEvent(
-			this.app.metadataCache.on("resolved", async () => {
-				loadMarkdownFiles();
-			}),
-		);
-		this.registerEvent(
-			this.app.workspace.on("file-open", () => {
-				loadMarkdownFiles();
-			}),
-		);
+		this.app.workspace.onLayoutReady(() => {
+			loadMarkdownFiles();
+			console.log("Automatic Linker: Loaded all markdown files.");
+			console.log("this.allFileNames.length", this.allFileNames.length);
+		});
 		this.registerEvent(
 			this.app.vault.on("delete", () => {
 				loadMarkdownFiles();
