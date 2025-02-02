@@ -1,7 +1,7 @@
 {
 	"id": "automatic-linker",
 	"name": "Automatic Linker",
-	"version": "0.0.4",
+	"version": "0.0.5",
 	"minAppVersion": "0.18.0",
 	"description": "Demonstrates some of the capabilities of the Obsidian API.",
 	"author": "Kodai Nakamura",
