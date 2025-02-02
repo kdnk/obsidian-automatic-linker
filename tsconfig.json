@@ -16,6 +16,9 @@
       "ES5",
       "ES6",
       "ES7"
+    ],
+	"types": [
+      "vitest/importMeta"
     ]
   },
   "include": [
