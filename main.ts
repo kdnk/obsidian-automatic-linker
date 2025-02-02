@@ -29,11 +29,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		if (!activeFile) return;
 		const fileContent = await this.app.vault.read(activeFile);
 
-		const updatedContent = await replaceLinks(
+		const updatedContent = await replaceLinks({
 			fileContent,
-			this.allFileNames,
+			allFileNames: this.allFileNames,
 			getFrontMatterInfo,
-		);
+			specialDirs: ["pages"],
+		});
 
 		await this.app.vault.modify(activeFile, updatedContent);
 	}

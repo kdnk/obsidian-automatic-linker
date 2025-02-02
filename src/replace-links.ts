@@ -1,28 +1,50 @@
-export const replaceLinks = async (
-	fileContent: string,
-	allFileNames: string[],
-	getFrontMatterInfo: (fileContent: string) => { contentStart: number },
-) => {
-	// 特殊文字をエスケープする関数
+export const replaceLinks = async ({
+	fileContent,
+	allFileNames,
+	getFrontMatterInfo,
+	// 特別扱いするディレクトリ一覧。省略時は "pages" を特別扱いします。
+	specialDirs = [],
+}: {
+	fileContent: string;
+	allFileNames: string[];
+	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
+	specialDirs?: string[];
+}): Promise<string> => {
+	// 正規表現用に特殊文字をエスケープする関数
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-	// allFileNames から正規表現パターンを作成
-	const filePathPatterns = allFileNames.map((name) => escapeRegExp(name));
+	// 候補ファイル名を長いものが先にマッチするように降順ソート
+	const sortedFileNames = allFileNames
+		.slice()
+		.sort((a, b) => b.length - a.length);
+
+	// 各候補について、もし specialDirs のいずれかで始まっていれば、ディレクトリ部分が
+	// 省略可能となるように正規表現パターンを作成する。
+	const filePathPatterns = sortedFileNames.map((name) => {
+		for (const specialDir of specialDirs) {
+			const prefix = `${specialDir}/`;
+			if (name.startsWith(prefix)) {
+				// 例："pages/tags" → (?:pages/)?tags
+				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(name.slice(prefix.length))}`;
+			}
+		}
+		// 特別扱い外ならそのままエスケープしたパスを返す
+		return escapeRegExp(name);
+	});
+
+	// 複数候補を "|" で連結
 	const combinedPattern = filePathPatterns.join("|");
 
-	// CJK対応の境界チェック：
-	// ・マッチの直前は行頭または空白（キャプチャグループで保持）
-	// ・マッチの直後は行末または空白
-	//
-	// ※既にリンク化されている場合は ([[...]] の中) にはマッチさせないため、
-	//    (?!\[\[) と (?!\]\]) を利用しています。
+	// CJK や日本語の場合、\b (単語境界) は意図した動作をしないため、
+	// 行頭または空白（^|\s）と、行末または空白（$|\s）で囲まれた部分にマッチさせる。
+	// また、既に [[ ]] で囲まれている場合は除外するため (?!\[\[) と (?!\]\]) を利用。
 	const regex = new RegExp(
 		`(^|\\s)(?!\\[\\[)(${combinedPattern})(?!\\]\\])(?=$|\\s)`,
 		"g",
 	);
 
-	// FrontMatterを除いた本文部分で置換する
+	// FrontMatter 部分を除いた本文で置換を実施
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
 	const updatedContent = contentWithoutFrontMatter.replace(
@@ -42,75 +64,83 @@ if (import.meta.vitest) {
 	describe("basic", () => {
 		it("replaces links", async () => {
 			expect(
-				await replaceLinks("hello", ["hello"], getFrontMatterInfo),
+				await replaceLinks({
+					fileContent: "hello",
+					allFileNames: ["hello"],
+					getFrontMatterInfo,
+				}),
 			).toBe("[[hello]]");
 		});
 		it("replaces links with bullet", async () => {
 			expect(
-				await replaceLinks("- hello", ["hello"], getFrontMatterInfo),
+				await replaceLinks({
+					fileContent: "- hello",
+					allFileNames: ["hello"],
+					getFrontMatterInfo,
+				}),
 			).toBe("- [[hello]]");
 		});
 		it("replaces links with other texts", async () => {
 			expect(
-				await replaceLinks(
-					"world hello",
-					["hello"],
+				await replaceLinks({
+					fileContent: "world hello",
+					allFileNames: ["hello"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("world [[hello]]");
 			expect(
-				await replaceLinks(
-					"hello world",
-					["hello"],
+				await replaceLinks({
+					fileContent: "hello world",
+					allFileNames: ["hello"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("[[hello]] world");
 		});
 		it("replaces links with other texts and bullet", async () => {
 			expect(
-				await replaceLinks(
-					"- world hello",
-					["hello"],
+				await replaceLinks({
+					fileContent: "- world hello",
+					allFileNames: ["hello"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("- world [[hello]]");
 			expect(
-				await replaceLinks(
-					"- hello world",
-					["hello"],
+				await replaceLinks({
+					fileContent: "- hello world",
+					allFileNames: ["hello"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("- [[hello]] world");
 		});
 
 		it("replaces multiple links", async () => {
 			expect(
-				await replaceLinks(
-					"hello world",
-					["hello", "world"],
+				await replaceLinks({
+					fileContent: "hello world",
+					allFileNames: ["hello", "world"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("[[hello]] [[world]]");
 			expect(
-				await replaceLinks(
-					`\nhello\nworld\n`,
-					["hello", "world"],
+				await replaceLinks({
+					fileContent: `\nhello\nworld\n`,
+					allFileNames: ["hello", "world"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe(`\n[[hello]]\n[[world]]\n`);
 			expect(
-				await replaceLinks(
-					`\nhello\nworld aaaaa\n`,
-					["hello", "world"],
+				await replaceLinks({
+					fileContent: `\nhello\nworld aaaaa\n`,
+					allFileNames: ["hello", "world"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe(`\n[[hello]]\n[[world]] aaaaa\n`);
 			expect(
-				await replaceLinks(
-					`\n aaaaa hello\nworld bbbbb\n`,
-					["hello", "world"],
+				await replaceLinks({
+					fileContent: `\n aaaaa hello\nworld bbbbb\n`,
+					allFileNames: ["hello", "world"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe(`\n aaaaa [[hello]]\n[[world]] bbbbb\n`);
 		});
 	});
@@ -118,29 +148,33 @@ if (import.meta.vitest) {
 	describe("complex fileNames", () => {
 		it("unmatched namespace", async () => {
 			expect(
-				await replaceLinks(
-					"namespace",
-					["namespace/tag1", "namespace/tag2"],
+				await replaceLinks({
+					fileContent: "namespace",
+					allFileNames: ["namespace/tag1", "namespace/tag2"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("namespace");
 		});
 		it("single namespace", async () => {
 			expect(
-				await replaceLinks(
-					"namespace/tag1",
-					["namespace/tag1", "namespace/tag2"],
+				await replaceLinks({
+					fileContent: "namespace/tag1",
+					allFileNames: ["namespace/tag1", "namespace/tag2"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("[[namespace/tag1]]");
 		});
 		it("multiple namespaces", async () => {
 			expect(
-				await replaceLinks(
-					"namespace/tag1 namespace/tag2",
-					["namespace/tag1", "namespace/tag2", "namespace"],
+				await replaceLinks({
+					fileContent: "namespace/tag1 namespace/tag2",
+					allFileNames: [
+						"namespace/tag1",
+						"namespace/tag2",
+						"namespace",
+					],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]]");
 		});
 	});
@@ -148,20 +182,25 @@ if (import.meta.vitest) {
 	describe("containing CJK", () => {
 		it("unmatched namespace", async () => {
 			expect(
-				await replaceLinks(
-					"namespace",
-					["namespace/タグ"],
+				await replaceLinks({
+					fileContent: "namespace",
+					allFileNames: ["namespace/タグ"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("namespace");
 		});
 		it("multiple namespaces", async () => {
 			expect(
-				await replaceLinks(
-					"namespace/tag1 namespace/tag2 namespace/タグ3",
-					["namespace/tag1", "namespace/tag2", "namespace/タグ3"],
+				await replaceLinks({
+					fileContent:
+						"namespace/tag1 namespace/tag2 namespace/タグ3",
+					allFileNames: [
+						"namespace/tag1",
+						"namespace/tag2",
+						"namespace/タグ3",
+					],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]] [[namespace/タグ3]]");
 		});
 	});
@@ -169,30 +208,64 @@ if (import.meta.vitest) {
 	describe("starting CJK", () => {
 		it("unmatched namespace", async () => {
 			expect(
-				await replaceLinks(
-					"名前空間",
-					["namespace/タグ"],
+				await replaceLinks({
+					fileContent: "名前空間",
+					allFileNames: ["namespace/タグ"],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("名前空間");
 		});
 		it("single namespace", async () => {
 			expect(
-				await replaceLinks(
-					"名前空間/tag1",
-					["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
+				await replaceLinks({
+					fileContent: "名前空間/tag1",
+					allFileNames: [
+						"名前空間/tag1",
+						"名前空間/tag2",
+						"名前空間/タグ3",
+					],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("[[名前空間/tag1]]");
 		});
 		it("multiple namespaces", async () => {
 			expect(
-				await replaceLinks(
-					"名前空間/tag1 名前空間/tag2 名前空間/タグ3",
-					["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
+				await replaceLinks({
+					fileContent: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
+					allFileNames: [
+						"名前空間/tag1",
+						"名前空間/tag2",
+						"名前空間/タグ3",
+					],
 					getFrontMatterInfo,
-				),
+				}),
 			).toBe("[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]");
+		});
+	});
+
+	describe("special character (pages)", () => {
+		it("unmatched namespace", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "tags",
+					allFileNames: ["pages/tags"],
+					getFrontMatterInfo,
+					specialDirs: ["pages"],
+				}),
+			).toBe("[[tags]]");
+		});
+	});
+
+	describe("mixed", () => {
+		it("unmatched namespace", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "サウナ tags pages/tags",
+					allFileNames: ["pages/tags", "サウナ", "tags"],
+					getFrontMatterInfo,
+					specialDirs: ["pages"],
+				}),
+			).toBe("[[tags]]");
 		});
 	});
 }
