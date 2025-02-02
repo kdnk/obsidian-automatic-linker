@@ -10,7 +10,7 @@ export const replaceLinks = async ({
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 	specialDirs?: string[];
 }): Promise<string> => {
-	// Escape special characters for use in regular expressions.
+	// Function to escape special characters for use in regex.
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -26,9 +26,7 @@ export const replaceLinks = async ({
 			const prefix = `${specialDir}/`;
 			if (name.startsWith(prefix)) {
 				// Example: "pages/tags" → pattern: (?:pages/)?tags
-				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(
-					name.slice(prefix.length),
-				)}`;
+				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(name.slice(prefix.length))}`;
 			}
 		}
 		return escapeRegExp(name);
@@ -36,56 +34,64 @@ export const replaceLinks = async ({
 
 	// Concatenate multiple candidate patterns with "|" to form a single regex pattern.
 	const combinedPattern = filePathPatterns.join("|");
-	// Create a regular expression to match candidate strings (global flag).
+	// Create a regex to match candidate strings (global flag).
 	const candidateRegex = new RegExp(`(${combinedPattern})`, "g");
 
-	// Process the text body excluding the FrontMatter section.
+	// Get the starting index of the content (excluding frontmatter).
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	// Preserve the frontmatter portion.
 	const frontmatter = fileContent.slice(0, contentStart);
+	// Extract the content without the frontmatter.
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
 
-	// To leave existing links ([[...]]), split the text by existing links and process separately.
-	const existingLinkRegex = /\[\[.*?\]\]/g;
-	let result = "";
-	let lastIndex = 0;
-	let match: RegExpExecArray | null;
+	// Define a regex to match protected links: either wiki links ([[...]]) or Markdown links ([title](url)).
+	// We want to keep these unchanged.
+	const protectedLinkRegex = /(\[\[.*?\]\])|(\[[^\]]+\]\([^)]+\))/g;
 
-	// Modified callback with proper argument order.
+	// Callback function to wrap candidate strings with wiki link syntax ([[...]])
+	// unless the candidate appears to be part of a URL.
+	// Note: The callback receives arguments (match, captured, offset, string) due to capture groups.
 	const replaceCallback = (
 		m: string,
 		captured: string,
 		offset: number,
 		s: string,
 	) => {
+		// Get the 8 and 7 characters immediately preceding the match.
 		const preceding8 = s.substring(Math.max(0, offset - 8), offset);
 		const preceding7 = s.substring(Math.max(0, offset - 7), offset);
+		// If the match is immediately preceded by "https://" or "http://",
+		// then it is considered part of a URL and should not be replaced.
 		if (preceding8 === "https://" || preceding7 === "http://") {
 			return m;
 		}
 		return `[[${m}]]`;
 	};
 
+	// Process the content while preserving protected links.
+	let result = "";
+	let lastIndex = 0;
+	let match: RegExpExecArray | null;
 	while (
-		(match = existingLinkRegex.exec(contentWithoutFrontMatter)) !== null
+		(match = protectedLinkRegex.exec(contentWithoutFrontMatter)) !== null
 	) {
-		// Process the segment preceding the current existing link.
+		// Process the segment before the protected link by replacing candidate matches.
 		const segment = contentWithoutFrontMatter.slice(lastIndex, match.index);
 		const replacedSegment = segment.replace(
 			candidateRegex,
 			replaceCallback,
 		);
 		result += replacedSegment;
-		// Append the existing link unchanged.
+		// Append the protected link unchanged.
 		result += match[0];
 		lastIndex = match.index + match[0].length;
 	}
-	// Process the remaining segment.
+	// Process any remaining content after the last protected link.
 	result += contentWithoutFrontMatter
 		.slice(lastIndex)
 		.replace(candidateRegex, replaceCallback);
 
-	// Concatenate the preserved frontmatter with the processed content and return.
+	// Return the frontmatter concatenated with the processed content.
 	return frontmatter + result;
 };
 
@@ -385,6 +391,48 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com https://example1.com [[link]]");
+		});
+	});
+
+	describe("ignore markdown url", () => {
+		it("one url", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "- [title](https://example.com)",
+					allFileNames: ["example", "title"],
+					getFrontMatterInfo,
+				}),
+			).toBe("- [title](https://example.com)");
+		});
+		it("multiple urls", async () => {
+			expect(
+				await replaceLinks({
+					fileContent:
+						"- [title1](https://example1.com) [title2](https://example2.com)",
+					allFileNames: ["example1", "example2", "title1", "title2"],
+					getFrontMatterInfo,
+				}),
+			).toBe(
+				"- [title1](https://example1.com) [title2](https://example2.com)",
+			);
+		});
+		it("multiple urls with links", async () => {
+			expect(
+				await replaceLinks({
+					fileContent:
+						"- [title1](https://example1.com) [title2](https://example2.com) link",
+					allFileNames: [
+						"example1",
+						"example2",
+						"title1",
+						"title2",
+						"link",
+					],
+					getFrontMatterInfo,
+				}),
+			).toBe(
+				"- [title1](https://example1.com) [title2](https://example2.com) [[link]]",
+			);
 		});
 	});
 }
