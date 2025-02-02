@@ -9,7 +9,6 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
-	TFile,
 } from "obsidian";
 
 // Remember to rename these classes and interfaces!
