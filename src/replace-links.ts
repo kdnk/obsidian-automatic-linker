@@ -14,7 +14,7 @@ export const replaceLinks = async ({
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-	// Sort candidate filenames in descending order so longer names match first.
+	// Sort candidate filenames in descending order so that longer names match first.
 	const sortedFileNames = allFileNames
 		.slice()
 		.sort((a, b) => b.length - a.length);
@@ -32,54 +32,49 @@ export const replaceLinks = async ({
 		return escapeRegExp(name);
 	});
 
-	// Combine all candidate patterns into one regex pattern.
+	// Combine all candidate patterns with "|" to form one regex fragment.
 	const combinedPattern = filePathPatterns.join("|");
-	// Create a regex to match candidate strings (global flag).
-	const candidateRegex = new RegExp(`(${combinedPattern})`, "g");
+	// Create a combined regex that matches, in order:
+	// 1. Plain URLs (http:// or https:// followed by non-space characters)
+	// 2. Wiki links ([[...]])
+	// 3. Markdown links ([text](url))
+	// 4. Candidate words (only if not immediately preceded by "http://" or "https://")
+	//    (This negative lookbehind prevents wrapping parts of a URL.)
+	const combinedRegex = new RegExp(
+		`(https?:\\/\\/[^\s]+)|(\\[\\[.*?\\]\\])|(\\[[^\\]]+\\]\\([^)]+\\))|(?<!https?:\\/\\/)(?:${combinedPattern})`,
+		"g",
+	);
 
-	// Retrieve the starting index of the content (excluding frontmatter).
+	// Retrieve the starting index of the content (excluding frontmatter),
+	// and split the file into frontmatter and body.
 	const { contentStart } = getFrontMatterInfo(fileContent);
-	// Preserve the frontmatter.
 	const frontmatter = fileContent.slice(0, contentStart);
-	// Extract the body content (without frontmatter).
-	const contentWithoutFrontMatter = fileContent.slice(contentStart);
+	const body = fileContent.slice(contentStart);
 
-	// Define a regex to match protected segments:
-	// 1. Plain URLs (http:// or https:// followed by non-space characters),
-	// 2. Wiki links ([[...]]),
-	// 3. Markdown links ([text](url)).
-	const protectedLinkRegex =
-		/(https?:\/\/[^\s]+)|(\[\[.*?\]\])|(\[[^\]]+\]\([^)]+\))/g;
-
-	// Define a simple replacement callback that wraps candidate words in wiki-link syntax.
-	// Since candidate words inside protected segments will not be processed,
-	// we can safely wrap every candidate match.
-	const replaceCallback = (m: string) => `[[${m}]]`;
-
-	// Process the content by splitting it using the protectedLinkRegex.
 	let result = "";
 	let lastIndex = 0;
 	let match: RegExpExecArray | null;
-	while (
-		(match = protectedLinkRegex.exec(contentWithoutFrontMatter)) !== null
-	) {
-		// Process the segment before the protected link using candidateRegex.
-		const segment = contentWithoutFrontMatter.slice(lastIndex, match.index);
-		const replacedSegment = segment.replace(
-			candidateRegex,
-			replaceCallback,
-		);
-		result += replacedSegment;
-		// Append the protected segment unchanged.
-		result += match[0];
-		lastIndex = match.index + match[0].length;
-	}
-	// Process any remaining content after the last protected segment.
-	result += contentWithoutFrontMatter
-		.slice(lastIndex)
-		.replace(candidateRegex, replaceCallback);
 
-	// Return the frontmatter concatenated with the processed content.
+	// Process the body in one pass.
+	while ((match = combinedRegex.exec(body)) !== null) {
+		// Append text between the last match and current match unchanged.
+		result += body.slice(lastIndex, match.index);
+
+		// If one of the first three groups (protected segments: plain URL, wiki link, or Markdown link) matched,
+		// output the match as-is.
+		if (match[1] || match[2] || match[3]) {
+			result += match[0];
+		}
+		// Otherwise, group 4 matched a candidate word that is safe to wrap.
+		else {
+			result += `[[${match[0]}]]`;
+		}
+		lastIndex = combinedRegex.lastIndex;
+	}
+	// Append any remaining text.
+	result += body.slice(lastIndex);
+
+	// Return the frontmatter concatenated with the processed body.
 	return frontmatter + result;
 };
 
