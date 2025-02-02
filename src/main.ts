@@ -1,5 +1,5 @@
 import { getFrontMatterInfo, parseFrontMatterAliases, Plugin } from "obsidian";
-import { replaceLinks } from "./src/replace-links";
+import { replaceLinks } from "./replace-links";
 
 // Remember to rename these classes and interfaces!
 
