@@ -1,27 +1,24 @@
-import { getFrontMatterInfo, parseFrontMatterAliases, Plugin } from "obsidian";
+import {
+	App,
+	getFrontMatterInfo,
+	parseFrontMatterAliases,
+	Plugin,
+	PluginManifest,
+} from "obsidian";
 import { replaceLinks } from "./replace-links";
-
-// Remember to rename these classes and interfaces!
-
-interface AutomaticLinkerPluginSettings {
-	mySetting: string;
-}
-
-const DEFAULT_SETTINGS: AutomaticLinkerPluginSettings = {
-	mySetting: "default",
-};
+import {
+	AutomaticLinkerPluginSettingsTab,
+	AutomaticLinkerSettings,
+	DEFAULT_SETTINGS,
+} from "./settings";
 
 export default class AutomaticLinkerPlugin extends Plugin {
-	settings: AutomaticLinkerPluginSettings;
+	settings: AutomaticLinkerSettings;
 
 	private allFileNames: string[] = [];
 
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData(),
-		);
+	constructor(app: App, pluginManifest: PluginManifest) {
+		super(app, pluginManifest);
 	}
 
 	async modifyLinks() {
@@ -41,6 +38,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		this.addSettingTab(
+			new AutomaticLinkerPluginSettingsTab(this.app, this),
+		);
 
 		const loadMarkdownFiles = () => {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
@@ -113,8 +113,22 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		const save = saveCommandDefinition?.callback;
 		if (typeof save === "function") {
 			saveCommandDefinition.callback = async () => {
-				await this.modifyLinks();
+				if (this.settings.formatOnSave) {
+					await this.modifyLinks();
+				}
 			};
 		}
+	}
+
+	async loadSettings() {
+		this.settings = Object.assign(
+			{},
+			DEFAULT_SETTINGS,
+			await this.loadData(),
+		);
+	}
+
+	async saveSettings() {
+		await this.saveData(this.settings);
 	}
 }
