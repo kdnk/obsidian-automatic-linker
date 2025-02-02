@@ -10,7 +10,7 @@ export const replaceLinks = async ({
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 	specialDirs?: string[];
 }): Promise<string> => {
-	// Escape special characters in a string for use in a regular expression.
+	// Escape special characters for use in regular expressions.
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -39,18 +39,32 @@ export const replaceLinks = async ({
 	// Create a regular expression to match candidate strings (global flag).
 	const candidateRegex = new RegExp(`(${combinedPattern})`, "g");
 
-	// Get the starting index of the content (excluding frontmatter).
+	// Process the text body excluding the FrontMatter section.
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	// Preserve the frontmatter portion.
 	const frontmatter = fileContent.slice(0, contentStart);
-	// Extract the content portion without the frontmatter.
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
 
-	// Process the content while preserving any existing links ([[...]]).
+	// To leave existing links ([[...]]), split the text by existing links and process separately.
 	const existingLinkRegex = /\[\[.*?\]\]/g;
 	let result = "";
 	let lastIndex = 0;
 	let match: RegExpExecArray | null;
+
+	// Modified callback with proper argument order.
+	const replaceCallback = (
+		m: string,
+		captured: string,
+		offset: number,
+		s: string,
+	) => {
+		const preceding8 = s.substring(Math.max(0, offset - 8), offset);
+		const preceding7 = s.substring(Math.max(0, offset - 7), offset);
+		if (preceding8 === "https://" || preceding7 === "http://") {
+			return m;
+		}
+		return `[[${m}]]`;
+	};
 
 	while (
 		(match = existingLinkRegex.exec(contentWithoutFrontMatter)) !== null
@@ -59,17 +73,17 @@ export const replaceLinks = async ({
 		const segment = contentWithoutFrontMatter.slice(lastIndex, match.index);
 		const replacedSegment = segment.replace(
 			candidateRegex,
-			(m) => `[[${m}]]`,
+			replaceCallback,
 		);
 		result += replacedSegment;
 		// Append the existing link unchanged.
 		result += match[0];
 		lastIndex = match.index + match[0].length;
 	}
-	// Process the remaining content after the last existing link.
+	// Process the remaining segment.
 	result += contentWithoutFrontMatter
 		.slice(lastIndex)
-		.replace(candidateRegex, (m) => `[[${m}]]`);
+		.replace(candidateRegex, replaceCallback);
 
 	// Concatenate the preserved frontmatter with the processed content and return.
 	return frontmatter + result;
@@ -340,6 +354,37 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 				}),
 			).toBe("[[obsidian/automatic linker]]");
+		});
+	});
+
+	describe("ignore url", () => {
+		it("one url", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "- https://example.com",
+					allFileNames: ["example"],
+					getFrontMatterInfo,
+				}),
+			).toBe("- https://example.com");
+		});
+		it("multiple urls", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "- https://example.com https://example1.com",
+					allFileNames: ["example", "example1"],
+					getFrontMatterInfo,
+				}),
+			).toBe("- https://example.com https://example1.com");
+		});
+		it("multiple urls with links", async () => {
+			expect(
+				await replaceLinks({
+					fileContent:
+						"- https://example.com https://example1.com link",
+					allFileNames: ["example1", "example", "link"],
+					getFrontMatterInfo,
+				}),
+			).toBe("- https://example.com https://example1.com [[link]]");
 		});
 	});
 }
