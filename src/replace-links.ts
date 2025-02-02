@@ -10,17 +10,17 @@ export const replaceLinks = async ({
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 	specialDirs?: string[];
 }): Promise<string> => {
-	// Function to escape special characters for use in regex.
+	// Function to escape special regex characters.
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-	// Sort candidate filenames in descending order so that longer names match first.
+	// Sort candidate filenames in descending order so longer names match first.
 	const sortedFileNames = allFileNames
 		.slice()
 		.sort((a, b) => b.length - a.length);
 
-	// Create regex patterns for each candidate.
-	// For names under any of the specialDirs, make the directory part optional.
+	// Generate regex patterns for each candidate.
+	// For names in specialDirs, the directory part is made optional.
 	const filePathPatterns = sortedFileNames.map((name) => {
 		for (const specialDir of specialDirs) {
 			const prefix = `${specialDir}/`;
@@ -32,61 +32,49 @@ export const replaceLinks = async ({
 		return escapeRegExp(name);
 	});
 
-	// Concatenate multiple candidate patterns with "|" to form a single regex pattern.
+	// Combine all candidate patterns into one regex pattern.
 	const combinedPattern = filePathPatterns.join("|");
 	// Create a regex to match candidate strings (global flag).
 	const candidateRegex = new RegExp(`(${combinedPattern})`, "g");
 
-	// Get the starting index of the content (excluding frontmatter).
+	// Retrieve the starting index of the content (excluding frontmatter).
 	const { contentStart } = getFrontMatterInfo(fileContent);
-	// Preserve the frontmatter portion.
+	// Preserve the frontmatter.
 	const frontmatter = fileContent.slice(0, contentStart);
-	// Extract the content without the frontmatter.
+	// Extract the body content (without frontmatter).
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
 
-	// Define a regex to match protected links: either wiki links ([[...]]) or Markdown links ([title](url)).
-	// We want to keep these unchanged.
-	const protectedLinkRegex = /(\[\[.*?\]\])|(\[[^\]]+\]\([^)]+\))/g;
+	// Define a regex to match protected segments:
+	// 1. Plain URLs (http:// or https:// followed by non-space characters),
+	// 2. Wiki links ([[...]]),
+	// 3. Markdown links ([text](url)).
+	const protectedLinkRegex =
+		/(https?:\/\/[^\s]+)|(\[\[.*?\]\])|(\[[^\]]+\]\([^)]+\))/g;
 
-	// Callback function to wrap candidate strings with wiki link syntax ([[...]])
-	// unless the candidate appears to be part of a URL.
-	// Note: The callback receives arguments (match, captured, offset, string) due to capture groups.
-	const replaceCallback = (
-		m: string,
-		captured: string,
-		offset: number,
-		s: string,
-	) => {
-		// Get the 8 and 7 characters immediately preceding the match.
-		const preceding8 = s.substring(Math.max(0, offset - 8), offset);
-		const preceding7 = s.substring(Math.max(0, offset - 7), offset);
-		// If the match is immediately preceded by "https://" or "http://",
-		// then it is considered part of a URL and should not be replaced.
-		if (preceding8 === "https://" || preceding7 === "http://") {
-			return m;
-		}
-		return `[[${m}]]`;
-	};
+	// Define a simple replacement callback that wraps candidate words in wiki-link syntax.
+	// Since candidate words inside protected segments will not be processed,
+	// we can safely wrap every candidate match.
+	const replaceCallback = (m: string) => `[[${m}]]`;
 
-	// Process the content while preserving protected links.
+	// Process the content by splitting it using the protectedLinkRegex.
 	let result = "";
 	let lastIndex = 0;
 	let match: RegExpExecArray | null;
 	while (
 		(match = protectedLinkRegex.exec(contentWithoutFrontMatter)) !== null
 	) {
-		// Process the segment before the protected link by replacing candidate matches.
+		// Process the segment before the protected link using candidateRegex.
 		const segment = contentWithoutFrontMatter.slice(lastIndex, match.index);
 		const replacedSegment = segment.replace(
 			candidateRegex,
 			replaceCallback,
 		);
 		result += replacedSegment;
-		// Append the protected link unchanged.
+		// Append the protected segment unchanged.
 		result += match[0];
 		lastIndex = match.index + match[0].length;
 	}
-	// Process any remaining content after the last protected link.
+	// Process any remaining content after the last protected segment.
 	result += contentWithoutFrontMatter
 		.slice(lastIndex)
 		.replace(candidateRegex, replaceCallback);
@@ -368,7 +356,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- https://example.com",
-					allFileNames: ["example"],
+					allFileNames: ["example", "http", "https"],
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com");
@@ -377,7 +365,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- https://example.com https://example1.com",
-					allFileNames: ["example", "example1"],
+					allFileNames: ["example", "example1", "https", "http"],
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com https://example1.com");
@@ -387,7 +375,13 @@ if (import.meta.vitest) {
 				await replaceLinks({
 					fileContent:
 						"- https://example.com https://example1.com link",
-					allFileNames: ["example1", "example", "link"],
+					allFileNames: [
+						"example1",
+						"example",
+						"link",
+						"https",
+						"http",
+					],
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com https://example1.com [[link]]");
@@ -399,7 +393,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- [title](https://example.com)",
-					allFileNames: ["example", "title"],
+					allFileNames: ["example", "title", "https", "http"],
 					getFrontMatterInfo,
 				}),
 			).toBe("- [title](https://example.com)");
@@ -409,7 +403,14 @@ if (import.meta.vitest) {
 				await replaceLinks({
 					fileContent:
 						"- [title1](https://example1.com) [title2](https://example2.com)",
-					allFileNames: ["example1", "example2", "title1", "title2"],
+					allFileNames: [
+						"example1",
+						"example2",
+						"title1",
+						"title2",
+						"https",
+						"http",
+					],
 					getFrontMatterInfo,
 				}),
 			).toBe(
@@ -426,6 +427,8 @@ if (import.meta.vitest) {
 						"example2",
 						"title1",
 						"title2",
+						"https",
+						"http",
 						"link",
 					],
 					getFrontMatterInfo,
