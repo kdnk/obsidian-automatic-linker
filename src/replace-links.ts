@@ -14,45 +14,38 @@ export const replaceLinks = async ({
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-	// 候補ファイル名を長いものが先にマッチするように降順ソート
-	const sortedFileNames = allFileNames
-		.slice()
-		.sort((a, b) => b.length - a.length);
+	// ファイル名候補を長いものが先にマッチするように降順ソート
+	const sortedFileNames = allFileNames.slice().sort((a, b) => b.length - a.length);
 
-	// 各候補について、もし specialDirs のいずれかで始まっていれば、ディレクトリ部分が
-	// 省略可能となるように正規表現パターンを作成する。
+	// 各候補について、もし specialDirs のいずれかで始まっていれば
+	// ディレクトリ部分が省略可能となるように正規表現パターンを作成する
 	const filePathPatterns = sortedFileNames.map((name) => {
 		for (const specialDir of specialDirs) {
 			const prefix = `${specialDir}/`;
 			if (name.startsWith(prefix)) {
-				// 例："pages/tags" → (?:pages/)?tags
-				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(name.slice(prefix.length))}`;
+				// 例："pages/tags" → パターン: (?:pages/)?tags
+				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(
+					name.slice(prefix.length)
+				)}`;
 			}
 		}
-		// 特別扱い外ならそのままエスケープしたパスを返す
 		return escapeRegExp(name);
 	});
 
-	// 複数候補を "|" で連結
+	// 複数候補を "|" で連結してひとつのパターンにする
 	const combinedPattern = filePathPatterns.join("|");
 
-	// CJK や日本語の場合、\b (単語境界) は意図した動作をしないため、
-	// 行頭または空白（^|\s）と、行末または空白（$|\s）で囲まれた部分にマッチさせる。
-	// また、既に [[ ]] で囲まれている場合は除外するため (?!\[\[) と (?!\]\]) を利用。
-	const regex = new RegExp(
-		`(^|\\s)(?!\\[\\[)(${combinedPattern})(?!\\]\\])(?=$|\\s)`,
-		"g",
-	);
+	// これまで「前後に空白または行頭／行末」という境界チェックをしていましたが、
+	// CJK の連続する文字列（例："ひらがなとひらがな"）も正しく置換できるように、
+	// ネガティブ・ルックビハインド／ルックアヘッドで既にリンク化されている箇所を除外するのみとします。
+	const regex = new RegExp(`(?<!\\[\\[)(${combinedPattern})(?!\\]\\])`, "g");
 
-	// FrontMatter 部分を除いた本文で置換を実施
+	// FrontMatter 部分を除いた本文（contentStart 以降）に対して置換を実施
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
-	const updatedContent = contentWithoutFrontMatter.replace(
-		regex,
-		(match, preceding, link) => {
-			return `${preceding}[[${link}]]`;
-		},
-	);
+	const updatedContent = contentWithoutFrontMatter.replace(regex, (match) => {
+		return `[[${match}]]`;
+	});
 	return updatedContent;
 };
 
@@ -241,6 +234,24 @@ if (import.meta.vitest) {
 				}),
 			).toBe("[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]");
 		});
+		it("multiple CJK words", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "- 漢字　ひらがな",
+					allFileNames: ["漢字", "ひらがな"],
+					getFrontMatterInfo,
+				}),
+			).toBe("- [[漢字]]　[[ひらがな]]");
+		});
+		it("multiple same CJK words", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "- ひらがなとひらがな",
+					allFileNames: ["ひらがな"],
+					getFrontMatterInfo,
+				}),
+			).toBe("- [[ひらがな]]と[[ひらがな]]");
+		});
 	});
 
 	describe("special character (pages)", () => {
@@ -265,7 +276,7 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 					specialDirs: ["pages"],
 				}),
-			).toBe("[[tags]]");
+			).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
 		});
 	});
 }
