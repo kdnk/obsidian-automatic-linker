@@ -50,7 +50,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					this.app.metadataCache.getFileCache(file)?.frontmatter;
 				if (frontmatter) {
 					const alias = parseFrontMatterAliases(frontmatter);
-					// 必要に応じて、ファイルとそのエイリアスをまとめたオブジェクトを作成する
+					// Create an object combining the file and its aliases as needed.
 					allAlias.push({
 						file,
 						alias,
@@ -58,13 +58,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				}
 			}
 
-			// ファイルパスから拡張子 .md を除いた文字列を生成
+			// Generate strings for file paths with the .md extension removed.
 			const allFileNames = allMarkdownFiles.map((file) => {
 				const path = file.path;
 				return path.replace(/\.md$/, "");
 			});
 
-			// 長いパスが先にマッチするように、ファイル名を長さの降順でソートする
+			// Sort the filenames in descending order by length so that longer paths match first.
 			allFileNames.sort((a, b) => b.length - a.length);
 
 			this.allFileNames = allFileNames;

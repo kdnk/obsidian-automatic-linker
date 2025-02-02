@@ -2,7 +2,7 @@ export const replaceLinks = async ({
 	fileContent,
 	allFileNames,
 	getFrontMatterInfo,
-	// 特別扱いするディレクトリ一覧。省略時は "pages" を特別扱いします。
+	// List of directories to treat specially. Defaults to ["pages"].
 	specialDirs = ["pages"],
 }: {
 	fileContent: string;
@@ -10,37 +10,40 @@ export const replaceLinks = async ({
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 	specialDirs?: string[];
 }): Promise<string> => {
-	// 正規表現用に特殊文字をエスケープする関数
+	// Function to escape special characters for use in regular expressions.
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-	// 候補ファイル名を長いものが先にマッチするように降順ソート
+	// Sort candidate filenames in descending order so that longer ones match first.
 	const sortedFileNames = allFileNames
 		.slice()
 		.sort((a, b) => b.length - a.length);
 
-	// specialDirs に該当する場合、ディレクトリ部分が省略可能になるように正規表現パターンを作成
+	// Create regex patterns for each candidate. For names that fall under any of the specialDirs,
+	// make the directory part optional.
 	const filePathPatterns = sortedFileNames.map((name) => {
 		for (const specialDir of specialDirs) {
 			const prefix = `${specialDir}/`;
 			if (name.startsWith(prefix)) {
-				// 例："pages/tags" → パターン: (?:pages/)?tags
-				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(name.slice(prefix.length))}`;
+				// Example: "pages/tags" → pattern: (?:pages/)?tags
+				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(
+					name.slice(prefix.length),
+				)}`;
 			}
 		}
 		return escapeRegExp(name);
 	});
 
-	// 複数候補を "|" で連結してひとつのパターンにする
+	// Concatenate multiple candidate patterns with "|" to form a single pattern.
 	const combinedPattern = filePathPatterns.join("|");
-	// 候補文字列をマッチさせる正規表現（グローバルフラグ）
+	// Regular expression to match candidate strings (global flag).
 	const candidateRegex = new RegExp(`(${combinedPattern})`, "g");
 
-	// FrontMatter 部分を除いた本文を処理対象とする
+	// Process the text body excluding the FrontMatter section.
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const contentWithoutFrontMatter = fileContent.slice(contentStart);
 
-	// 既存のリンク（[[…]]）をそのまま残すため、一度既存リンクでテキストを分割して処理する
+	// To leave existing links ([[...]]), split the text by existing links and process separately.
 	const existingLinkRegex = /\[\[.*?\]\]/g;
 	let result = "";
 	let lastIndex = 0;
@@ -49,18 +52,18 @@ export const replaceLinks = async ({
 	while (
 		(match = existingLinkRegex.exec(contentWithoutFrontMatter)) !== null
 	) {
-		// 現在の既存リンクの直前の部分だけ candidateRegex で置換
+		// Replace only the segment immediately preceding the current existing link using candidateRegex.
 		const segment = contentWithoutFrontMatter.slice(lastIndex, match.index);
 		const replacedSegment = segment.replace(
 			candidateRegex,
 			(m) => `[[${m}]]`,
 		);
 		result += replacedSegment;
-		// 既存リンク部分はそのまま追加
+		// Append the existing link unchanged.
 		result += match[0];
 		lastIndex = match.index + match[0].length;
 	}
-	// 最後の既存リンク以降の部分も candidateRegex で置換
+	// Replace the segment after the last existing link using candidateRegex.
 	result += contentWithoutFrontMatter
 		.slice(lastIndex)
 		.replace(candidateRegex, (m) => `[[${m}]]`);
