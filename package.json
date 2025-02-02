@@ -7,7 +7,7 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
-		"test": "vitest"
+		"test": "VITE_CJS_IGNORE_WARNING=true vitest"
 	},
 	"keywords": [],
 	"author": "",
@@ -24,7 +24,7 @@
 		"typescript": "4.7.4",
 		"vitest": "^3.0.4"
 	},
-  "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "4.6.1"
-  }
+	"optionalDependencies": {
+		"@rollup/rollup-linux-x64-gnu": "4.6.1"
+	}
 }
