@@ -71,7 +71,30 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		};
 
 		this.registerEvent(
+			this.app.metadataCache.on("resolved", async () => {
+				loadMarkdownFiles();
+			}),
+		);
+		this.registerEvent(
 			this.app.workspace.on("file-open", () => {
+				loadMarkdownFiles();
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("delete", () => {
+				loadMarkdownFiles();
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("create", () => {
+				loadMarkdownFiles();
+			}),
+		);
+
+		this.registerEvent(
+			this.app.vault.on("rename", () => {
 				loadMarkdownFiles();
 			}),
 		);
