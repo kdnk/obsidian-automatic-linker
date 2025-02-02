@@ -330,4 +330,16 @@ if (import.meta.vitest) {
 			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 		});
 	});
+
+	describe("with space", () => {
+		it("", async () => {
+			expect(
+				await replaceLinks({
+					fileContent: "obsidian/automatic linker",
+					allFileNames: ["obsidian/automatic linker", "obsidian"],
+					getFrontMatterInfo,
+				}),
+			).toBe("[[obsidian/automatic linker]]");
+		});
+	});
 }
