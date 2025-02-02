@@ -86,14 +86,16 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			}),
 		);
 
-		this.registerEvent(
-			this.app.workspace.on("active-leaf-change", async (file) => {
-				console.log(`[main.ts:87] file: `, file);
-				setTimeout(async () => {
-					await replaceLinks();
-				}, 100);
-			}),
-		);
+		const saveCommandDefinition = (this.app as any).commands?.commands?.[
+			"editor:save-file"
+		];
+		const save = saveCommandDefinition?.callback;
+
+		if (typeof save === "function") {
+			saveCommandDefinition.callback = async () => {
+				await replaceLinks();
+			};
+		}
 
 		// This creates an icon in the left ribbon.
 		const ribbonIconEl = this.addRibbonIcon(
