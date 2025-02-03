@@ -47,12 +47,23 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						return reject(new PCancelable.CancelError());
 					}
 					// Replace links using the provided utility function.
+					console.log(
+						new Date().toISOString(),
+						"modifyLinks started",
+					);
+
 					const updatedContent = await replaceLinks({
 						fileContent,
 						allFileNames: this.allFileNames,
 						getFrontMatterInfo,
-						specialDirs: this.settings.specialDirs,
+						baseDirs: this.settings.specialDirs,
 					});
+
+					console.log(
+						new Date().toISOString(),
+						"modifyLinks finished",
+					);
+
 					// Check again if the task has been canceled.
 					if (canceled) {
 						return reject(new PCancelable.CancelError());
@@ -145,10 +156,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			);
 			saveCommandDefinition.callback = async () => {
 				// Call the throttled modifyLinks function first.
-				throttledModifyLinks().then(() => {
-					// Then, call the original save function.
-					save();
-				});
+				save();
+				throttledModifyLinks();
 			};
 		}
 	}

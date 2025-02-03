@@ -10,81 +10,150 @@ export const replaceLinks = async ({
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 	baseDirs?: string[];
 }): Promise<string> => {
-	// Escape special regex characters.
-	const escapeRegExp = (str: string) =>
-		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-	// Sort file names in descending order (longest first) so that longer matches are prioritized.
-	const sortedFileNames = allFileNames.slice().sort((a, b) => b.length - a.length);
-
-	// Regex to check if a candidate is "safe" (only contains alphanumerics, underscore, hyphen, slash, and space)
-	const safePatternRegex = /^[A-Za-z0-9_\/\- ]+$/;
-
-	// Build regex patterns for each candidate file name.
-	// If a file name starts with one of the baseDirs, the directory part is made optional.
-	// Additionally, if the candidate consists only of safe characters, wrap it with word boundaries.
-	const candidatePatterns = sortedFileNames.map((name) => {
-		let pattern: string | null = null;
-		for (const specialDir of baseDirs) {
-			const prefix = `${specialDir}/`;
+	// Preprocess candidate file names.
+	// For names that start with one of the baseDirs, create a candidate object
+	// with both the full form (e.g. "pages/tags") and a short form (e.g. "tags").
+	type Candidate = { full: string; short: string | null };
+	const candidates: Candidate[] = allFileNames.map((name) => {
+		const candidate: Candidate = { full: name, short: null };
+		for (const dir of baseDirs) {
+			const prefix = `${dir}/`;
 			if (name.startsWith(prefix)) {
-				// Example: "pages/tags" becomes pattern: (?:pages/)?tags
-				pattern = `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(name.slice(prefix.length))}`;
+				candidate.short = name.slice(prefix.length);
 				break;
 			}
 		}
-		if (!pattern) {
-			pattern = escapeRegExp(name);
-		}
-		if (safePatternRegex.test(name)) {
-			pattern = `\\b${pattern}\\b`;
-		}
-		return pattern;
+		return candidate;
 	});
 
-	// Combine candidate patterns with the OR operator.
-	const candidateAlternative = candidatePatterns.join("|");
+	// Build a mapping from candidate string to its canonical replacement.
+	// The full form always takes precedence.
+	const candidateMap = new Map<string, string>();
+	for (const { full, short } of candidates) {
+		candidateMap.set(full, full);
+		if (short && !candidateMap.has(short)) {
+			candidateMap.set(short, short);
+		}
+	}
 
-	// Create the combined regex with the following groups:
-	// Group 1: Plain URLs (http:// or https:// followed by non-space characters)
-	// Group 2: Wiki links ([[...]])
-	// Group 3: Markdown links ([text](url))
-	// Group 4: Candidate words (only if not immediately preceded by "http://" or "https://")
-	const combinedRegex = new RegExp(
-		`(https?:\\/\\/[^\s]+)|(\\[\\[.*?\\]\\])|(\\[[^\\]]+\\]\\([^)]+\\))|(?<!https?:\\/\\/)(` +
-			candidateAlternative +
-			`)`,
-		"gu"
-	);
+	// Build a trie from the keys of candidateMap.
+	interface TrieNode {
+		children: Map<string, TrieNode>;
+		// If this node marks the end of a candidate, store the candidate string.
+		candidate?: string;
+	}
+	const buildTrie = (words: string[]): TrieNode => {
+		const root: TrieNode = { children: new Map() };
+		for (const word of words) {
+			let node = root;
+			for (const ch of word) {
+				if (!node.children.has(ch)) {
+					node.children.set(ch, { children: new Map() });
+				}
+				node = node.children.get(ch)!;
+			}
+			node.candidate = word;
+		}
+		return root;
+	};
+	const trie = buildTrie(Array.from(candidateMap.keys()));
 
-	// Split the file into frontmatter and body using contentStart.
+	// Helper: check if a character is a word boundary.
+	const isWordBoundary = (char: string | undefined): boolean => {
+		if (char === undefined) return true;
+		return !/[A-Za-z0-9_\/\-]/.test(char);
+	};
+
+	// Protected segments: markdown links and wiki links should not be processed.
+	// This regex matches [title](url) and [[wiki link]].
+	const protectedRegex = /(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/gu;
+
+	// If the entire body is already a protected link, skip processing.
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const frontmatter = fileContent.slice(0, contentStart);
 	const body = fileContent.slice(contentStart);
-
-	let result = "";
-	let lastIndex = 0;
-	let match: RegExpExecArray | null;
-
-	// Process the body in one pass.
-	while ((match = combinedRegex.exec(body)) !== null) {
-		// Append unchanged text from the end of the last match to the start of the current match.
-		result += body.slice(lastIndex, match.index);
-
-		// If any of groups 1-3 matched (URLs, Wiki links, or Markdown links), leave the match unchanged.
-		if (match[1] || match[2] || match[3]) {
-			result += match[0];
-		} else {
-			// Otherwise, group 4 matched a candidate word; wrap it in double brackets.
-			result += `[[${match[0]}]]`;
-		}
-		lastIndex = combinedRegex.lastIndex;
+	if (/^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/.test(body)) {
+		return frontmatter + body;
 	}
-	// Append any remaining text after the last match.
-	result += body.slice(lastIndex);
 
-	// Return the frontmatter concatenated with the processed body.
-	return frontmatter + result;
+	// Function to process a plain text segment (which is not already protected)
+	// using trie‑based search.
+	const replaceInSegment = (text: string): string => {
+		let result = "";
+		let i = 0;
+		while (i < text.length) {
+			// Check if a URL starts at the current index.
+			const urlMatch = text.slice(i).match(/^(https?:\/\/[^\s]+)/);
+			if (urlMatch) {
+				// If a URL is found, copy it unchanged.
+				result += urlMatch[0];
+				i += urlMatch[0].length;
+				continue;
+			}
+
+			// Traverse the trie from the current index.
+			let node = trie;
+			let lastCandidate: { candidate: string; length: number } | null =
+				null;
+			let j = i;
+			while (j < text.length) {
+				const ch = text[j];
+				if (!node.children.has(ch)) break;
+				node = node.children.get(ch)!;
+				if (node.candidate) {
+					lastCandidate = {
+						candidate: node.candidate,
+						length: j - i + 1,
+					};
+				}
+				j++;
+			}
+			if (lastCandidate) {
+				const matched = text.substring(i, i + lastCandidate.length);
+				// For safe candidates, check word boundaries.
+				if (
+					/[A-Za-z0-9_\/\- ]+/.test(matched) &&
+					candidateMap.has(matched)
+				) {
+					const left = i > 0 ? text[i - 1] : undefined;
+					const right =
+						i + lastCandidate.length < text.length
+							? text[i + lastCandidate.length]
+							: undefined;
+					if (!isWordBoundary(left) || !isWordBoundary(right)) {
+						result += text[i];
+						i++;
+						continue;
+					}
+				}
+				// Replace candidate with its canonical form wrapped in double brackets.
+				const canonical = candidateMap.get(matched) ?? matched;
+				result += `[[${canonical}]]`;
+				i += lastCandidate.length;
+			} else {
+				result += text[i];
+				i++;
+			}
+		}
+		return result;
+	};
+
+	// Process the body while preserving protected segments.
+	let resultBody = "";
+	let lastIndex = 0;
+	for (const m of body.matchAll(protectedRegex)) {
+		const mIndex = m.index ?? 0;
+		// Process text before the protected segment.
+		const segment = body.slice(lastIndex, mIndex);
+		resultBody += replaceInSegment(segment);
+		// Append the protected segment unchanged.
+		resultBody += m[0];
+		lastIndex = mIndex + m[0].length;
+	}
+	// Process any remaining text after the last protected segment.
+	resultBody += replaceInSegment(body.slice(lastIndex));
+
+	return frontmatter + resultBody;
 };
 
 if (import.meta.vitest) {
