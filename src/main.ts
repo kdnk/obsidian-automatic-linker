@@ -13,11 +13,17 @@ import {
 } from "./settings";
 import PCancelable from "p-cancelable";
 import throttle from "just-throttle";
+import { buildCandidateTrie, TrieNode } from "./trie";
 
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
+	// List of markdown file paths (without the ".md" extension)
 	private allFileNames: string[] = [];
-	// Holds the currently running modifyLinks task
+	// Pre-built Trie for link candidate lookup
+	private trie: TrieNode | null = null;
+	// Mapping from candidate string to its canonical replacement
+	private candidateMap: Map<string, string> | null = null;
+	// Holds the currently running modifyLinks task (cancelable)
 	private currentModifyLinks: PCancelable<void> | null = null;
 
 	constructor(app: App, pluginManifest: PluginManifest) {
@@ -39,30 +45,29 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					return;
 				}
 
-				// Flag to track cancellation within this task.
 				let canceled = false;
 				onCancel(() => {
 					canceled = true;
 				});
 
 				try {
-					// Read the active file's content
+					// Read the content of the active file.
 					const fileContent = await this.app.vault.read(activeFile);
-					// Abort processing if the task was canceled after reading.
 					if (canceled) {
 						return reject(new PCancelable.CancelError());
 					}
-					// Replace links using the provided utility function.
 					console.log(
 						new Date().toISOString(),
 						"modifyLinks started",
 					);
 
+					// Use the pre-built trie and candidateMap to replace links.
+					// If trie is not built, use an empty one as a fallback.
 					const updatedContent = await replaceLinks({
 						fileContent,
-						allFileNames: this.allFileNames,
+						trie: this.trie ?? buildCandidateTrie([]).trie,
+						candidateMap: this.candidateMap ?? new Map(),
 						getFrontMatterInfo,
-						baseDirs: this.settings.baseDirs,
 					});
 
 					console.log(
@@ -70,7 +75,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						"modifyLinks finished",
 					);
 
-					// Check again if the task has been canceled.
 					if (canceled) {
 						return reject(new PCancelable.CancelError());
 					}
@@ -93,15 +97,23 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			new AutomaticLinkerPluginSettingsTab(this.app, this),
 		);
 
-		const loadMarkdownFiles = () => {
+		// Function to load file data and build the candidate map and Trie.
+		const refreshFileDataAndTrie = () => {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
-			// Create an array of file paths with the ".md" extension removed.
 			const allFileNames = allMarkdownFiles.map((file) =>
 				file.path.replace(/\.md$/, ""),
 			);
-			// Sort file names in descending order by length so longer paths match first.
+			// Sort file names in descending order by length (longer paths first)
 			allFileNames.sort((a, b) => b.length - a.length);
 			this.allFileNames = allFileNames;
+
+			// Build candidate map and Trie using the helper from trie.ts.
+			const { candidateMap, trie } = buildCandidateTrie(
+				allFileNames,
+				this.settings.baseDirs ?? ["pages"],
+			);
+			this.candidateMap = candidateMap;
+			this.trie = trie;
 
 			if (this.settings.showNotice) {
 				new Notice(
@@ -110,24 +122,24 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			}
 		};
 
-		// Load markdown file names when the layout is ready.
+		// Load file data and build the Trie when the layout is ready.
 		this.app.workspace.onLayoutReady(() => {
-			loadMarkdownFiles();
+			refreshFileDataAndTrie();
 			console.log("Automatic Linker: Loaded all markdown files.");
 			console.log("this.allFileNames.length", this.allFileNames.length);
 
 			this.registerEvent(
-				this.app.vault.on("delete", () => loadMarkdownFiles()),
+				this.app.vault.on("delete", () => refreshFileDataAndTrie()),
 			);
 			this.registerEvent(
-				this.app.vault.on("create", () => loadMarkdownFiles()),
+				this.app.vault.on("create", () => refreshFileDataAndTrie()),
 			);
 			this.registerEvent(
-				this.app.vault.on("rename", () => loadMarkdownFiles()),
+				this.app.vault.on("rename", () => refreshFileDataAndTrie()),
 			);
 		});
 
-		// Add a command to trigger modifyLinks manually.
+		// Command: Manually trigger link replacement for the current file.
 		this.addCommand({
 			id: "automatic-linker:link-current-file",
 			name: "Link current file",
@@ -135,7 +147,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				try {
 					await this.modifyLinks();
 				} catch (error) {
-					// If the task was canceled, log that it was canceled.
 					if (error instanceof PCancelable.CancelError) {
 						console.log("modifyLinks was canceled");
 					} else {
@@ -145,13 +156,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 		});
 
-		// Optionally, override the default save command to run modifyLinks with throttling.
+		// Optionally, override the default save command to run modifyLinks (with throttling).
 		const saveCommandDefinition =
 			// @ts-expect-error
 			this.app?.commands?.commands?.["editor:save-file"];
 		const save = saveCommandDefinition?.callback;
 		if (typeof save === "function") {
-			// Create a throttled version of modifyLinks with a 300ms interval.
 			const throttledModifyLinks = throttle(
 				async () => {
 					if (this.settings.formatOnSave) {
@@ -168,7 +178,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				{ leading: true },
 			);
 			saveCommandDefinition.callback = async () => {
-				// Call the throttled modifyLinks function first.
 				save?.();
 				throttledModifyLinks();
 			};

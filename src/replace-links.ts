@@ -1,96 +1,57 @@
+import { buildCandidateTrie, TrieNode } from "./trie";
+
+/**
+ * Replaces plain text with wikilinks using the provided Trie and candidateMap.
+ *
+ * @param fileContent - The content of the file to process.
+ * @param trie - The pre-built Trie for candidate lookup.
+ * @param candidateMap - Mapping from candidate string to its canonical replacement.
+ * @param getFrontMatterInfo - Function to get the front matter info.
+ * @returns The file content with replaced links.
+ */
 export const replaceLinks = async ({
 	fileContent,
-	allFileNames,
+	trie,
+	candidateMap,
 	getFrontMatterInfo,
-	baseDirs = ["pages"],
 }: {
 	fileContent: string;
-	allFileNames: string[];
+	trie: TrieNode;
+	candidateMap: Map<string, string>;
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
-	baseDirs?: string[];
 }): Promise<string> => {
-	// Preprocess candidate file names.
-	// For names that start with one of the baseDirs, create a candidate object
-	// with both the full form (e.g. "pages/tags") and a short form (e.g. "tags").
-	type Candidate = { full: string; short: string | null };
-	const candidates: Candidate[] = allFileNames.map((name) => {
-		const candidate: Candidate = { full: name, short: null };
-		for (const dir of baseDirs) {
-			const prefix = `${dir}/`;
-			if (name.startsWith(prefix)) {
-				candidate.short = name.slice(prefix.length);
-				break;
-			}
-		}
-		return candidate;
-	});
-
-	// Build a mapping from candidate string to its canonical replacement.
-	// The full form always takes precedence.
-	const candidateMap = new Map<string, string>();
-	for (const { full, short } of candidates) {
-		candidateMap.set(full, full);
-		if (short && !candidateMap.has(short)) {
-			candidateMap.set(short, short);
-		}
-	}
-
-	// Build a trie from the keys of candidateMap.
-	interface TrieNode {
-		children: Map<string, TrieNode>;
-		// If this node marks the end of a candidate, store the candidate string.
-		candidate?: string;
-	}
-	const buildTrie = (words: string[]): TrieNode => {
-		const root: TrieNode = { children: new Map() };
-		for (const word of words) {
-			let node = root;
-			for (const ch of word) {
-				if (!node.children.has(ch)) {
-					node.children.set(ch, { children: new Map() });
-				}
-				node = node.children.get(ch)!;
-			}
-			node.candidate = word;
-		}
-		return root;
-	};
-	const trie = buildTrie(Array.from(candidateMap.keys()));
-
-	// Helper: check if a character is a word boundary.
+	// Helper: determine if a character is a word boundary.
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
 		return !/[A-Za-z0-9_\/\-]/.test(char);
 	};
 
-	// Protected segments: markdown links and wiki links should not be processed.
-	// This regex matches [title](url) and [[wiki link]].
+	// Regex for protected segments (Markdown links and Wiki links)
 	const protectedRegex = /(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/gu;
 
-	// If the entire body is already a protected link, skip processing.
+	// Separate the front matter from the body.
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const frontmatter = fileContent.slice(0, contentStart);
 	const body = fileContent.slice(contentStart);
+	// If the body consists solely of a protected link, return as is.
 	if (/^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/.test(body)) {
 		return frontmatter + body;
 	}
 
-	// Function to process a plain text segment (which is not already protected)
-	// using trie‑based search.
+	// Function to process a plain text segment (not protected) using Trie-based search.
 	const replaceInSegment = (text: string): string => {
 		let result = "";
 		let i = 0;
 		while (i < text.length) {
-			// Check if a URL starts at the current index.
+			// If a URL is found, copy it unchanged.
 			const urlMatch = text.slice(i).match(/^(https?:\/\/[^\s]+)/);
 			if (urlMatch) {
-				// If a URL is found, copy it unchanged.
 				result += urlMatch[0];
 				i += urlMatch[0].length;
 				continue;
 			}
 
-			// Traverse the trie from the current index.
+			// Traverse the Trie from the current index.
 			let node = trie;
 			let lastCandidate: { candidate: string; length: number } | null =
 				null;
@@ -109,7 +70,7 @@ export const replaceLinks = async ({
 			}
 			if (lastCandidate) {
 				const matched = text.substring(i, i + lastCandidate.length);
-				// For safe candidates, check word boundaries.
+				// For valid candidates, check word boundaries.
 				if (
 					/[A-Za-z0-9_\/\- ]+/.test(matched) &&
 					candidateMap.has(matched)
@@ -137,12 +98,12 @@ export const replaceLinks = async ({
 		return result;
 	};
 
-	// Process the body while preserving protected segments.
 	let resultBody = "";
 	let lastIndex = 0;
+	// Process the body while preserving protected segments.
 	for (const m of body.matchAll(protectedRegex)) {
 		const mIndex = m.index ?? 0;
-		// Process text before the protected segment.
+		// Process the text before the protected segment.
 		const segment = body.slice(lastIndex, mIndex);
 		resultBody += replaceInSegment(segment);
 		// Append the protected segment unchanged.
@@ -166,122 +127,182 @@ if (import.meta.vitest) {
 
 	describe("basic", () => {
 		it("replaces links", async () => {
+			const fileNames = getSortedFileNames(["hello"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "hello",
-					allFileNames: getSortedFileNames(["hello"]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[hello]]");
 		});
+
 		it("replaces links with bullet", async () => {
+			const fileNames = getSortedFileNames(["hello"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "- hello",
-					allFileNames: getSortedFileNames(["hello"]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("- [[hello]]");
 		});
+
 		it("replaces links with other texts", async () => {
-			expect(
-				await replaceLinks({
-					fileContent: "world hello",
-					allFileNames: getSortedFileNames(["hello"]),
-					getFrontMatterInfo,
-				}),
-			).toBe("world [[hello]]");
-			expect(
-				await replaceLinks({
-					fileContent: "hello world",
-					allFileNames: getSortedFileNames(["hello"]),
-					getFrontMatterInfo,
-				}),
-			).toBe("[[hello]] world");
+			{
+				const fileNames = getSortedFileNames(["hello"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: "world hello",
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe("world [[hello]]");
+			}
+			{
+				const fileNames = getSortedFileNames(["hello"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: "hello world",
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe("[[hello]] world");
+			}
 		});
+
 		it("replaces links with other texts and bullet", async () => {
-			expect(
-				await replaceLinks({
-					fileContent: "- world hello",
-					allFileNames: getSortedFileNames(["hello"]),
-					getFrontMatterInfo,
-				}),
-			).toBe("- world [[hello]]");
-			expect(
-				await replaceLinks({
-					fileContent: "- hello world",
-					allFileNames: getSortedFileNames(["hello"]),
-					getFrontMatterInfo,
-				}),
-			).toBe("- [[hello]] world");
+			{
+				const fileNames = getSortedFileNames(["hello"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: "- world hello",
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe("- world [[hello]]");
+			}
+			{
+				const fileNames = getSortedFileNames(["hello"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: "- hello world",
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe("- [[hello]] world");
+			}
 		});
 
 		it("replaces multiple links", async () => {
-			expect(
-				await replaceLinks({
-					fileContent: "hello world",
-					allFileNames: getSortedFileNames(["hello", "world"]),
-					getFrontMatterInfo,
-				}),
-			).toBe("[[hello]] [[world]]");
-			expect(
-				await replaceLinks({
-					fileContent: `\nhello\nworld\n`,
-					allFileNames: getSortedFileNames(["hello", "world"]),
-					getFrontMatterInfo,
-				}),
-			).toBe(`\n[[hello]]\n[[world]]\n`);
-			expect(
-				await replaceLinks({
-					fileContent: `\nhello\nworld aaaaa\n`,
-					allFileNames: getSortedFileNames(["hello", "world"]),
-					getFrontMatterInfo,
-				}),
-			).toBe(`\n[[hello]]\n[[world]] aaaaa\n`);
-			expect(
-				await replaceLinks({
-					fileContent: `\n aaaaa hello\nworld bbbbb\n`,
-					allFileNames: getSortedFileNames(["hello", "world"]),
-					getFrontMatterInfo,
-				}),
-			).toBe(`\n aaaaa [[hello]]\n[[world]] bbbbb\n`);
+			{
+				const fileNames = getSortedFileNames(["hello", "world"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: "hello world",
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe("[[hello]] [[world]]");
+			}
+			{
+				const fileNames = getSortedFileNames(["hello", "world"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: `\nhello\nworld\n`,
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe(`\n[[hello]]\n[[world]]\n`);
+			}
+			{
+				const fileNames = getSortedFileNames(["hello", "world"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: `\nhello\nworld aaaaa\n`,
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe(`\n[[hello]]\n[[world]] aaaaa\n`);
+			}
+			{
+				const fileNames = getSortedFileNames(["hello", "world"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: `\n aaaaa hello\nworld bbbbb\n`,
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe(`\n aaaaa [[hello]]\n[[world]] bbbbb\n`);
+			}
 		});
 	});
 
 	describe("complex fileNames", () => {
 		it("unmatched namespace", async () => {
+			const fileNames = getSortedFileNames([
+				"namespace/tag1",
+				"namespace/tag2",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "namespace",
-					allFileNames: getSortedFileNames([
-						"namespace/tag1",
-						"namespace/tag2",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("namespace");
 		});
+
 		it("single namespace", async () => {
+			const fileNames = getSortedFileNames([
+				"namespace/tag1",
+				"namespace/tag2",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "namespace/tag1",
-					allFileNames: getSortedFileNames([
-						"namespace/tag1",
-						"namespace/tag2",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[namespace/tag1]]");
 		});
+
 		it("multiple namespaces", async () => {
+			const fileNames = getSortedFileNames([
+				"namespace/tag1",
+				"namespace/tag2",
+				"namespace",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "namespace/tag1 namespace/tag2",
-					allFileNames: getSortedFileNames([
-						"namespace/tag1",
-						"namespace/tag2",
-						"namespace",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]]");
@@ -290,24 +311,31 @@ if (import.meta.vitest) {
 
 	describe("containing CJK", () => {
 		it("unmatched namespace", async () => {
+			const fileNames = getSortedFileNames(["namespace/タグ"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "namespace",
-					allFileNames: getSortedFileNames(["namespace/タグ"]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("namespace");
 		});
+
 		it("multiple namespaces", async () => {
+			const fileNames = getSortedFileNames([
+				"namespace/tag1",
+				"namespace/tag2",
+				"namespace/タグ3",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent:
 						"namespace/tag1 namespace/tag2 namespace/タグ3",
-					allFileNames: getSortedFileNames([
-						"namespace/tag1",
-						"namespace/tag2",
-						"namespace/タグ3",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]] [[namespace/タグ3]]");
@@ -316,54 +344,73 @@ if (import.meta.vitest) {
 
 	describe("starting CJK", () => {
 		it("unmatched namespace", async () => {
+			const fileNames = getSortedFileNames(["namespace/タグ"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "名前空間",
-					allFileNames: getSortedFileNames(["namespace/タグ"]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("名前空間");
 		});
+
 		it("single namespace", async () => {
+			const fileNames = getSortedFileNames([
+				"名前空間/tag1",
+				"名前空間/tag2",
+				"名前空間/タグ3",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "名前空間/tag1",
-					allFileNames: getSortedFileNames([
-						"名前空間/tag1",
-						"名前空間/tag2",
-						"名前空間/タグ3",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[名前空間/tag1]]");
 		});
+
 		it("multiple namespaces", async () => {
+			const fileNames = getSortedFileNames([
+				"名前空間/tag1",
+				"名前空間/tag2",
+				"名前空間/タグ3",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
-					allFileNames: getSortedFileNames([
-						"名前空間/tag1",
-						"名前空間/tag2",
-						"名前空間/タグ3",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]");
 		});
+
 		it("multiple CJK words", async () => {
+			const fileNames = getSortedFileNames(["漢字", "ひらがな"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "- 漢字　ひらがな",
-					allFileNames: getSortedFileNames(["漢字", "ひらがな"]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("- [[漢字]]　[[ひらがな]]");
 		});
+
 		it("multiple same CJK words", async () => {
+			const fileNames = getSortedFileNames(["ひらがな"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "- ひらがなとひらがな",
-					allFileNames: getSortedFileNames(["ひらがな"]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("- [[ひらがな]]と[[ひらがな]]");
@@ -372,53 +419,63 @@ if (import.meta.vitest) {
 
 	describe("base character (pages)", () => {
 		it("unmatched namespace", async () => {
+			const fileNames = getSortedFileNames(["pages/tags"]);
+			// Pass baseDirs to buildCandidateTrie so that the short candidate is created.
+			const { candidateMap, trie } = buildCandidateTrie(fileNames, [
+				"pages",
+			]);
 			expect(
 				await replaceLinks({
 					fileContent: "tags",
-					allFileNames: getSortedFileNames(["pages/tags"]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
-					baseDirs: ["pages"],
 				}),
 			).toBe("[[tags]]");
 		});
 	});
 
 	it("multiple links in the same line", async () => {
+		const fileNames = getSortedFileNames(["pages/tags", "サウナ", "tags"]);
+		const { candidateMap, trie } = buildCandidateTrie(fileNames, ["pages"]);
 		expect(
 			await replaceLinks({
 				fileContent: "サウナ tags pages/tags",
-				allFileNames: getSortedFileNames([
-					"pages/tags",
-					"サウナ",
-					"tags",
-				]),
+				trie,
+				candidateMap,
 				getFrontMatterInfo,
-				baseDirs: ["pages"],
 			}),
 		).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
 	});
 
 	describe("nested links", () => {
 		it("", async () => {
+			const fileNames = getSortedFileNames([
+				"アジャイルリーダーコンピテンシーマップ",
+				"リーダー",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "アジャイルリーダーコンピテンシーマップ",
-					allFileNames: getSortedFileNames([
-						"アジャイルリーダーコンピテンシーマップ",
-						"リーダー",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 		});
+
 		it("exsiting links", async () => {
+			const fileNames = getSortedFileNames([
+				"アジャイルリーダーコンピテンシーマップ",
+				"リーダー",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "[[アジャイルリーダーコンピテンシーマップ]]",
-					allFileNames: getSortedFileNames([
-						"アジャイルリーダーコンピテンシーマップ",
-						"リーダー",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
@@ -427,13 +484,16 @@ if (import.meta.vitest) {
 
 	describe("with space", () => {
 		it("", async () => {
+			const fileNames = getSortedFileNames([
+				"obsidian/automatic linker",
+				"obsidian",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "obsidian/automatic linker",
-					allFileNames: getSortedFileNames([
-						"obsidian/automatic linker",
-						"obsidian",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("[[obsidian/automatic linker]]");
@@ -442,51 +502,70 @@ if (import.meta.vitest) {
 
 	describe("ignore url", () => {
 		it("one url", async () => {
-			expect(
-				await replaceLinks({
-					fileContent: "- https://example.com",
-					allFileNames: getSortedFileNames([
-						"example",
-						"http",
-						"https",
-					]),
-					getFrontMatterInfo,
-				}),
-			).toBe("- https://example.com");
-			expect(
-				await replaceLinks({
-					fileContent: "- https://x.com/xxxx/status/12345?t=25S02Tda",
-					allFileNames: getSortedFileNames(["st"]),
-					getFrontMatterInfo,
-				}),
-			).toBe("- https://x.com/xxxx/status/12345?t=25S02Tda");
+			{
+				const fileNames = getSortedFileNames([
+					"example",
+					"http",
+					"https",
+				]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent: "- https://example.com",
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe("- https://example.com");
+			}
+			{
+				const fileNames = getSortedFileNames(["st"]);
+				const { candidateMap, trie } = buildCandidateTrie(fileNames);
+				expect(
+					await replaceLinks({
+						fileContent:
+							"- https://x.com/xxxx/status/12345?t=25S02Tda",
+						trie,
+						candidateMap,
+						getFrontMatterInfo,
+					}),
+				).toBe("- https://x.com/xxxx/status/12345?t=25S02Tda");
+			}
 		});
+
 		it("multiple urls", async () => {
+			const fileNames = getSortedFileNames([
+				"example",
+				"example1",
+				"https",
+				"http",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "- https://example.com https://example1.com",
-					allFileNames: getSortedFileNames([
-						"example",
-						"example1",
-						"https",
-						"http",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com https://example1.com");
 		});
+
 		it("multiple urls with links", async () => {
+			const fileNames = getSortedFileNames([
+				"example1",
+				"example",
+				"link",
+				"https",
+				"http",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent:
 						"- https://example.com https://example1.com link",
-					allFileNames: getSortedFileNames([
-						"example1",
-						"example",
-						"link",
-						"https",
-						"http",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com https://example1.com [[link]]");
@@ -495,52 +574,63 @@ if (import.meta.vitest) {
 
 	describe("ignore markdown url", () => {
 		it("one url", async () => {
+			const fileNames = getSortedFileNames([
+				"example",
+				"title",
+				"https",
+				"http",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent: "- [title](https://example.com)",
-					allFileNames: getSortedFileNames([
-						"example",
-						"title",
-						"https",
-						"http",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe("- [title](https://example.com)");
 		});
+
 		it("multiple urls", async () => {
+			const fileNames = getSortedFileNames([
+				"example1",
+				"example2",
+				"title1",
+				"title2",
+				"https",
+				"http",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent:
 						"- [title1](https://example1.com) [title2](https://example2.com)",
-					allFileNames: getSortedFileNames([
-						"example1",
-						"example2",
-						"title1",
-						"title2",
-						"https",
-						"http",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe(
 				"- [title1](https://example1.com) [title2](https://example2.com)",
 			);
 		});
+
 		it("multiple urls with links", async () => {
+			const fileNames = getSortedFileNames([
+				"example1",
+				"example2",
+				"title1",
+				"title2",
+				"https",
+				"http",
+				"link",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
 					fileContent:
 						"- [title1](https://example1.com) [title2](https://example2.com) link",
-					allFileNames: getSortedFileNames([
-						"example1",
-						"example2",
-						"title1",
-						"title2",
-						"https",
-						"http",
-						"link",
-					]),
+					trie,
+					candidateMap,
 					getFrontMatterInfo,
 				}),
 			).toBe(
