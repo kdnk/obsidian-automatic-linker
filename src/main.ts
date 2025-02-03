@@ -6,6 +6,7 @@ import {
 	DEFAULT_SETTINGS,
 } from "./settings";
 import PCancelable from "p-cancelable";
+import throttle from "just-throttle";
 
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
@@ -41,7 +42,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				try {
 					// Read the active file's content
 					const fileContent = await this.app.vault.read(activeFile);
-					// If the task was canceled after reading, abort processing.
+					// Abort processing if the task was canceled after reading.
 					if (canceled) {
 						return reject(new PCancelable.CancelError());
 					}
@@ -120,29 +121,34 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 		});
 
-		// Optionally, override the default save command to run modifyLinks with debounce.
+		// Optionally, override the default save command to run modifyLinks with throttling.
 		const saveCommandDefinition = (this.app as any)?.commands?.commands?.[
 			"editor:save-file"
 		];
 		const save = saveCommandDefinition?.callback;
 		if (typeof save === "function") {
-			// Create a debounced version of modifyLinks with a 300ms delay.
-			const debouncedModifyLinks = debounce(async () => {
-				if (this.settings.formatOnSave) {
-					try {
-						await this.modifyLinks();
-					} catch (error) {
-						if (!(error instanceof PCancelable.CancelError)) {
-							console.error(error);
+			// Create a throttled version of modifyLinks with a 300ms interval.
+			const throttledModifyLinks = throttle(
+				async () => {
+					if (this.settings.formatOnSave) {
+						try {
+							await this.modifyLinks();
+						} catch (error) {
+							if (!(error instanceof PCancelable.CancelError)) {
+								console.error(error);
+							}
 						}
 					}
-				}
-			}, 300);
+				},
+				300,
+				{ leading: true },
+			);
 			saveCommandDefinition.callback = async () => {
-				// Call the debounced modifyLinks function first.
-				debouncedModifyLinks();
-				// Then, call the original save function.
-				save();
+				// Call the throttled modifyLinks function first.
+				throttledModifyLinks().then(() => {
+					// Then, call the original save function.
+					save();
+				});
 			};
 		}
 	}
@@ -158,14 +164,4 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
-}
-
-// A simple debounce function
-function debounce<T extends (...args: any[]) => any>(func: T, wait: number): T {
-	let timeout: ReturnType<typeof setTimeout>;
-	return function (this: any, ...args: any[]) {
-		const context = this;
-		clearTimeout(timeout);
-		timeout = setTimeout(() => func.apply(context, args), wait);
-	} as T;
 }
