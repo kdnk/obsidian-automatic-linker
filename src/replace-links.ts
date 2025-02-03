@@ -2,51 +2,62 @@ export const replaceLinks = async ({
 	fileContent,
 	allFileNames,
 	getFrontMatterInfo,
-	// List of directories to treat specially. Defaults to ["pages"].
-	specialDirs = ["pages"],
+	// Directories to treat specially. Defaults to ["pages"].
+	baseDirs = ["pages"],
 }: {
 	fileContent: string;
 	allFileNames: string[];
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
-	specialDirs?: string[];
+	baseDirs?: string[];
 }): Promise<string> => {
-	// Function to escape special regex characters.
+	// Escape special regex characters.
 	const escapeRegExp = (str: string) =>
 		str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-	// Sort candidate filenames in descending order so that longer names match first.
-	const sortedFileNames = allFileNames
-		.slice()
-		.sort((a, b) => b.length - a.length);
+	// Sort file names in descending order (longest first) so that longer matches are prioritized.
+	const sortedFileNames = allFileNames.slice().sort((a, b) => b.length - a.length);
 
-	// Generate regex patterns for each candidate.
-	// For names in specialDirs, the directory part is made optional.
-	const filePathPatterns = sortedFileNames.map((name) => {
-		for (const specialDir of specialDirs) {
+	// Regex to check if a candidate is "safe" (only contains alphanumerics, underscore, hyphen, slash, and space)
+	const safePatternRegex = /^[A-Za-z0-9_\/\- ]+$/;
+
+	// Build regex patterns for each candidate file name.
+	// If a file name starts with one of the baseDirs, the directory part is made optional.
+	// Additionally, if the candidate consists only of safe characters, wrap it with word boundaries.
+	const candidatePatterns = sortedFileNames.map((name) => {
+		let pattern: string | null = null;
+		for (const specialDir of baseDirs) {
 			const prefix = `${specialDir}/`;
 			if (name.startsWith(prefix)) {
-				// Example: "pages/tags" → pattern: (?:pages/)?tags
-				return `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(name.slice(prefix.length))}`;
+				// Example: "pages/tags" becomes pattern: (?:pages/)?tags
+				pattern = `(?:${escapeRegExp(specialDir)}/)?${escapeRegExp(name.slice(prefix.length))}`;
+				break;
 			}
 		}
-		return escapeRegExp(name);
+		if (!pattern) {
+			pattern = escapeRegExp(name);
+		}
+		if (safePatternRegex.test(name)) {
+			pattern = `\\b${pattern}\\b`;
+		}
+		return pattern;
 	});
 
-	// Combine all candidate patterns with "|" to form one regex fragment.
-	const combinedPattern = filePathPatterns.join("|");
-	// Create a combined regex that matches, in order:
-	// 1. Plain URLs (http:// or https:// followed by non-space characters)
-	// 2. Wiki links ([[...]])
-	// 3. Markdown links ([text](url))
-	// 4. Candidate words (only if not immediately preceded by "http://" or "https://")
-	//    (This negative lookbehind prevents wrapping parts of a URL.)
+	// Combine candidate patterns with the OR operator.
+	const candidateAlternative = candidatePatterns.join("|");
+
+	// Create the combined regex with the following groups:
+	// Group 1: Plain URLs (http:// or https:// followed by non-space characters)
+	// Group 2: Wiki links ([[...]])
+	// Group 3: Markdown links ([text](url))
+	// Group 4: Candidate words (only if not immediately preceded by "http://" or "https://")
 	const combinedRegex = new RegExp(
-		`(https?:\\/\\/[^\s]+)|(\\[\\[.*?\\]\\])|(\\[[^\\]]+\\]\\([^)]+\\))|(?<!https?:\\/\\/)(?:${combinedPattern})`,
-		"g",
+		`(https?:\\/\\/[^\s]+)|(\\[\\[.*?\\]\\])|(\\[[^\\]]+\\]\\([^)]+\\))|(?<!https?:\\/\\/)(` +
+			candidateAlternative +
+			`)`,
+		"gu"
 	);
 
-	// Retrieve the starting index of the content (excluding frontmatter),
-	// and split the file into frontmatter and body.
+	// Split the file into frontmatter and body using contentStart.
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const frontmatter = fileContent.slice(0, contentStart);
 	const body = fileContent.slice(contentStart);
@@ -57,21 +68,19 @@ export const replaceLinks = async ({
 
 	// Process the body in one pass.
 	while ((match = combinedRegex.exec(body)) !== null) {
-		// Append text between the last match and current match unchanged.
+		// Append unchanged text from the end of the last match to the start of the current match.
 		result += body.slice(lastIndex, match.index);
 
-		// If one of the first three groups (protected segments: plain URL, wiki link, or Markdown link) matched,
-		// output the match as-is.
+		// If any of groups 1-3 matched (URLs, Wiki links, or Markdown links), leave the match unchanged.
 		if (match[1] || match[2] || match[3]) {
 			result += match[0];
-		}
-		// Otherwise, group 4 matched a candidate word that is safe to wrap.
-		else {
+		} else {
+			// Otherwise, group 4 matched a candidate word; wrap it in double brackets.
 			result += `[[${match[0]}]]`;
 		}
 		lastIndex = combinedRegex.lastIndex;
 	}
-	// Append any remaining text.
+	// Append any remaining text after the last match.
 	result += body.slice(lastIndex);
 
 	// Return the frontmatter concatenated with the processed body.
@@ -290,7 +299,7 @@ if (import.meta.vitest) {
 					fileContent: "tags",
 					allFileNames: ["pages/tags"],
 					getFrontMatterInfo,
-					specialDirs: ["pages"],
+					baseDirs: ["pages"],
 				}),
 			).toBe("[[tags]]");
 		});
@@ -302,7 +311,7 @@ if (import.meta.vitest) {
 				fileContent: "サウナ tags pages/tags",
 				allFileNames: ["pages/tags", "サウナ", "tags"],
 				getFrontMatterInfo,
-				specialDirs: ["pages"],
+				baseDirs: ["pages"],
 			}),
 		).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
 	});
@@ -355,6 +364,13 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com");
+			expect(
+				await replaceLinks({
+					fileContent: "- https://x.com/xxxx/status/12345?t=25S02Tda",
+					allFileNames: ["st"],
+					getFrontMatterInfo,
+				}),
+			).toBe("- https://x.com/xxxx/status/12345?t=25S02Tda");
 		});
 		it("multiple urls", async () => {
 			expect(
