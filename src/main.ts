@@ -12,7 +12,7 @@ import {
 	DEFAULT_SETTINGS,
 } from "./settings";
 import PCancelable from "p-cancelable";
-import throttle from "just-throttle";
+import debounce from "just-debounce-it";
 import { buildCandidateTrie, TrieNode } from "./trie";
 
 export default class AutomaticLinkerPlugin extends Plugin {
@@ -156,13 +156,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 		});
 
-		// Optionally, override the default save command to run modifyLinks (with throttling).
+		// Optionally, override the default save command to run modifyLinks (with debouncing).
 		const saveCommandDefinition =
 			// @ts-expect-error
 			this.app?.commands?.commands?.["editor:save-file"];
 		const save = saveCommandDefinition?.callback;
 		if (typeof save === "function") {
-			const throttledModifyLinks = throttle(
+			const debouncedModifyLinks = debounce(
 				async () => {
 					if (this.settings.formatOnSave) {
 						try {
@@ -175,11 +175,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					}
 				},
 				300,
-				{ leading: true },
+				true,
 			);
 			saveCommandDefinition.callback = async () => {
 				save?.();
-				throttledModifyLinks();
+				debouncedModifyLinks();
 			};
 		}
 	}
