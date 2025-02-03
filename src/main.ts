@@ -133,9 +133,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		});
 
 		// Optionally, override the default save command to run modifyLinks with throttling.
-		const saveCommandDefinition = (this.app as any)?.commands?.commands?.[
-			"editor:save-file"
-		];
+		const saveCommandDefinition =
+			// @ts-expect-error
+			this.app?.commands?.commands?.["editor:save-file"];
 		const save = saveCommandDefinition?.callback;
 		if (typeof save === "function") {
 			// Create a throttled version of modifyLinks with a 300ms interval.
@@ -156,7 +156,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			);
 			saveCommandDefinition.callback = async () => {
 				// Call the throttled modifyLinks function first.
-				save();
+				save?.();
 				throttledModifyLinks();
 			};
 		}
