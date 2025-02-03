@@ -1,10 +1,4 @@
-import {
-	App,
-	getFrontMatterInfo,
-	parseFrontMatterAliases,
-	Plugin,
-	PluginManifest,
-} from "obsidian";
+import { App, getFrontMatterInfo, Plugin, PluginManifest } from "obsidian";
 import { replaceLinks } from "./replace-links";
 import {
 	AutomaticLinkerPluginSettingsTab,
