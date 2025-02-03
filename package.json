@@ -28,6 +28,6 @@
 		"@rollup/rollup-linux-x64-gnu": "4.6.1"
 	},
 	"dependencies": {
-		"just-throttle": "^4.2.0"
+		"just-debounce-it": "^3.2.0"
 	}
 }
