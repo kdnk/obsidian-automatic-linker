@@ -26,8 +26,13 @@ export const replaceLinks = async ({
 		return !/[A-Za-z0-9_\/\-]/.test(char);
 	};
 
-	// Regex for protected segments (Markdown links and Wiki links)
-	const protectedRegex = /(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/gu;
+	// Regex for protected segments:
+	//  - Code blocks: ```...```
+	//  - Inline code: `...`
+	//  - Wiki links: [[...]]
+	//  - Markdown links: [...](...)
+	const protectedRegex =
+		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/g;
 
 	// Separate the front matter from the body.
 	const { contentStart } = getFrontMatterInfo(fileContent);
@@ -636,6 +641,34 @@ if (import.meta.vitest) {
 			).toBe(
 				"- [title1](https://example1.com) [title2](https://example2.com) [[link]]",
 			);
+		});
+	});
+
+	describe("ignore code", () => {
+		it("inline code", async () => {
+			const fileNames = getSortedFileNames(["example", "code"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					fileContent: "`code` example",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("`code` [[example]]");
+		});
+
+		it("code block", async () => {
+			const fileNames = getSortedFileNames(["example", "typescript"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					fileContent: "```typescript\nexample\n```",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("```typescript\nexample\n```");
 		});
 	});
 }
