@@ -2,7 +2,6 @@ export const replaceLinks = async ({
 	fileContent,
 	allFileNames,
 	getFrontMatterInfo,
-	// Directories to treat specially. Defaults to ["pages"].
 	baseDirs = ["pages"],
 }: {
 	fileContent: string;
@@ -371,7 +370,7 @@ if (import.meta.vitest) {
 		});
 	});
 
-	describe("special character (pages)", () => {
+	describe("base character (pages)", () => {
 		it("unmatched namespace", async () => {
 			expect(
 				await replaceLinks({

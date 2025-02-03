@@ -56,7 +56,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						fileContent,
 						allFileNames: this.allFileNames,
 						getFrontMatterInfo,
-						baseDirs: this.settings.specialDirs,
+						baseDirs: this.settings.baseDirs,
 					});
 
 					console.log(
