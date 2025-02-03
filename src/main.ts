@@ -1,4 +1,10 @@
-import { App, getFrontMatterInfo, Plugin, PluginManifest } from "obsidian";
+import {
+	App,
+	getFrontMatterInfo,
+	Notice,
+	Plugin,
+	PluginManifest,
+} from "obsidian";
 import { replaceLinks } from "./replace-links";
 import {
 	AutomaticLinkerPluginSettingsTab,
@@ -96,6 +102,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// Sort file names in descending order by length so longer paths match first.
 			allFileNames.sort((a, b) => b.length - a.length);
 			this.allFileNames = allFileNames;
+
+			if (this.settings.showNotice) {
+				new Notice(
+					`Automatic Linker: Loaded all markdown files. (${allFileNames.length} files)`,
+				);
+			}
 		};
 
 		// Load markdown file names when the layout is ready.
@@ -103,16 +115,17 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			loadMarkdownFiles();
 			console.log("Automatic Linker: Loaded all markdown files.");
 			console.log("this.allFileNames.length", this.allFileNames.length);
+
+			this.registerEvent(
+				this.app.vault.on("delete", () => loadMarkdownFiles()),
+			);
+			this.registerEvent(
+				this.app.vault.on("create", () => loadMarkdownFiles()),
+			);
+			this.registerEvent(
+				this.app.vault.on("rename", () => loadMarkdownFiles()),
+			);
 		});
-		this.registerEvent(
-			this.app.vault.on("delete", () => loadMarkdownFiles()),
-		);
-		this.registerEvent(
-			this.app.vault.on("create", () => loadMarkdownFiles()),
-		);
-		this.registerEvent(
-			this.app.vault.on("rename", () => loadMarkdownFiles()),
-		);
 
 		// Add a command to trigger modifyLinks manually.
 		this.addCommand({

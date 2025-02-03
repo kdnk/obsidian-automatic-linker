@@ -4,11 +4,13 @@ import AutomaticLinkerPlugin from "./main";
 export type AutomaticLinkerSettings = {
 	formatOnSave: boolean;
 	baseDirs: string[];
+	showNotice: boolean;
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	formatOnSave: false,
 	baseDirs: ["pages"],
+	showNotice: false,
 };
 
 export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
@@ -50,6 +52,18 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 							.split(/\r?\n/)
 							.map((s) => s.trim())
 							.filter((s) => s.length > 0);
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Show Load Notice")
+			.setDesc("Display a notice when markdown files are loaded.")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.showNotice)
+					.onChange(async (value) => {
+						this.plugin.settings.showNotice = value;
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
