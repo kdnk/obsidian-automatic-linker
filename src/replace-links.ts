@@ -90,6 +90,10 @@ export const replaceLinks = async ({
 if (import.meta.vitest) {
 	const { it, expect, describe } = import.meta.vitest;
 
+	const getSortedFileNames = (fileNames: string[]) => {
+		return fileNames.slice().sort((a, b) => b.length - a.length);
+	};
+
 	const getFrontMatterInfo = (fileContent: string) => ({ contentStart: 0 });
 
 	describe("basic", () => {
@@ -97,7 +101,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "hello",
-					allFileNames: ["hello"],
+					allFileNames: getSortedFileNames(["hello"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[hello]]");
@@ -106,7 +110,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- hello",
-					allFileNames: ["hello"],
+					allFileNames: getSortedFileNames(["hello"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- [[hello]]");
@@ -115,14 +119,14 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "world hello",
-					allFileNames: ["hello"],
+					allFileNames: getSortedFileNames(["hello"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("world [[hello]]");
 			expect(
 				await replaceLinks({
 					fileContent: "hello world",
-					allFileNames: ["hello"],
+					allFileNames: getSortedFileNames(["hello"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[hello]] world");
@@ -131,14 +135,14 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- world hello",
-					allFileNames: ["hello"],
+					allFileNames: getSortedFileNames(["hello"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- world [[hello]]");
 			expect(
 				await replaceLinks({
 					fileContent: "- hello world",
-					allFileNames: ["hello"],
+					allFileNames: getSortedFileNames(["hello"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- [[hello]] world");
@@ -148,28 +152,28 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "hello world",
-					allFileNames: ["hello", "world"],
+					allFileNames: getSortedFileNames(["hello", "world"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[hello]] [[world]]");
 			expect(
 				await replaceLinks({
 					fileContent: `\nhello\nworld\n`,
-					allFileNames: ["hello", "world"],
+					allFileNames: getSortedFileNames(["hello", "world"]),
 					getFrontMatterInfo,
 				}),
 			).toBe(`\n[[hello]]\n[[world]]\n`);
 			expect(
 				await replaceLinks({
 					fileContent: `\nhello\nworld aaaaa\n`,
-					allFileNames: ["hello", "world"],
+					allFileNames: getSortedFileNames(["hello", "world"]),
 					getFrontMatterInfo,
 				}),
 			).toBe(`\n[[hello]]\n[[world]] aaaaa\n`);
 			expect(
 				await replaceLinks({
 					fileContent: `\n aaaaa hello\nworld bbbbb\n`,
-					allFileNames: ["hello", "world"],
+					allFileNames: getSortedFileNames(["hello", "world"]),
 					getFrontMatterInfo,
 				}),
 			).toBe(`\n aaaaa [[hello]]\n[[world]] bbbbb\n`);
@@ -181,7 +185,10 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "namespace",
-					allFileNames: ["namespace/tag1", "namespace/tag2"],
+					allFileNames: getSortedFileNames([
+						"namespace/tag1",
+						"namespace/tag2",
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("namespace");
@@ -190,7 +197,10 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "namespace/tag1",
-					allFileNames: ["namespace/tag1", "namespace/tag2"],
+					allFileNames: getSortedFileNames([
+						"namespace/tag1",
+						"namespace/tag2",
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[namespace/tag1]]");
@@ -199,11 +209,11 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "namespace/tag1 namespace/tag2",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"namespace/tag1",
 						"namespace/tag2",
 						"namespace",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]]");
@@ -215,7 +225,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "namespace",
-					allFileNames: ["namespace/タグ"],
+					allFileNames: getSortedFileNames(["namespace/タグ"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("namespace");
@@ -225,11 +235,11 @@ if (import.meta.vitest) {
 				await replaceLinks({
 					fileContent:
 						"namespace/tag1 namespace/tag2 namespace/タグ3",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"namespace/tag1",
 						"namespace/tag2",
 						"namespace/タグ3",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]] [[namespace/タグ3]]");
@@ -241,7 +251,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "名前空間",
-					allFileNames: ["namespace/タグ"],
+					allFileNames: getSortedFileNames(["namespace/タグ"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("名前空間");
@@ -250,11 +260,11 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "名前空間/tag1",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"名前空間/tag1",
 						"名前空間/tag2",
 						"名前空間/タグ3",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[名前空間/tag1]]");
@@ -263,11 +273,11 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"名前空間/tag1",
 						"名前空間/tag2",
 						"名前空間/タグ3",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]");
@@ -276,7 +286,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- 漢字　ひらがな",
-					allFileNames: ["漢字", "ひらがな"],
+					allFileNames: getSortedFileNames(["漢字", "ひらがな"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- [[漢字]]　[[ひらがな]]");
@@ -285,7 +295,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- ひらがなとひらがな",
-					allFileNames: ["ひらがな"],
+					allFileNames: getSortedFileNames(["ひらがな"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- [[ひらがな]]と[[ひらがな]]");
@@ -297,7 +307,7 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "tags",
-					allFileNames: ["pages/tags"],
+					allFileNames: getSortedFileNames(["pages/tags"]),
 					getFrontMatterInfo,
 					baseDirs: ["pages"],
 				}),
@@ -309,7 +319,11 @@ if (import.meta.vitest) {
 		expect(
 			await replaceLinks({
 				fileContent: "サウナ tags pages/tags",
-				allFileNames: ["pages/tags", "サウナ", "tags"],
+				allFileNames: getSortedFileNames([
+					"pages/tags",
+					"サウナ",
+					"tags",
+				]),
 				getFrontMatterInfo,
 				baseDirs: ["pages"],
 			}),
@@ -321,10 +335,10 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "アジャイルリーダーコンピテンシーマップ",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"アジャイルリーダーコンピテンシーマップ",
 						"リーダー",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
@@ -333,10 +347,10 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "[[アジャイルリーダーコンピテンシーマップ]]",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"アジャイルリーダーコンピテンシーマップ",
 						"リーダー",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
@@ -348,7 +362,10 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "obsidian/automatic linker",
-					allFileNames: ["obsidian/automatic linker", "obsidian"],
+					allFileNames: getSortedFileNames([
+						"obsidian/automatic linker",
+						"obsidian",
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("[[obsidian/automatic linker]]");
@@ -360,14 +377,18 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- https://example.com",
-					allFileNames: ["example", "http", "https"],
+					allFileNames: getSortedFileNames([
+						"example",
+						"http",
+						"https",
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com");
 			expect(
 				await replaceLinks({
 					fileContent: "- https://x.com/xxxx/status/12345?t=25S02Tda",
-					allFileNames: ["st"],
+					allFileNames: getSortedFileNames(["st"]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://x.com/xxxx/status/12345?t=25S02Tda");
@@ -376,7 +397,12 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- https://example.com https://example1.com",
-					allFileNames: ["example", "example1", "https", "http"],
+					allFileNames: getSortedFileNames([
+						"example",
+						"example1",
+						"https",
+						"http",
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com https://example1.com");
@@ -386,13 +412,13 @@ if (import.meta.vitest) {
 				await replaceLinks({
 					fileContent:
 						"- https://example.com https://example1.com link",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"example1",
 						"example",
 						"link",
 						"https",
 						"http",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- https://example.com https://example1.com [[link]]");
@@ -404,7 +430,12 @@ if (import.meta.vitest) {
 			expect(
 				await replaceLinks({
 					fileContent: "- [title](https://example.com)",
-					allFileNames: ["example", "title", "https", "http"],
+					allFileNames: getSortedFileNames([
+						"example",
+						"title",
+						"https",
+						"http",
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe("- [title](https://example.com)");
@@ -414,14 +445,14 @@ if (import.meta.vitest) {
 				await replaceLinks({
 					fileContent:
 						"- [title1](https://example1.com) [title2](https://example2.com)",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"example1",
 						"example2",
 						"title1",
 						"title2",
 						"https",
 						"http",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe(
@@ -433,7 +464,7 @@ if (import.meta.vitest) {
 				await replaceLinks({
 					fileContent:
 						"- [title1](https://example1.com) [title2](https://example2.com) link",
-					allFileNames: [
+					allFileNames: getSortedFileNames([
 						"example1",
 						"example2",
 						"title1",
@@ -441,7 +472,7 @@ if (import.meta.vitest) {
 						"https",
 						"http",
 						"link",
-					],
+					]),
 					getFrontMatterInfo,
 				}),
 			).toBe(
