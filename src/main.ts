@@ -25,6 +25,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	private candidateMap: Map<string, string> | null = null;
 	// Holds the currently running modifyLinks task (cancelable)
 	private currentModifyLinks: PCancelable<void> | null = null;
+	// Backup storage to hold original file content before modification (keyed by file path)
+	private backupContent: Map<string, string> = new Map();
 
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
@@ -51,8 +53,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				});
 
 				try {
-					// Read the content of the active file.
+					// Read the current file content
 					const fileContent = await this.app.vault.read(activeFile);
+					// Save a backup before making any modifications
+					this.backupContent.set(activeFile.path, fileContent);
+
 					if (canceled) {
 						return reject(new PCancelable.CancelError());
 					}
@@ -62,7 +67,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					);
 
 					// Use the pre-built trie and candidateMap to replace links.
-					// If trie is not built, use an empty one as a fallback.
+					// Fallback to an empty trie if not built.
 					const updatedContent = await replaceLinks({
 						fileContent,
 						trie: this.trie ?? buildCandidateTrie([]).trie,
@@ -78,7 +83,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					if (canceled) {
 						return reject(new PCancelable.CancelError());
 					}
-					// Modify the active file with the updated content.
+					// Overwrite the file with the updated content.
 					await this.app.vault.modify(activeFile, updatedContent);
 					resolve();
 				} catch (error) {
@@ -97,17 +102,17 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			new AutomaticLinkerPluginSettingsTab(this.app, this),
 		);
 
-		// Function to load file data and build the candidate map and Trie.
+		// Function to load file data and build the Trie.
 		const refreshFileDataAndTrie = () => {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
 			const allFileNames = allMarkdownFiles.map((file) =>
 				file.path.replace(/\.md$/, ""),
 			);
-			// Sort file names in descending order by length (longer paths first)
+			// Sort filenames in descending order (longer paths first)
 			allFileNames.sort((a, b) => b.length - a.length);
 			this.allFileNames = allFileNames;
 
-			// Build candidate map and Trie using the helper from trie.ts.
+			// Build candidateMap and Trie using the helper function from trie.ts.
 			const { candidateMap, trie } = buildCandidateTrie(
 				allFileNames,
 				this.settings.baseDirs ?? ["pages"],
@@ -156,7 +161,36 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 		});
 
-		// Optionally, override the default save command to run modifyLinks (with throttling).
+		// Command: Rollback the last change using the backup.
+		this.addCommand({
+			id: "automatic-linker:rollback-last-change",
+			name: "Rollback Last Change",
+			callback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					new Notice("Rollback: No active file found.");
+					return;
+				}
+				// Check if a backup exists for this file.
+				const backup = this.backupContent.get(activeFile.path);
+				if (!backup) {
+					new Notice("Rollback: No backup available.");
+					return;
+				}
+				try {
+					// Overwrite the file with the backup content.
+					await this.app.vault.modify(activeFile, backup);
+					new Notice("Rollback: Changes reverted.");
+					// Remove the backup after a successful rollback.
+					this.backupContent.delete(activeFile.path);
+				} catch (error) {
+					new Notice("Rollback: Failed to revert changes.");
+					console.error(error);
+				}
+			},
+		});
+
+		// Optionally, override the default save command to run modifyLinks (throttled).
 		const saveCommandDefinition =
 			// @ts-expect-error
 			this.app?.commands?.commands?.["editor:save-file"];
@@ -178,8 +212,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				{ leading: true },
 			);
 			saveCommandDefinition.callback = async () => {
-				await throttledModifyLinks();
-				await save?.();
+				save?.();
+				throttledModifyLinks();
 			};
 		}
 	}
