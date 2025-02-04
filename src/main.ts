@@ -170,23 +170,31 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			callback: async () => {
 				const activeFile = this.app.workspace.getActiveFile();
 				if (!activeFile) {
-					new Notice("Rollback: No active file found.");
+					new Notice(
+						"Automatic Linker: No active file found for rollback.",
+					);
 					return;
 				}
 				// Check if a backup exists for this file.
 				const backup = this.backupContent.get(activeFile.path);
 				if (!backup) {
-					new Notice("Rollback: No backup available.");
+					new Notice(
+						"Automatic Linker: No backup available for rollback.",
+					);
 					return;
 				}
 				try {
 					// Overwrite the file with the backup content.
 					await this.app.vault.modify(activeFile, backup);
-					new Notice("Rollback: Changes reverted.");
+					new Notice(
+						"Automatic Linker: Rollback successful. Changes have been reverted.",
+					);
 					// Remove the backup after a successful rollback.
 					this.backupContent.delete(activeFile.path);
 				} catch (error) {
-					new Notice("Rollback: Failed to revert changes.");
+					new Notice(
+						"Automatic Linker: Rollback failed. Unable to revert changes.",
+					);
 					console.error(error);
 				}
 			},
@@ -226,7 +234,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	async onunload() {
 		this.removeCommand("automatic-linker:link-current-file");
 		this.removeCommand("automatic-linker:rollback-last-change");
-		// restore original save command callback
+		// Restore original save command callback
 		const saveCommandDefinition =
 			// @ts-expect-error
 			this.app?.commands?.commands?.["editor:save-file"];
