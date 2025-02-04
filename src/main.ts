@@ -212,8 +212,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				{ leading: true },
 			);
 			saveCommandDefinition.callback = async () => {
-				save?.();
-				throttledModifyLinks();
+				await throttledModifyLinks();
+				await save?.();
 			};
 		}
 	}
