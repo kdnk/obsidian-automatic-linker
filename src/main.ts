@@ -27,6 +27,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	private currentModifyLinks: PCancelable<void> | null = null;
 	// Backup storage to hold original file content before modification (keyed by file path)
 	private backupContent: Map<string, string> = new Map();
+	// Preserved callback for the original save command
+	private originalSaveCallback: (() => Promise<void>) | undefined;
 
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
@@ -196,6 +198,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			this.app?.commands?.commands?.["editor:save-file"];
 		const save = saveCommandDefinition?.callback;
 		if (typeof save === "function") {
+			// Preserve the original save callback to call it after modifying links.
+			this.originalSaveCallback = save;
+
 			const throttledModifyLinks = throttle(
 				async () => {
 					if (this.settings.formatOnSave) {
@@ -215,6 +220,18 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				await throttledModifyLinks();
 				await save?.();
 			};
+		}
+	}
+
+	async onunload() {
+		this.removeCommand("automatic-linker:link-current-file");
+		this.removeCommand("automatic-linker:rollback-last-change");
+		// restore original save command callback
+		const saveCommandDefinition =
+			// @ts-expect-error
+			this.app?.commands?.commands?.["editor:save-file"];
+		if (saveCommandDefinition && this.originalSaveCallback) {
+			saveCommandDefinition.callback = this.originalSaveCallback;
 		}
 	}
 
