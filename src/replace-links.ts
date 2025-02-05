@@ -7,19 +7,28 @@ import { buildCandidateTrie, TrieNode } from "./trie";
  * @param trie - The pre-built Trie for candidate lookup.
  * @param candidateMap - Mapping from candidate string to its canonical replacement.
  * @param getFrontMatterInfo - Function to get the front matter info.
+ * @param minCharCount - Minimum character count required to perform replacement.
  * @returns The file content with replaced links.
  */
 export const replaceLinks = async ({
 	fileContent,
 	trie,
 	candidateMap,
+	minCharCount = 0,
 	getFrontMatterInfo,
 }: {
 	fileContent: string;
 	trie: TrieNode;
 	candidateMap: Map<string, string>;
+	minCharCount?: number;
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 }): Promise<string> => {
+	// If the file content is shorter than the minimum character count,
+	// return the content unchanged.
+	if (fileContent.length <= minCharCount) {
+		return fileContent;
+	}
+
 	// Helper: determine if a character is a word boundary.
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
@@ -140,6 +149,7 @@ if (import.meta.vitest) {
 					trie,
 					candidateMap,
 					getFrontMatterInfo,
+					minCharCount: 0,
 				}),
 			).toBe("[[hello]]");
 		});
@@ -669,6 +679,20 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 				}),
 			).toBe("```typescript\nexample\n```");
+		});
+		it("skips replacement when content is too short", async () => {
+			const fileNames = getSortedFileNames(["hello"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			// When minCharCount is higher than the fileContent length, no replacement should occur.
+			expect(
+				await replaceLinks({
+					fileContent: "hello",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+					minCharCount: 10,
+				}),
+			).toBe("hello");
 		});
 	});
 }

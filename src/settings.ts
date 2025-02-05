@@ -5,12 +5,14 @@ export type AutomaticLinkerSettings = {
 	formatOnSave: boolean;
 	baseDirs: string[];
 	showNotice: boolean;
+	minCharCount: number; // Minimum character count setting
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	formatOnSave: false,
 	baseDirs: ["pages"],
 	showNotice: false,
+	minCharCount: 0, // Default value: 0 (always replace links)
 };
 
 export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
@@ -39,6 +41,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Setting for base directories.
 		new Setting(containerEl)
 			.setName("Base Directories")
 			.setDesc(
@@ -56,6 +59,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Toggle for showing the load notice.
 		new Setting(containerEl)
 			.setName("Show Load Notice")
 			.setDesc("Display a notice when markdown files are loaded.")
@@ -65,6 +69,25 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					.onChange(async (value) => {
 						this.plugin.settings.showNotice = value;
 						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		// Setting for minimum character count.
+		// If the text is below this number of characters, links will not be replaced.
+		new Setting(containerEl)
+			.setName("Minimum Character Count")
+			.setDesc(
+				"If the content is below this character count, the links will not be replaced.",
+			)
+			.addText((text) => {
+				text.setPlaceholder("e.g. 4")
+					.setValue(this.plugin.settings.minCharCount.toString())
+					.onChange(async (value) => {
+						const parsedValue = parseInt(value);
+						if (!isNaN(parsedValue)) {
+							this.plugin.settings.minCharCount = parsedValue;
+							await this.plugin.saveData(this.plugin.settings);
+						}
 					});
 			});
 	}

@@ -8,10 +8,13 @@ Automatic Linker Plugin automatically converts plain text file references into O
   The plugin scans your file for text that matches file names in your vault and converts them into wiki links by wrapping them in `[[ ]]`.
 
 - **Format on Save:**  
-  Optionally, the plugin can automatically format (i.e. convert links) when you save your file.
+  Optionally, the plugin can automatically format (i.e. convert links) when you save a file.
 
 - **Configurable Base Directories:**  
   Specify directories (e.g. `pages`) that are treated as base. For files in these directories, the directory prefix can be omitted when linking.
+
+- **Minimum Character Count:**  
+  If the file content is shorter than the specified minimum character count, link conversion is skipped. This prevents accidental formatting of very short texts.
 
 - **Respects Existing Links:**  
   Already formatted links (i.e. those wrapped in `[[ ]]`) are preserved and not reformatted.
@@ -36,3 +39,6 @@ The plugin settings are available under the **Automatic Linker Plugin** settings
 
 - **Base Directories:**  
   Enter one or more directory names (one per line) that should be treated as base. For example, if you enter `pages`, then file links like `pages/tags` can be referenced simply as `tags`.
+
+- **Minimum Character Count:**  
+  Set the minimum number of characters required for the file content to be processed. If the file content is shorter than this value, link conversion will be skipped.

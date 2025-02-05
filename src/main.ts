@@ -74,6 +74,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						fileContent,
 						trie: this.trie ?? buildCandidateTrie([]).trie,
 						candidateMap: this.candidateMap ?? new Map(),
+						minCharCount: this.settings.minCharCount,
 						getFrontMatterInfo,
 					});
 
