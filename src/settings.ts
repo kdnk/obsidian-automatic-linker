@@ -97,7 +97,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Consider Aliases")
 			.setDesc(
-				"When enabled, aliases will be taken into account when processing links.",
+				"When enabled, aliases will be taken into account when processing links. !!! Restart required for changes to take effect.",
 			)
 			.addToggle((toggle) => {
 				toggle
