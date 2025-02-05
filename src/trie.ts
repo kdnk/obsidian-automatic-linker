@@ -1,3 +1,5 @@
+import { PathAndAliases } from "./path-and-aliases.types";
+
 /**
  * Type definition for a node in the Trie.
  */
@@ -34,22 +36,22 @@ export const buildTrie = (words: string[]): TrieNode => {
  * The candidate map maps both the full candidate and a short candidate (if applicable)
  * to its canonical replacement.
  *
- * @param allFileNames - List of file names (without the ".md" extension).
+ * @param allFiles - List of files (without the ".md" extension).
  * @param baseDirs - List of base directories to consider for short names.
  * @returns An object containing the candidateMap and Trie.
  */
 export const buildCandidateTrie = (
-	allFileNames: string[],
+	allFiles: PathAndAliases[],
 	baseDirs: string[] = ["pages"],
 ) => {
 	// Process candidate strings.
 	type Candidate = { full: string; short: string | null };
-	const candidates: Candidate[] = allFileNames.map((name) => {
-		const candidate: Candidate = { full: name, short: null };
+	const candidates: Candidate[] = allFiles.map((f) => {
+		const candidate: Candidate = { full: f.path, short: null };
 		for (const dir of baseDirs) {
 			const prefix = `${dir}/`;
-			if (name.startsWith(prefix)) {
-				candidate.short = name.slice(prefix.length);
+			if (f.path.startsWith(prefix)) {
+				candidate.short = f.path.slice(prefix.length);
 				break;
 			}
 		}

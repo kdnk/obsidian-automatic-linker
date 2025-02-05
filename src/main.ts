@@ -14,11 +14,13 @@ import {
 import PCancelable from "p-cancelable";
 import throttle from "just-throttle";
 import { buildCandidateTrie, TrieNode } from "./trie";
+import { getAliases } from "./get-aliases";
+import { PathAndAliases } from "./path-and-aliases.types";
 
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
 	// List of markdown file paths (without the ".md" extension)
-	private allFileNames: string[] = [];
+	private allFiles: PathAndAliases[] = [];
 	// Pre-built Trie for link candidate lookup
 	private trie: TrieNode | null = null;
 	// Mapping from candidate string to its canonical replacement
@@ -108,16 +110,20 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		// Function to load file data and build the Trie.
 		const refreshFileDataAndTrie = () => {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
-			const allFileNames = allMarkdownFiles.map((file) =>
-				file.path.replace(/\.md$/, ""),
-			);
+			const allFiles: PathAndAliases[] = allMarkdownFiles.map((file) => {
+				const path = file.path.replace(/\.md$/, "");
+				return {
+					path,
+					aliases: getAliases(this.app, file, this.settings),
+				};
+			});
 			// Sort filenames in descending order (longer paths first)
-			allFileNames.sort((a, b) => b.length - a.length);
-			this.allFileNames = allFileNames;
+			allFiles.sort((a, b) => b.path.length - a.path.length);
+			this.allFiles = allFiles;
 
 			// Build candidateMap and Trie using the helper function from trie.ts.
 			const { candidateMap, trie } = buildCandidateTrie(
-				allFileNames,
+				allFiles,
 				this.settings.baseDirs ?? ["pages"],
 			);
 			this.candidateMap = candidateMap;
@@ -125,7 +131,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 			if (this.settings.showNotice) {
 				new Notice(
-					`Automatic Linker: Loaded all markdown files. (${allFileNames.length} files)`,
+					`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
 				);
 			}
 		};
@@ -134,7 +140,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		this.app.workspace.onLayoutReady(() => {
 			refreshFileDataAndTrie();
 			console.log("Automatic Linker: Loaded all markdown files.");
-			console.log("this.allFileNames.length", this.allFileNames.length);
 
 			this.registerEvent(
 				this.app.vault.on("delete", () => refreshFileDataAndTrie()),

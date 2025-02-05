@@ -133,15 +133,18 @@ export const replaceLinks = async ({
 if (import.meta.vitest) {
 	const { it, expect, describe } = import.meta.vitest;
 
-	const getSortedFileNames = (fileNames: string[]) => {
-		return fileNames.slice().sort((a, b) => b.length - a.length);
+	const getSortedFiles = (fileNames: string[]) => {
+		const sortedFileNames = fileNames
+			.slice()
+			.sort((a, b) => b.length - a.length);
+		return sortedFileNames.map((path) => ({ path, aliases: null }));
 	};
 
 	const getFrontMatterInfo = (fileContent: string) => ({ contentStart: 0 });
 
 	describe("basic", () => {
 		it("replaces links", async () => {
-			const fileNames = getSortedFileNames(["hello"]);
+			const fileNames = getSortedFiles(["hello"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
@@ -155,7 +158,7 @@ if (import.meta.vitest) {
 		});
 
 		it("replaces links with bullet", async () => {
-			const fileNames = getSortedFileNames(["hello"]);
+			const fileNames = getSortedFiles(["hello"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
@@ -169,7 +172,7 @@ if (import.meta.vitest) {
 
 		it("replaces links with other texts", async () => {
 			{
-				const fileNames = getSortedFileNames(["hello"]);
+				const fileNames = getSortedFiles(["hello"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -181,7 +184,7 @@ if (import.meta.vitest) {
 				).toBe("world [[hello]]");
 			}
 			{
-				const fileNames = getSortedFileNames(["hello"]);
+				const fileNames = getSortedFiles(["hello"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -196,7 +199,7 @@ if (import.meta.vitest) {
 
 		it("replaces links with other texts and bullet", async () => {
 			{
-				const fileNames = getSortedFileNames(["hello"]);
+				const fileNames = getSortedFiles(["hello"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -208,7 +211,7 @@ if (import.meta.vitest) {
 				).toBe("- world [[hello]]");
 			}
 			{
-				const fileNames = getSortedFileNames(["hello"]);
+				const fileNames = getSortedFiles(["hello"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -223,7 +226,7 @@ if (import.meta.vitest) {
 
 		it("replaces multiple links", async () => {
 			{
-				const fileNames = getSortedFileNames(["hello", "world"]);
+				const fileNames = getSortedFiles(["hello", "world"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -235,7 +238,7 @@ if (import.meta.vitest) {
 				).toBe("[[hello]] [[world]]");
 			}
 			{
-				const fileNames = getSortedFileNames(["hello", "world"]);
+				const fileNames = getSortedFiles(["hello", "world"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -247,7 +250,7 @@ if (import.meta.vitest) {
 				).toBe(`\n[[hello]]\n[[world]]\n`);
 			}
 			{
-				const fileNames = getSortedFileNames(["hello", "world"]);
+				const fileNames = getSortedFiles(["hello", "world"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -259,7 +262,7 @@ if (import.meta.vitest) {
 				).toBe(`\n[[hello]]\n[[world]] aaaaa\n`);
 			}
 			{
-				const fileNames = getSortedFileNames(["hello", "world"]);
+				const fileNames = getSortedFiles(["hello", "world"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -275,7 +278,7 @@ if (import.meta.vitest) {
 
 	describe("complex fileNames", () => {
 		it("unmatched namespace", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"namespace/tag1",
 				"namespace/tag2",
 			]);
@@ -291,7 +294,7 @@ if (import.meta.vitest) {
 		});
 
 		it("single namespace", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"namespace/tag1",
 				"namespace/tag2",
 			]);
@@ -307,7 +310,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple namespaces", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"namespace/tag1",
 				"namespace/tag2",
 				"namespace",
@@ -326,7 +329,7 @@ if (import.meta.vitest) {
 
 	describe("containing CJK", () => {
 		it("unmatched namespace", async () => {
-			const fileNames = getSortedFileNames(["namespace/タグ"]);
+			const fileNames = getSortedFiles(["namespace/タグ"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
@@ -339,7 +342,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple namespaces", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"namespace/tag1",
 				"namespace/tag2",
 				"namespace/タグ3",
@@ -359,7 +362,7 @@ if (import.meta.vitest) {
 
 	describe("starting CJK", () => {
 		it("unmatched namespace", async () => {
-			const fileNames = getSortedFileNames(["namespace/タグ"]);
+			const fileNames = getSortedFiles(["namespace/タグ"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
@@ -372,7 +375,7 @@ if (import.meta.vitest) {
 		});
 
 		it("single namespace", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"名前空間/tag1",
 				"名前空間/tag2",
 				"名前空間/タグ3",
@@ -389,7 +392,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple namespaces", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"名前空間/tag1",
 				"名前空間/tag2",
 				"名前空間/タグ3",
@@ -406,7 +409,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple CJK words", async () => {
-			const fileNames = getSortedFileNames(["漢字", "ひらがな"]);
+			const fileNames = getSortedFiles(["漢字", "ひらがな"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
@@ -419,7 +422,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple same CJK words", async () => {
-			const fileNames = getSortedFileNames(["ひらがな"]);
+			const fileNames = getSortedFiles(["ひらがな"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
@@ -434,7 +437,7 @@ if (import.meta.vitest) {
 
 	describe("base character (pages)", () => {
 		it("unmatched namespace", async () => {
-			const fileNames = getSortedFileNames(["pages/tags"]);
+			const fileNames = getSortedFiles(["pages/tags"]);
 			// Pass baseDirs to buildCandidateTrie so that the short candidate is created.
 			const { candidateMap, trie } = buildCandidateTrie(fileNames, [
 				"pages",
@@ -451,7 +454,7 @@ if (import.meta.vitest) {
 	});
 
 	it("multiple links in the same line", async () => {
-		const fileNames = getSortedFileNames(["pages/tags", "サウナ", "tags"]);
+		const fileNames = getSortedFiles(["pages/tags", "サウナ", "tags"]);
 		const { candidateMap, trie } = buildCandidateTrie(fileNames, ["pages"]);
 		expect(
 			await replaceLinks({
@@ -465,7 +468,7 @@ if (import.meta.vitest) {
 
 	describe("nested links", () => {
 		it("", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"アジャイルリーダーコンピテンシーマップ",
 				"リーダー",
 			]);
@@ -481,7 +484,7 @@ if (import.meta.vitest) {
 		});
 
 		it("exsiting links", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"アジャイルリーダーコンピテンシーマップ",
 				"リーダー",
 			]);
@@ -499,7 +502,7 @@ if (import.meta.vitest) {
 
 	describe("with space", () => {
 		it("", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"obsidian/automatic linker",
 				"obsidian",
 			]);
@@ -518,11 +521,7 @@ if (import.meta.vitest) {
 	describe("ignore url", () => {
 		it("one url", async () => {
 			{
-				const fileNames = getSortedFileNames([
-					"example",
-					"http",
-					"https",
-				]);
+				const fileNames = getSortedFiles(["example", "http", "https"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -534,7 +533,7 @@ if (import.meta.vitest) {
 				).toBe("- https://example.com");
 			}
 			{
-				const fileNames = getSortedFileNames(["st"]);
+				const fileNames = getSortedFiles(["st"]);
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
@@ -549,7 +548,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple urls", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"example",
 				"example1",
 				"https",
@@ -567,7 +566,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple urls with links", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"example1",
 				"example",
 				"link",
@@ -589,7 +588,7 @@ if (import.meta.vitest) {
 
 	describe("ignore markdown url", () => {
 		it("one url", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"example",
 				"title",
 				"https",
@@ -607,7 +606,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple urls", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"example1",
 				"example2",
 				"title1",
@@ -630,7 +629,7 @@ if (import.meta.vitest) {
 		});
 
 		it("multiple urls with links", async () => {
-			const fileNames = getSortedFileNames([
+			const fileNames = getSortedFiles([
 				"example1",
 				"example2",
 				"title1",
@@ -656,7 +655,7 @@ if (import.meta.vitest) {
 
 	describe("ignore code", () => {
 		it("inline code", async () => {
-			const fileNames = getSortedFileNames(["example", "code"]);
+			const fileNames = getSortedFiles(["example", "code"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
@@ -669,7 +668,7 @@ if (import.meta.vitest) {
 		});
 
 		it("code block", async () => {
-			const fileNames = getSortedFileNames(["example", "typescript"]);
+			const fileNames = getSortedFiles(["example", "typescript"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
@@ -681,7 +680,7 @@ if (import.meta.vitest) {
 			).toBe("```typescript\nexample\n```");
 		});
 		it("skips replacement when content is too short", async () => {
-			const fileNames = getSortedFileNames(["hello"]);
+			const fileNames = getSortedFiles(["hello"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			// When minCharCount is higher than the fileContent length, no replacement should occur.
 			expect(
