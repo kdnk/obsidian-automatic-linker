@@ -32,7 +32,7 @@ export const replaceLinks = async ({
 	// Helper: determine if a character is a word boundary.
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
-		return !/[A-Za-z0-9_\/\-]/.test(char);
+		return !/[A-Za-z0-9_/-]/.test(char);
 	};
 
 	// Regex for protected segments:
