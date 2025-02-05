@@ -47,7 +47,7 @@ export const replaceLinks = async ({
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const frontmatter = fileContent.slice(0, contentStart);
 	const body = fileContent.slice(contentStart);
-	// If the body consists solely of a protected link, return as is.
+	// If the body consists solely of a protected link, return it unchanged.
 	if (/^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/.test(body)) {
 		return frontmatter + body;
 	}
@@ -133,6 +133,7 @@ export const replaceLinks = async ({
 if (import.meta.vitest) {
 	const { it, expect, describe } = import.meta.vitest;
 
+	// Helper to sort file names and create file objects.
 	const getSortedFiles = (fileNames: string[]) => {
 		const sortedFileNames = fileNames
 			.slice()
@@ -140,6 +141,7 @@ if (import.meta.vitest) {
 		return sortedFileNames.map((path) => ({ path, aliases: null }));
 	};
 
+	// Dummy function to get front matter info.
 	const getFrontMatterInfo = (fileContent: string) => ({ contentStart: 0 });
 
 	describe("basic", () => {
@@ -483,7 +485,7 @@ if (import.meta.vitest) {
 			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 		});
 
-		it("exsiting links", async () => {
+		it("existing links", async () => {
 			const fileNames = getSortedFiles([
 				"アジャイルリーダーコンピテンシーマップ",
 				"リーダー",
@@ -692,6 +694,58 @@ if (import.meta.vitest) {
 					minCharCount: 10,
 				}),
 			).toBe("hello");
+		});
+	});
+
+	describe("aliases", () => {
+		it("replaces alias with canonical form using file path and alias", async () => {
+			// File information with aliases
+			const files = [
+				{ path: "pages/HelloWorld", aliases: ["Hello", "HW"] },
+			];
+			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
+			// "Hello" is registered as an alias with canonical value "pages/HelloWorld|Hello"
+			expect(
+				await replaceLinks({
+					fileContent: "Hello",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[pages/HelloWorld|Hello]]");
+			// "HW" is treated the same way
+			expect(
+				await replaceLinks({
+					fileContent: "HW",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[pages/HelloWorld|HW]]");
+			// The normal candidate "HelloWorld" is registered normally
+			expect(
+				await replaceLinks({
+					fileContent: "HelloWorld",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[HelloWorld]]");
+		});
+
+		it("replaces multiple occurrences of alias and normal candidate", async () => {
+			// File information with aliases
+			const files = [{ path: "pages/HelloWorld", aliases: ["Hello"] }];
+			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
+			// Verify replacement when alias and normal candidate coexist in the text
+			expect(
+				await replaceLinks({
+					fileContent: "Hello HelloWorld",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
 		});
 	});
 }

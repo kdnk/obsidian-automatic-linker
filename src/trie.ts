@@ -36,6 +36,9 @@ export const buildTrie = (words: string[]): TrieNode => {
  * The candidate map maps both the full candidate and a short candidate (if applicable)
  * to its canonical replacement.
  *
+ * For a normal link, the canonical replacement is the candidate itself (e.g. [[link]]).
+ * For an alias, the canonical replacement is "file.path|alias" (e.g. [[file.path|alias]]).
+ *
  * @param allFiles - List of files (without the ".md" extension).
  * @param baseDirs - List of base directories to consider for short names.
  * @returns An object containing the candidateMap and Trie.
@@ -44,7 +47,7 @@ export const buildCandidateTrie = (
 	allFiles: PathAndAliases[],
 	baseDirs: string[] = ["pages"],
 ) => {
-	// Process candidate strings.
+	// Process candidate strings (create normal candidates from file paths)
 	type Candidate = { full: string; short: string | null };
 	const candidates: Candidate[] = allFiles.map((f) => {
 		const candidate: Candidate = { full: f.path, short: null };
@@ -60,10 +63,25 @@ export const buildCandidateTrie = (
 
 	// Build a mapping from candidate string to its canonical replacement.
 	const candidateMap = new Map<string, string>();
+
+	// Register normal candidates.
 	for (const { full, short } of candidates) {
 		candidateMap.set(full, full);
 		if (short && !candidateMap.has(short)) {
 			candidateMap.set(short, short);
+		}
+	}
+
+	// Register alias candidates.
+	for (const file of allFiles) {
+		if (file.aliases) {
+			for (const alias of file.aliases) {
+				// Add only if the same alias does not already exist.
+				if (!candidateMap.has(alias)) {
+					// For an alias, register the canonical value as "file.path|alias"
+					candidateMap.set(alias, `${file.path}|${alias}`);
+				}
+			}
 		}
 	}
 
