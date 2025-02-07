@@ -3,7 +3,7 @@
 	"name": "Automatic Linker",
 	"version": "0.6.0",
 	"minAppVersion": "0.18.0",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
+	"description": "automatically converts plain text file references into Obsidian wiki links (i.e. `[[...]]`)",
 	"author": "Kodai Nakamura",
 	"isDesktopOnly": false
 }
