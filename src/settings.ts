@@ -6,6 +6,7 @@ export type AutomaticLinkerSettings = {
 	baseDirs: string[];
 	showNotice: boolean;
 	minCharCount: number; // Minimum character count setting
+	considerAliases: boolean; // Consider aliases when linking
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -13,6 +14,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	baseDirs: ["pages"],
 	showNotice: false,
 	minCharCount: 0, // Default value: 0 (always replace links)
+	considerAliases: false, // Default: do not consider aliases
 };
 
 export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
@@ -88,6 +90,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 							this.plugin.settings.minCharCount = parsedValue;
 							await this.plugin.saveData(this.plugin.settings);
 						}
+					});
+			});
+
+		// Toggle for considering aliases.
+		new Setting(containerEl)
+			.setName("Consider Aliases")
+			.setDesc(
+				"When enabled, aliases will be taken into account when processing links. !!! Restart required for changes to take effect.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.considerAliases)
+					.onChange(async (value) => {
+						this.plugin.settings.considerAliases = value;
+						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
 	}
