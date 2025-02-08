@@ -15,21 +15,23 @@ export const replaceLinks = async ({
 	trie,
 	candidateMap,
 	minCharCount = 0,
+	namespaceResolution = false,
 	getFrontMatterInfo,
 }: {
 	fileContent: string;
 	trie: TrieNode;
 	candidateMap: Map<string, string>;
 	minCharCount?: number;
+	namespaceResolution?: boolean;
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 }): Promise<string> => {
-	// If the file content is shorter than the minimum character count,
-	// return the content unchanged.
+	// If the file content is shorter than the minimum character count, return it unchanged.
 	if (fileContent.length <= minCharCount) {
 		return fileContent;
 	}
 
 	// Helper: determine if a character is a word boundary.
+	// (A word boundary is defined as a character that is NOT alphanumeric, underscore, slash, or hyphen.)
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
 		return !/[A-Za-z0-9_/-]/.test(char);
@@ -56,7 +58,7 @@ export const replaceLinks = async ({
 	const replaceInSegment = (text: string): string => {
 		let result = "";
 		let i = 0;
-		while (i < text.length) {
+		outer: while (i < text.length) {
 			// If a URL is found, copy it unchanged.
 			const urlMatch = text.slice(i).match(/^(https?:\/\/[^\s]+)/);
 			if (urlMatch) {
@@ -84,9 +86,9 @@ export const replaceLinks = async ({
 			}
 			if (lastCandidate) {
 				const matched = text.substring(i, i + lastCandidate.length);
-				// For valid candidates, check word boundaries.
+				// For valid candidates, check that the match is isolated by word boundaries.
 				if (
-					/[A-Za-z0-9_\/\- ]+/.test(matched) &&
+					/[A-Za-z0-9_/\- ]+/.test(matched) &&
 					candidateMap.has(matched)
 				) {
 					const left = i > 0 ? text[i - 1] : undefined;
@@ -104,10 +106,41 @@ export const replaceLinks = async ({
 				const canonical = candidateMap.get(matched) ?? matched;
 				result += `[[${canonical}]]`;
 				i += lastCandidate.length;
-			} else {
-				result += text[i];
-				i++;
+				continue;
 			}
+
+			// Fallback: try to match a "word" using a regex.
+			// This fallback (which resolves namespaces) is only performed when namespaceResolution is enabled.
+			if (namespaceResolution) {
+				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
+				const fallbackMatch = text.slice(i).match(fallbackRegex);
+				if (fallbackMatch) {
+					const word = fallbackMatch[1];
+					// If candidateMap directly contains the word, use it.
+					if (candidateMap.has(word)) {
+						const canonical = candidateMap.get(word) ?? word;
+						result += `[[${canonical}]]`;
+						i += word.length;
+						continue;
+					}
+					// Otherwise, search candidateMap for any key that ends with "/" + word.
+					for (const [key] of candidateMap.entries()) {
+						const slashIndex = key.lastIndexOf("/");
+						if (slashIndex !== -1) {
+							const shorthand = key.slice(slashIndex + 1);
+							if (shorthand === word) {
+								result += `[[${key}]]`;
+								i += word.length;
+								continue outer;
+							}
+						}
+					}
+				}
+			}
+
+			// If no candidate (or fallback candidate) was found, copy the current character.
+			result += text[i];
+			i++;
 		}
 		return result;
 	};
@@ -746,6 +779,53 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 				}),
 			).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
+		});
+	});
+
+	describe("namespace resolution", () => {
+		it("replaces candidate with namespace when full candidate is provided", async () => {
+			// Test that a candidate including a namespace is correctly replaced when the full candidate string is used in the content.
+			const fileNames = getSortedFiles(["namespaces/link"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					fileContent: "namespaces/link",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[namespaces/link]]");
+		});
+
+		it("replaces candidate without namespace correctly", async () => {
+			// Test that a candidate without any namespace is correctly replaced.
+			const fileNames = getSortedFiles(["link"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					fileContent: "link",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[link]]");
+		});
+
+		it("expands shorthand link to full namespaced candidate", async () => {
+			// Test that if the candidate has a namespace, using only the shorthand (without the namespace) in the content expands to the full namespaced candidate.
+			const fileNames = getSortedFiles(["namespace/link"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					fileContent: "link",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[namespace/link]]");
 		});
 	});
 }
