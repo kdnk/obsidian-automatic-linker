@@ -3,11 +3,13 @@ import { buildCandidateTrie, TrieNode } from "./trie";
 /**
  * Replaces plain text with wikilinks using the provided Trie and candidateMap.
  *
+ * @param filePath - The path of the current file.
  * @param fileContent - The content of the file to process.
  * @param trie - The pre-built Trie for candidate lookup.
  * @param candidateMap - Mapping from candidate string to its canonical replacement.
- * @param getFrontMatterInfo - Function to get the front matter info.
  * @param minCharCount - Minimum character count required to perform replacement.
+ * @param getFrontMatterInfo - Function to get the front matter info.
+ * @param namespaceResolution - If false, automatic namespace resolution is skipped.
  * @returns The file content with replaced links.
  */
 export const replaceLinks = async ({
@@ -25,44 +27,46 @@ export const replaceLinks = async ({
 	candidateMap: Map<string, string>;
 	minCharCount?: number;
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
-	// New flag: if false, automatic namespace resolution is skipped.
 	namespaceResolution?: boolean;
 }): Promise<string> => {
-	// If the file content is shorter than the minimum character count, return it unchanged.
+	// ファイル内容が指定の文字数以下の場合は、そのまま返す
 	if (fileContent.length <= minCharCount) {
 		return fileContent;
 	}
 
-	// Helper: determine if a character is a word boundary.
-	// (A word boundary is defined as a character that is NOT alphanumeric, underscore, slash, or hyphen.)
+	// 単語境界かどうかの判定（アルファベット、数字、下線、スラッシュ、ハイフン以外は境界とする）
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
 		return !/[A-Za-z0-9_/-]/.test(char);
 	};
 
-	// Regex for protected segments:
-	//  - Code blocks: ```...```
-	//  - Inline code: `...`
-	//  - Wiki links: [[...]]
-	//  - Markdown links: [...](...)
+	// 候補文字列がスラッシュを含まず、1～12 の数字のみの場合は「月ノート」とみなす
+	const isMonthNote = (candidate: string): boolean =>
+		!candidate.includes("/") &&
+		/^[0-9]{1,2}$/.test(candidate) &&
+		parseInt(candidate, 10) >= 1 &&
+		parseInt(candidate, 10) <= 12;
+
+	// 保護対象のセグメント（コードブロック、インラインコード、ウィキリンク、Markdownリンク）を除外する正規表現
 	const protectedRegex =
 		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/g;
 
-	// Separate the front matter from the body.
+	// front matter と本文を分離する
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const frontmatter = fileContent.slice(0, contentStart);
 	const body = fileContent.slice(contentStart);
-	// If the body consists solely of a protected link, return it unchanged.
+
+	// 本文が保護リンクのみの場合はそのまま返す
 	if (/^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/.test(body)) {
 		return frontmatter + body;
 	}
 
-	// Function to process a plain text segment (not protected) using Trie-based search.
+	// テキスト内の候補を置換するためのヘルパー関数
 	const replaceInSegment = (text: string): string => {
 		let result = "";
 		let i = 0;
 		outer: while (i < text.length) {
-			// If a URL is found, copy it unchanged.
+			// URL の場合はそのままコピーする
 			const urlMatch = text.slice(i).match(/^(https?:\/\/[^\s]+)/);
 			if (urlMatch) {
 				result += urlMatch[0];
@@ -70,7 +74,7 @@ export const replaceLinks = async ({
 				continue;
 			}
 
-			// Traverse the Trie from the current index.
+			// Trie を使った候補検索
 			let node = trie;
 			let lastCandidate: { candidate: string; length: number } | null =
 				null;
@@ -90,7 +94,15 @@ export const replaceLinks = async ({
 			}
 			if (lastCandidate) {
 				const matched = text.substring(i, i + lastCandidate.length);
-				// For valid candidates, check that the match is isolated by word boundaries.
+
+				// 候補が月ノートの場合は置換せずそのまま出力する
+				if (isMonthNote(matched)) {
+					result += matched;
+					i += lastCandidate.length;
+					continue;
+				}
+
+				// 候補として成立する場合、前後が単語境界であるかチェックする
 				if (
 					/[A-Za-z0-9_/\- ]+/.test(matched) &&
 					candidateMap.has(matched)
@@ -106,62 +118,115 @@ export const replaceLinks = async ({
 						continue;
 					}
 				}
-				// Replace candidate with its canonical form wrapped in double brackets.
 				const canonical = candidateMap.get(matched) ?? matched;
 				result += `[[${canonical}]]`;
 				i += lastCandidate.length;
 				continue;
 			}
 
-			// Fallback: try to match a "word" using a regex.
-			// This fallback (which resolves namespaces) is only performed when namespaceResolution is enabled.
+			// fallback: namespace 解決（namespaceResolution が有効な場合）
 			if (namespaceResolution) {
 				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
 				const fallbackMatch = text.slice(i).match(fallbackRegex);
 				if (fallbackMatch) {
 					const word = fallbackMatch[1];
-					// If candidateMap directly contains the word, use it.
+
+					// 例: "2025-02-08" の場合、すでに "2025-02-" が出力済みなら、末尾の "08" はリンク置換しない
+					if (/^\d{2}$/.test(word) && /\d{4}-\d{2}-$/.test(result)) {
+						result += text[i];
+						i++;
+						continue;
+					}
+
+					// fallback でマッチした語が月ノートの場合は、そのまま出力する
+					if (isMonthNote(word)) {
+						result += word;
+						i += word.length;
+						continue;
+					}
+
+					// 候補マップに直接含まれている場合はリンク置換する
 					if (candidateMap.has(word)) {
 						const canonical = candidateMap.get(word) ?? word;
 						result += `[[${canonical}]]`;
 						i += word.length;
 						continue;
 					}
-					// Otherwise, search candidateMap for any key that ends with "/" + word.
+
+					// それ以外の場合、candidateMap の各キーについて、
+					// キーの末尾（shorthand）が word と一致する候補のうち、
+					// filePath のディレクトリ構造と最も近いものを採用する
+					let bestCandidate: string | null = null;
+					let bestScore = -1;
+					const filePathDir = filePath.includes("/")
+						? filePath.slice(0, filePath.lastIndexOf("/"))
+						: "";
+					const filePathSegments = filePathDir.split("/");
 					for (const [key] of candidateMap.entries()) {
 						const slashIndex = key.lastIndexOf("/");
 						if (slashIndex !== -1) {
 							const shorthand = key.slice(slashIndex + 1);
 							if (shorthand === word) {
-								result += `[[${key}]]`;
-								i += word.length;
-								continue outer;
+								const candidateDir = key.slice(0, slashIndex);
+								const candidateSegments =
+									candidateDir.split("/");
+								let score = 0;
+								for (
+									let idx = 0;
+									idx <
+									Math.min(
+										candidateSegments.length,
+										filePathSegments.length,
+									);
+									idx++
+								) {
+									if (
+										candidateSegments[idx] ===
+										filePathSegments[idx]
+									) {
+										score++;
+									} else {
+										break;
+									}
+								}
+								if (score > bestScore) {
+									bestScore = score;
+									bestCandidate = key;
+								}
 							}
 						}
 					}
+					if (bestCandidate !== null) {
+						result += `[[${bestCandidate}]]`;
+						i += word.length;
+						continue outer;
+					}
+
+					// 候補が見つからなかった場合は、1文字ずつ進める
+					result += text[i];
+					i++;
+					continue;
 				}
 			}
 
-			// If no candidate (or fallback candidate) was found, copy the current character.
+			// どの処理にも該当しなかった場合は、現在の文字をそのまま出力する
 			result += text[i];
 			i++;
 		}
 		return result;
 	};
 
+	// 本文全体を protectedRegex により分割し、保護セグメントはそのまま、
+	// それ以外は replaceInSegment で置換する
 	let resultBody = "";
 	let lastIndex = 0;
-	// Process the body while preserving protected segments.
 	for (const m of body.matchAll(protectedRegex)) {
 		const mIndex = m.index ?? 0;
-		// Process the text before the protected segment.
 		const segment = body.slice(lastIndex, mIndex);
 		resultBody += replaceInSegment(segment);
-		// Append the protected segment unchanged.
 		resultBody += m[0];
 		lastIndex = mIndex + m[0].length;
 	}
-	// Process any remaining text after the last protected segment.
 	resultBody += replaceInSegment(body.slice(lastIndex));
 
 	return frontmatter + resultBody;
@@ -860,18 +925,46 @@ if (import.meta.vitest) {
 
 		it("expands shorthand link to full namespaced candidate", async () => {
 			// Test that if the candidate has a namespace, using only the shorthand (without the namespace) in the content expands to the full namespaced candidate.
-			const fileNames = getSortedFiles(["namespace/link"]);
+			const fileNames = getSortedFiles([
+				"namespace2/subnamespace/link",
+				"namespace1/link",
+			]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+
+			// closest namespace should be used
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
+					filePath: "namespace2/subnamespace/current-file",
 					fileContent: "link",
 					trie,
 					candidateMap,
 					namespaceResolution: true,
 					getFrontMatterInfo,
 				}),
-			).toBe("[[namespace/link]]");
+			).toBe("[[namespace2/subnamespace/link]]");
+
+			// closest namespace should be used
+			expect(
+				await replaceLinks({
+					filePath: "namespace1/current-file",
+					fileContent: "link",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[namespace1/link]]");
+
+			expect(
+				await replaceLinks({
+					filePath: "current-file",
+					fileContent: "link",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[namespace2/subnamespace/link]]");
 		});
 
 		it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
@@ -890,5 +983,62 @@ if (import.meta.vitest) {
 				}),
 			).toBe("2025-02-08");
 		});
+	});
+
+	it("ignore month notes", async () => {
+		const fileNames = getSortedFiles([
+			"01",
+			"02",
+			"03",
+			"04",
+			"05",
+			"06",
+			"07",
+			"08",
+			"09",
+			"10",
+			"11",
+			"12",
+			"1",
+			"2",
+			"3",
+			"4",
+			"5",
+			"6",
+			"7",
+			"8",
+			"9",
+			"namespace/01",
+			"namespace/02",
+			"namespace/03",
+			"namespace/04",
+			"namespace/05",
+			"namespace/06",
+			"namespace/07",
+			"namespace/08",
+			"namespace/09",
+			"namespace/10",
+			"namespace/11",
+			"namespace/12",
+			"namespace/1",
+			"namespace/2",
+			"namespace/3",
+			"namespace/4",
+			"namespace/5",
+			"namespace/6",
+			"namespace/7",
+			"namespace/8",
+			"namespace/9",
+		]);
+		const { candidateMap, trie } = buildCandidateTrie(fileNames);
+		expect(
+			await replaceLinks({
+				filePath: "journals/2022-01-01",
+				fileContent: "01 1 12 namespace/01",
+				trie,
+				candidateMap,
+				getFrontMatterInfo,
+			}),
+		).toBe("01 1 12 [[namespace/01]]");
 	});
 }
