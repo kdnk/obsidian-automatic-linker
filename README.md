@@ -22,6 +22,13 @@ Automatic Linker Plugin automatically converts plain text file references into O
 - **CJK Support:**  
   Handles Japanese, Chinese, and other CJK text correctly.
 
+- **Automatic Namespace Resolution:**  
+  When enabled, the plugin automatically resolves shorthand links to their full namespaced candidates. For example, if a file is named `namespace/link`, you can simply type `link` and it will be converted to `[[namespace/link]]`.
+
+- **Consider Aliases:**  
+  When enabled, the plugin takes file aliases into account during link conversion, allowing you to reference a file by any of its aliases.  
+  *(Restart is required for changes to this setting to take effect.)*
+
 ## Usage
 
 - **Automatic Conversion:**  
@@ -42,3 +49,11 @@ The plugin settings are available under the **Automatic Linker Plugin** settings
 
 - **Minimum Character Count:**  
   Set the minimum number of characters required for the file content to be processed. If the file content is shorter than this value, link conversion will be skipped.
+
+- **Consider Aliases:**  
+  When enabled, the plugin will take file aliases into account during link conversion.  
+  *(Restart required for changes to take effect.)*
+
+- **Automatic Namespace Resolution:**  
+  When enabled, the plugin will attempt to resolve shorthand links to their full namespaced candidates.  
+  *(Restart required for changes to take effect.)*
