@@ -77,8 +77,9 @@ export const replaceLinks = async ({
 			let j = i;
 			while (j < text.length) {
 				const ch = text[j];
-				if (!node.children.has(ch)) break;
-				node = node.children.get(ch)!;
+				const child = node.children.get(ch);
+				if (!child) break;
+				node = child;
 				if (node.candidate) {
 					lastCandidate = {
 						candidate: node.candidate,
