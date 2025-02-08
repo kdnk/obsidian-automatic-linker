@@ -29,44 +29,51 @@ export const replaceLinks = async ({
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
 	namespaceResolution?: boolean;
 }): Promise<string> => {
-	// ファイル内容が指定の文字数以下の場合は、そのまま返す
+	// Return content as-is if it's shorter than the minimum character count.
 	if (fileContent.length <= minCharCount) {
 		return fileContent;
 	}
 
-	// 単語境界かどうかの判定（アルファベット、数字、下線、スラッシュ、ハイフン以外は境界とする）
+	// Normalize the entire content to NFC to ensure consistent Unicode representation.
+	fileContent = fileContent.normalize("NFC");
+
+	// Determine if a character is a word boundary.
+	// (Considers any Unicode letter or number, underscore, slash, or hyphen as part of a word.)
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
-		return !/[A-Za-z0-9_/-]/.test(char);
+		return !/[\p{L}\p{N}_\/-]/u.test(char);
 	};
 
-	// 候補文字列がスラッシュを含まず、1～12 の数字のみの場合は「月ノート」とみなす
+	// Determine if the candidate string represents a month note (e.g. "1", "01", ..., "12")
 	const isMonthNote = (candidate: string): boolean =>
 		!candidate.includes("/") &&
 		/^[0-9]{1,2}$/.test(candidate) &&
 		parseInt(candidate, 10) >= 1 &&
 		parseInt(candidate, 10) <= 12;
 
-	// 保護対象のセグメント（コードブロック、インラインコード、ウィキリンク、Markdownリンク）を除外する正規表現
+	// Regex to match protected segments (code blocks, inline code, wikilinks, Markdown links)
 	const protectedRegex =
 		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/g;
 
-	// front matter と本文を分離する
+	// Separate front matter from the body.
 	const { contentStart } = getFrontMatterInfo(fileContent);
 	const frontmatter = fileContent.slice(0, contentStart);
-	const body = fileContent.slice(contentStart);
+	let body = fileContent.slice(contentStart);
 
-	// 本文が保護リンクのみの場合はそのまま返す
+	// Normalize the body text to NFC.
+	body = body.normalize("NFC");
+
+	// If the body consists solely of a protected link, return it unchanged.
 	if (/^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/.test(body)) {
 		return frontmatter + body;
 	}
 
-	// テキスト内の候補を置換するためのヘルパー関数
+	// Helper function to process a plain text segment.
 	const replaceInSegment = (text: string): string => {
 		let result = "";
 		let i = 0;
 		outer: while (i < text.length) {
-			// URL の場合はそのままコピーする
+			// If a URL is found, copy it unchanged.
 			const urlMatch = text.slice(i).match(/^(https?:\/\/[^\s]+)/);
 			if (urlMatch) {
 				result += urlMatch[0];
@@ -74,7 +81,7 @@ export const replaceLinks = async ({
 				continue;
 			}
 
-			// Trie を使った候補検索
+			// Use the Trie to find a candidate.
 			let node = trie;
 			let lastCandidate: { candidate: string; length: number } | null =
 				null;
@@ -93,59 +100,97 @@ export const replaceLinks = async ({
 				j++;
 			}
 			if (lastCandidate) {
-				const matched = text.substring(i, i + lastCandidate.length);
+				// Get the candidate string matched from the current position.
+				const candidate = text.substring(i, i + lastCandidate.length);
 
-				// 候補が月ノートの場合は置換せずそのまま出力する
-				if (isMonthNote(matched)) {
-					result += matched;
+				// If it's a month note, do not convert.
+				if (isMonthNote(candidate)) {
+					result += candidate;
 					i += lastCandidate.length;
 					continue;
 				}
 
-				// 候補として成立する場合、前後が単語境界であるかチェックする
-				if (
-					/[A-Za-z0-9_/\- ]+/.test(matched) &&
-					candidateMap.has(matched)
-				) {
-					const left = i > 0 ? text[i - 1] : undefined;
-					const right =
-						i + lastCandidate.length < text.length
-							? text[i + lastCandidate.length]
-							: undefined;
-					if (!isWordBoundary(left) || !isWordBoundary(right)) {
-						result += text[i];
-						i++;
-						continue;
+				if (candidateMap.has(candidate)) {
+					// 判定用の正規表現：
+					// isCjkCandidate は中国語・ひらがな・カタカナ・ハングルのいずれのみで構成されるか
+					const isCjkCandidate =
+						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
+							candidate,
+						);
+					// isKorean はハングルのみで構成されるか
+					const isKorean = /^[\p{Script=Hangul}]+$/u.test(candidate);
+					// 非 CJK もしくは、CJK であっても韓国語（ハングル）の場合は単語境界チェックを行う
+					if (!isCjkCandidate || isKorean) {
+						const left = i > 0 ? text[i - 1] : undefined;
+						const right =
+							i + lastCandidate.length < text.length
+								? text[i + lastCandidate.length]
+								: undefined;
+						if (!isWordBoundary(left) || !isWordBoundary(right)) {
+							// 韓国語の場合、許容接尾辞 (例: "이다", "이다.") をチェック
+							if (isKorean) {
+								const remaining = text.slice(
+									i + candidate.length,
+								);
+								const suffixMatch =
+									remaining.match(/^(이다\.?)/);
+								if (suffixMatch) {
+									const canonical =
+										candidateMap.get(candidate) ??
+										candidate;
+									result +=
+										`[[${canonical}]]` + suffixMatch[0];
+									i +=
+										candidate.length +
+										suffixMatch[0].length;
+									continue outer;
+								}
+							}
+							// 接尾辞がなければ変換せず、現在の文字を出力して先に進む
+							result += text[i];
+							i++;
+							continue outer;
+						}
+						// 単語境界チェックが通れば変換
+						const canonical =
+							candidateMap.get(candidate) ?? candidate;
+						result += `[[${canonical}]]`;
+						i += lastCandidate.length;
+						continue outer;
+					} else {
+						// 中国語、ひらがな、カタカナなどの非韓国語 CJK はそのまま変換
+						const canonical =
+							candidateMap.get(candidate) ?? candidate;
+						result += `[[${canonical}]]`;
+						i += lastCandidate.length;
+						continue outer;
 					}
 				}
-				const canonical = candidateMap.get(matched) ?? matched;
-				result += `[[${canonical}]]`;
-				i += lastCandidate.length;
-				continue;
 			}
 
-			// fallback: namespace 解決（namespaceResolution が有効な場合）
+			// Fallback: namespace resolution if enabled.
 			if (namespaceResolution) {
 				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
 				const fallbackMatch = text.slice(i).match(fallbackRegex);
 				if (fallbackMatch) {
 					const word = fallbackMatch[1];
 
-					// 例: "2025-02-08" の場合、すでに "2025-02-" が出力済みなら、末尾の "08" はリンク置換しない
+					// For date formats: if the candidate is 2 digits and the result ends with YYYY-MM-,
+					// skip conversion.
 					if (/^\d{2}$/.test(word) && /\d{4}-\d{2}-$/.test(result)) {
 						result += text[i];
 						i++;
 						continue;
 					}
 
-					// fallback でマッチした語が月ノートの場合は、そのまま出力する
+					// Skip conversion for month notes.
 					if (isMonthNote(word)) {
 						result += word;
 						i += word.length;
 						continue;
 					}
 
-					// 候補マップに直接含まれている場合はリンク置換する
+					// If the candidate is directly in candidateMap, convert it.
 					if (candidateMap.has(word)) {
 						const canonical = candidateMap.get(word) ?? word;
 						result += `[[${canonical}]]`;
@@ -153,9 +198,8 @@ export const replaceLinks = async ({
 						continue;
 					}
 
-					// それ以外の場合、candidateMap の各キーについて、
-					// キーの末尾（shorthand）が word と一致する候補のうち、
-					// filePath のディレクトリ構造と最も近いものを採用する
+					// Otherwise, try to resolve namespaces by selecting the candidate
+					// whose full path is closest to the current file's path.
 					let bestCandidate: string | null = null;
 					let bestScore = -1;
 					const filePathDir = filePath.includes("/")
@@ -202,22 +246,21 @@ export const replaceLinks = async ({
 						continue outer;
 					}
 
-					// 候補が見つからなかった場合は、1文字ずつ進める
+					// If no candidate is found, advance one character.
 					result += text[i];
 					i++;
 					continue;
 				}
 			}
 
-			// どの処理にも該当しなかった場合は、現在の文字をそのまま出力する
+			// If no rules apply, output the current character as is.
 			result += text[i];
 			i++;
 		}
 		return result;
 	};
 
-	// 本文全体を protectedRegex により分割し、保護セグメントはそのまま、
-	// それ以外は replaceInSegment で置換する
+	// Process the body while preserving protected segments.
 	let resultBody = "";
 	let lastIndex = 0;
 	for (const m of body.matchAll(protectedRegex)) {
@@ -556,6 +599,70 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 				}),
 			).toBe("- [[ひらがな]]と[[ひらがな]]");
+		});
+	});
+
+	describe("CJK - Korean", () => {
+		it("converts Korean words to links", async () => {
+			// テスト用の韓国語ファイル名を登録
+			const fileNames = getSortedFiles(["한글", "테스트", "예시"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					filePath: "journals/2022-01-01",
+					fileContent: "한글 테스트 예시",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[한글]] [[테스트]] [[예시]]");
+		});
+
+		it("converts Korean words within sentence", async () => {
+			// 文章中に韓国語の候補が含まれるケース
+			const fileNames = getSortedFiles(["문서"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					filePath: "journals/2022-01-01",
+					fileContent: "이 문서는 문서이다.",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("이 문서는 [[문서]]이다.");
+		});
+	});
+
+	describe("CJK - Chinese", () => {
+		it("converts Chinese words to links", async () => {
+			// テスト用の中国語ファイル名を登録
+			const fileNames = getSortedFiles(["汉字", "测试", "示例"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					filePath: "journals/2022-01-01",
+					fileContent: "汉字 测试 示例",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[汉字]] [[测试]] [[示例]]");
+		});
+
+		it("converts Chinese words within sentence", async () => {
+			// 文章中に中国語の候補が含まれるケース
+			const fileNames = getSortedFiles(["文档"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					filePath: "journals/2022-01-01",
+					fileContent: "这个文档很好。",
+					trie,
+					candidateMap,
+					getFrontMatterInfo,
+				}),
+			).toBe("这个[[文档]]很好。");
 		});
 	});
 
