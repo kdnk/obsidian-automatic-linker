@@ -23,11 +23,14 @@ Automatic Linker Plugin automatically converts plain text file references into O
   Handles Japanese, Chinese, and other CJK text correctly.
 
 - **Automatic Namespace Resolution:**  
-  When enabled, the plugin automatically resolves shorthand links to their full namespaced candidates. For example, if a file is named `namespace/link`, you can simply type `link` and it will be converted to `[[namespace/link]]`.
+  When enabled, the plugin automatically resolves shorthand links to their full namespaced candidates. In cases where multiple candidates share the same shorthand (for example, `namespace1/link` and `namespace2/subnamespace/link`), the candidate whose full path is closest to the current file—i.e. shares the most common path segments—is selected. For example, if your current file is located in `namespace2/subnamespace/`, typing `link` will be converted to `[[namespace2/subnamespace/link]]`.
 
 - **Consider Aliases:**  
   When enabled, the plugin takes file aliases into account during link conversion, allowing you to reference a file by any of its aliases.  
-  *(Restart is required for changes to this setting to take effect.)*
+  *(Restart is required for changes to take effect.)*
+
+- **Month Note Ignorance:**  
+  File references that consist solely of one or two digits (e.g. `1`, `01`, `12`) are commonly used to denote month notes. The plugin automatically ignores these as candidates unless they are explicitly namespaced (e.g. `namespace/01`), preventing unwanted link conversion.
 
 ## Usage
 
@@ -55,5 +58,6 @@ The plugin settings are available under the **Automatic Linker Plugin** settings
   *(Restart required for changes to take effect.)*
 
 - **Automatic Namespace Resolution:**  
-  When enabled, the plugin will attempt to resolve shorthand links to their full namespaced candidates.  
-  *(Restart required for changes to take effect.)*
+  When enabled, the plugin will automatically resolve namespaces for shorthand links.  
+  If multiple candidates share the same shorthand, the candidate whose full path is closest to the current file (i.e. shares the most common path segments) will be selected.
+

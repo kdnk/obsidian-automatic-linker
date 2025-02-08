@@ -34,7 +34,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Format on Save")
 			.setDesc(
-				"When enabled, the file will be automatically formatted (links replaced) when saving."
+				"When enabled, the file will be automatically formatted (links replaced) when saving.",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -49,7 +49,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Base Directories")
 			.setDesc(
-				"Enter directories (one per line) that should be treated as base. For example, 'pages' will allow links to be formatted without the 'pages/' prefix."
+				"Enter directories (one per line) that should be treated as base. For example, 'pages' will allow links to be formatted without the 'pages/' prefix.",
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("e.g. pages\n")
@@ -81,7 +81,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Minimum Character Count")
 			.setDesc(
-				"If the content is below this character count, the links will not be replaced."
+				"If the content is below this character count, the links will not be replaced.",
 			)
 			.addText((text) => {
 				text.setPlaceholder("e.g. 4")
@@ -99,7 +99,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Consider Aliases")
 			.setDesc(
-				"When enabled, aliases will be taken into account when processing links. !!! Restart required for changes to take effect."
+				"When enabled, aliases will be taken into account when processing links. !!! Restart required for changes to take effect.",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -114,7 +114,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Automatic Namespace Resolution")
 			.setDesc(
-				"When enabled, the plugin will automatically resolve namespaces for shorthand links. !!! Restart required for changes to take effect."
+				"When enabled, the plugin will automatically resolve namespaces for shorthand links. If multiple candidates share the same shorthand, the candidate whose full path is closest to the current file (i.e. shares the most common path segments) will be selected.",
 			)
 			.addToggle((toggle) => {
 				toggle
