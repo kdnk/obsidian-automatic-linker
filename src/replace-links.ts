@@ -11,19 +11,22 @@ import { buildCandidateTrie, TrieNode } from "./trie";
  * @returns The file content with replaced links.
  */
 export const replaceLinks = async ({
+	filePath,
 	fileContent,
 	trie,
 	candidateMap,
 	minCharCount = 0,
-	namespaceResolution = false,
 	getFrontMatterInfo,
+	namespaceResolution = true,
 }: {
+	filePath: string;
 	fileContent: string;
 	trie: TrieNode;
 	candidateMap: Map<string, string>;
 	minCharCount?: number;
-	namespaceResolution?: boolean;
 	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
+	// New flag: if false, automatic namespace resolution is skipped.
+	namespaceResolution?: boolean;
 }): Promise<string> => {
 	// If the file content is shorter than the minimum character count, return it unchanged.
 	if (fileContent.length <= minCharCount) {
@@ -183,6 +186,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "hello",
 					trie,
 					candidateMap,
@@ -197,6 +201,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "- hello",
 					trie,
 					candidateMap,
@@ -211,6 +216,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: "world hello",
 						trie,
 						candidateMap,
@@ -223,6 +229,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: "hello world",
 						trie,
 						candidateMap,
@@ -238,6 +245,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: "- world hello",
 						trie,
 						candidateMap,
@@ -250,6 +258,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: "- hello world",
 						trie,
 						candidateMap,
@@ -265,6 +274,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: "hello world",
 						trie,
 						candidateMap,
@@ -277,6 +287,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: `\nhello\nworld\n`,
 						trie,
 						candidateMap,
@@ -289,6 +300,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: `\nhello\nworld aaaaa\n`,
 						trie,
 						candidateMap,
@@ -301,6 +313,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: `\n aaaaa hello\nworld bbbbb\n`,
 						trie,
 						candidateMap,
@@ -320,6 +333,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "namespace",
 					trie,
 					candidateMap,
@@ -336,6 +350,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "namespace/tag1",
 					trie,
 					candidateMap,
@@ -353,6 +368,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "namespace/tag1 namespace/tag2",
 					trie,
 					candidateMap,
@@ -368,6 +384,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "namespace",
 					trie,
 					candidateMap,
@@ -385,6 +402,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent:
 						"namespace/tag1 namespace/tag2 namespace/タグ3",
 					trie,
@@ -401,6 +419,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "名前空間",
 					trie,
 					candidateMap,
@@ -418,6 +437,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "名前空間/tag1",
 					trie,
 					candidateMap,
@@ -435,6 +455,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
 					trie,
 					candidateMap,
@@ -448,6 +469,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "- 漢字　ひらがな",
 					trie,
 					candidateMap,
@@ -461,6 +483,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "- ひらがなとひらがな",
 					trie,
 					candidateMap,
@@ -479,6 +502,7 @@ if (import.meta.vitest) {
 			]);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "tags",
 					trie,
 					candidateMap,
@@ -493,6 +517,7 @@ if (import.meta.vitest) {
 		const { candidateMap, trie } = buildCandidateTrie(fileNames, ["pages"]);
 		expect(
 			await replaceLinks({
+				filePath: "journals/2022-01-01",
 				fileContent: "サウナ tags pages/tags",
 				trie,
 				candidateMap,
@@ -510,6 +535,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "アジャイルリーダーコンピテンシーマップ",
 					trie,
 					candidateMap,
@@ -526,6 +552,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "[[アジャイルリーダーコンピテンシーマップ]]",
 					trie,
 					candidateMap,
@@ -544,6 +571,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "obsidian/automatic linker",
 					trie,
 					candidateMap,
@@ -560,6 +588,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent: "- https://example.com",
 						trie,
 						candidateMap,
@@ -572,6 +601,7 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
+						filePath: "journals/2022-01-01",
 						fileContent:
 							"- https://x.com/xxxx/status/12345?t=25S02Tda",
 						trie,
@@ -592,6 +622,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "- https://example.com https://example1.com",
 					trie,
 					candidateMap,
@@ -611,6 +642,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent:
 						"- https://example.com https://example1.com link",
 					trie,
@@ -632,6 +664,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "- [title](https://example.com)",
 					trie,
 					candidateMap,
@@ -652,6 +685,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent:
 						"- [title1](https://example1.com) [title2](https://example2.com)",
 					trie,
@@ -676,6 +710,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent:
 						"- [title1](https://example1.com) [title2](https://example2.com) link",
 					trie,
@@ -694,6 +729,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "`code` example",
 					trie,
 					candidateMap,
@@ -707,6 +743,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "```typescript\nexample\n```",
 					trie,
 					candidateMap,
@@ -720,6 +757,7 @@ if (import.meta.vitest) {
 			// When minCharCount is higher than the fileContent length, no replacement should occur.
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "hello",
 					trie,
 					candidateMap,
@@ -740,6 +778,7 @@ if (import.meta.vitest) {
 			// "Hello" is registered as an alias with canonical value "pages/HelloWorld|Hello"
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "Hello",
 					trie,
 					candidateMap,
@@ -749,6 +788,7 @@ if (import.meta.vitest) {
 			// "HW" is treated the same way
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "HW",
 					trie,
 					candidateMap,
@@ -758,6 +798,7 @@ if (import.meta.vitest) {
 			// The normal candidate "HelloWorld" is registered normally
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "HelloWorld",
 					trie,
 					candidateMap,
@@ -773,6 +814,7 @@ if (import.meta.vitest) {
 			// Verify replacement when alias and normal candidate coexist in the text
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "Hello HelloWorld",
 					trie,
 					candidateMap,
@@ -789,6 +831,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "namespaces/link",
 					trie,
 					candidateMap,
@@ -804,6 +847,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "link",
 					trie,
 					candidateMap,
@@ -819,6 +863,7 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
+					filePath: "journals/2022-01-01",
 					fileContent: "link",
 					trie,
 					candidateMap,
@@ -826,6 +871,23 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 				}),
 			).toBe("[[namespace/link]]");
+		});
+
+		it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
+			// Test that if the candidate has a namespace, using a YYY-MM-DD formatted date
+			// (with hyphens instead of slashes) does not trigger a replacement.
+			const fileNames = getSortedFiles(["2025/02/08"]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+			expect(
+				await replaceLinks({
+					filePath: "journals/2022-01-01",
+					fileContent: "2025-02-08",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("2025-02-08");
 		});
 	});
 }
