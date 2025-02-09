@@ -1033,34 +1033,35 @@ if (import.meta.vitest) {
 		it("expands shorthand link to full namespaced candidate", async () => {
 			// Test that if the candidate has a namespace, using only the shorthand (without the namespace) in the content expands to the full namespaced candidate.
 			const fileNames = getSortedFiles([
-				"namespace2/subnamespace/link",
-				"namespace1/link",
+				"namespace1/subnamespace/link",
+				"namespace2/link",
+				"namespace3/link",
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 
 			// closest namespace should be used
 			expect(
 				await replaceLinks({
-					filePath: "namespace2/subnamespace/current-file",
+					filePath: "namespace1/subnamespace/current-file",
 					fileContent: "link",
 					trie,
 					candidateMap,
 					namespaceResolution: true,
 					getFrontMatterInfo,
 				}),
-			).toBe("[[namespace2/subnamespace/link]]");
+			).toBe("[[namespace1/subnamespace/link]]");
 
 			// closest namespace should be used
 			expect(
 				await replaceLinks({
-					filePath: "namespace1/current-file",
+					filePath: "namespace2/current-file",
 					fileContent: "link",
 					trie,
 					candidateMap,
 					namespaceResolution: true,
 					getFrontMatterInfo,
 				}),
-			).toBe("[[namespace1/link]]");
+			).toBe("[[namespace2/link]]");
 
 			expect(
 				await replaceLinks({
@@ -1071,7 +1072,7 @@ if (import.meta.vitest) {
 					namespaceResolution: true,
 					getFrontMatterInfo,
 				}),
-			).toBe("[[namespace2/subnamespace/link]]");
+			).toBe("[[namespace1/subnamespace/link]]");
 		});
 
 		it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
