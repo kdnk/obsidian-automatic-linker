@@ -58,7 +58,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 				try {
 					// Read the current file content
-					const fileContent = await this.app.vault.read(activeFile);
+					const fileContent = (
+						await this.app.vault.read(activeFile)
+					).normalize("NFC");
 					// Save a backup before making any modifications
 					this.backupContent.set(activeFile.path, fileContent);
 
@@ -72,14 +74,20 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 					// Use the pre-built trie and candidateMap to replace links.
 					// Fallback to an empty trie if not built.
+					const { contentStart } = getFrontMatterInfo(fileContent);
 					const updatedContent = await replaceLinks({
-						filePath: activeFile.path.replace(/\.md$/, ""),
-						fileContent,
-						trie: this.trie ?? buildCandidateTrie([]).trie,
-						candidateMap: this.candidateMap ?? new Map(),
-						minCharCount: this.settings.minCharCount,
-						namespaceResolution: this.settings.namespaceResolution,
-						getFrontMatterInfo,
+						body: "",
+						frontmatter: fileContent.slice(0, contentStart),
+						linkResolverContext: {
+							filePath: activeFile.path.replace(/\.md$/, ""),
+							trie: this.trie ?? buildCandidateTrie([]).trie,
+							candidateMap: this.candidateMap ?? new Map(),
+						},
+						settings: {
+							minCharCount: this.settings.minCharCount,
+							namespaceResolution:
+								this.settings.namespaceResolution,
+						},
 					});
 
 					console.log(

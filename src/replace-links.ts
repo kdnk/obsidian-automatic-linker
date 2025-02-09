@@ -4,7 +4,7 @@ import { buildCandidateTrie, TrieNode } from "./trie";
  * Replaces plain text with wikilinks using the provided Trie and candidateMap.
  *
  * @param filePath - The path of the current file.
- * @param fileContent - The content of the file to process.
+ * @param body - The content of the file to process.
  * @param trie - The pre-built Trie for candidate lookup.
  * @param candidateMap - Mapping from candidate string to its canonical replacement.
  * @param minCharCount - Minimum character count required to perform replacement.
@@ -13,35 +13,36 @@ import { buildCandidateTrie, TrieNode } from "./trie";
  * @returns The file content with replaced links.
  */
 export const replaceLinks = async ({
-	filePath,
-	fileContent,
-	trie,
-	candidateMap,
-	minCharCount = 0,
-	getFrontMatterInfo,
-	namespaceResolution = true,
+	body,
+	frontmatter,
+	linkResolverContext: { filePath, trie, candidateMap },
+	settings = {
+		minCharCount: 0,
+		namespaceResolution: true,
+	},
 }: {
-	filePath: string;
-	fileContent: string;
-	trie: TrieNode;
-	candidateMap: Map<string, string>;
-	minCharCount?: number;
-	getFrontMatterInfo: (fileContent: string) => { contentStart: number };
-	namespaceResolution?: boolean;
+	body: string;
+	frontmatter: string;
+	linkResolverContext: {
+		filePath: string;
+		trie: TrieNode;
+		candidateMap: Map<string, string>;
+	};
+	settings?: {
+		minCharCount?: number;
+		namespaceResolution?: boolean;
+	};
 }): Promise<string> => {
 	// Return content as-is if it's shorter than the minimum character count.
-	if (fileContent.length <= minCharCount) {
-		return fileContent;
+	if (body.length <= (settings.minCharCount ?? 0)) {
+		return frontmatter + body;
 	}
-
-	// Normalize the entire content to NFC to ensure consistent Unicode representation.
-	fileContent = fileContent.normalize("NFC");
 
 	// Determine if a character is a word boundary.
 	// (Considers any Unicode letter or number, underscore, slash, or hyphen as part of a word.)
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
-		return !/[\p{L}\p{N}_\/-]/u.test(char);
+		return !/[\p{L}\p{N}_/-]/u.test(char);
 	};
 
 	// Determine if the candidate string represents a month note (e.g. "1", "01", ..., "12")
@@ -54,11 +55,6 @@ export const replaceLinks = async ({
 	// Regex to match protected segments (code blocks, inline code, wikilinks, Markdown links)
 	const protectedRegex =
 		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/g;
-
-	// Separate front matter from the body.
-	const { contentStart } = getFrontMatterInfo(fileContent);
-	const frontmatter = fileContent.slice(0, contentStart);
-	let body = fileContent.slice(contentStart);
 
 	// Normalize the body text to NFC.
 	body = body.normalize("NFC");
@@ -169,14 +165,14 @@ export const replaceLinks = async ({
 			}
 
 			// Fallback: namespace resolution if enabled.
-			if (namespaceResolution) {
+			// Fallback: namespace resolution if enabled.
+			if (settings.namespaceResolution) {
 				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
 				const fallbackMatch = text.slice(i).match(fallbackRegex);
 				if (fallbackMatch) {
 					const word = fallbackMatch[1];
 
-					// For date formats: if the candidate is 2 digits and the result ends with YYYY-MM-,
-					// skip conversion.
+					// For date formats: if the candidate is 2 digits and the result ends with YYYY-MM-, skip conversion.
 					if (/^\d{2}$/.test(word) && /\d{4}-\d{2}-$/.test(result)) {
 						result += text[i];
 						i++;
@@ -190,12 +186,25 @@ export const replaceLinks = async ({
 						continue;
 					}
 
-					// If the candidate is directly in candidateMap, convert it.
-					if (candidateMap.has(word)) {
-						const canonical = candidateMap.get(word) ?? word;
-						result += `[[${canonical}]]`;
-						i += word.length;
-						continue;
+					// Only use the direct candidateMap replacement if there is a single candidate.
+					{
+						let count = 0;
+						let singleCandidate: string | undefined;
+						for (const key of candidateMap.keys()) {
+							const slashIndex = key.lastIndexOf("/");
+							if (slashIndex !== -1) {
+								const shorthand = key.slice(slashIndex + 1);
+								if (shorthand === word) {
+									count++;
+									singleCandidate = key;
+								}
+							}
+						}
+						if (count === 1 && singleCandidate !== undefined) {
+							result += `[[${singleCandidate}]]`;
+							i += word.length;
+							continue;
+						}
 					}
 
 					// Otherwise, try to resolve namespaces by selecting the candidate
@@ -236,6 +245,23 @@ export const replaceLinks = async ({
 								if (score > bestScore) {
 									bestScore = score;
 									bestCandidate = key;
+								} else if (
+									score === bestScore &&
+									bestCandidate !== null
+								) {
+									// Tie-breaker: choose the candidate with fewer directory segments.
+									const currentBestDir = bestCandidate.slice(
+										0,
+										bestCandidate.lastIndexOf("/"),
+									);
+									const currentBestSegments =
+										currentBestDir.split("/");
+									if (
+										candidateSegments.length <
+										currentBestSegments.length
+									) {
+										bestCandidate = key;
+									}
 								}
 							}
 						}
@@ -286,21 +312,22 @@ if (import.meta.vitest) {
 		return sortedFileNames.map((path) => ({ path, aliases: null }));
 	};
 
-	// Dummy function to get front matter info.
-	const getFrontMatterInfo = (fileContent: string) => ({ contentStart: 0 });
-
 	describe("basic", () => {
 		it("replaces links", async () => {
 			const fileNames = getSortedFiles(["hello"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "hello",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
-					minCharCount: 0,
+					frontmatter: "",
+					body: "hello",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						minCharCount: 0,
+					},
 				}),
 			).toBe("[[hello]]");
 		});
@@ -310,11 +337,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "- hello",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					frontmatter: "",
+					body: "- hello",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("- [[hello]]");
 		});
@@ -325,11 +354,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: "world hello",
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: "world hello",
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe("world [[hello]]");
 			}
@@ -338,11 +369,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: "hello world",
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: "hello world",
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe("[[hello]] world");
 			}
@@ -354,11 +387,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: "- world hello",
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: "- world hello",
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe("- world [[hello]]");
 			}
@@ -367,11 +402,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: "- hello world",
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: "- hello world",
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe("- [[hello]] world");
 			}
@@ -383,11 +420,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: "hello world",
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: "hello world",
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe("[[hello]] [[world]]");
 			}
@@ -396,11 +435,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: `\nhello\nworld\n`,
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: `\nhello\nworld\n`,
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe(`\n[[hello]]\n[[world]]\n`);
 			}
@@ -409,11 +450,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: `\nhello\nworld aaaaa\n`,
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: `\nhello\nworld aaaaa\n`,
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe(`\n[[hello]]\n[[world]] aaaaa\n`);
 			}
@@ -422,11 +465,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: `\n aaaaa hello\nworld bbbbb\n`,
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: `\n aaaaa hello\nworld bbbbb\n`,
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe(`\n aaaaa [[hello]]\n[[world]] bbbbb\n`);
 			}
@@ -442,11 +487,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "namespace",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "namespace",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("namespace");
 		});
@@ -459,11 +506,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "namespace/tag1",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "namespace/tag1",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[namespace/tag1]]");
 		});
@@ -477,11 +526,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "namespace/tag1 namespace/tag2",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "namespace/tag1 namespace/tag2",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]]");
 		});
@@ -493,11 +544,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "namespace",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "namespace",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("namespace");
 		});
@@ -511,12 +564,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent:
-						"namespace/tag1 namespace/tag2 namespace/タグ3",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "namespace/tag1 namespace/tag2 namespace/タグ3",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[namespace/tag1]] [[namespace/tag2]] [[namespace/タグ3]]");
 		});
@@ -528,11 +582,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "名前空間",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "名前空間",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("名前空間");
 		});
@@ -546,11 +602,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "名前空間/tag1",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "名前空間/tag1",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[名前空間/tag1]]");
 		});
@@ -564,11 +622,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]");
 		});
@@ -578,11 +638,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "- 漢字　ひらがな",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "- 漢字　ひらがな",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("- [[漢字]]　[[ひらがな]]");
 		});
@@ -592,11 +654,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "- ひらがなとひらがな",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "- ひらがなとひらがな",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("- [[ひらがな]]と[[ひらがな]]");
 		});
@@ -609,11 +673,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "한글 테스트 예시",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "한글 테스트 예시",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[한글]] [[테스트]] [[예시]]");
 		});
@@ -624,11 +690,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "이 문서는 문서이다.",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "이 문서는 문서이다.",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("이 문서는 [[문서]]이다.");
 		});
@@ -641,11 +709,14 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "汉字 测试 示例",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "汉字 测试 示例",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[汉字]] [[测试]] [[示例]]");
 		});
@@ -656,11 +727,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "这个文档很好。",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "这个文档很好。",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("这个[[文档]]很好。");
 		});
@@ -675,11 +748,13 @@ if (import.meta.vitest) {
 			]);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "tags",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "tags",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[tags]]");
 		});
@@ -690,11 +765,13 @@ if (import.meta.vitest) {
 		const { candidateMap, trie } = buildCandidateTrie(fileNames, ["pages"]);
 		expect(
 			await replaceLinks({
-				filePath: "journals/2022-01-01",
-				fileContent: "サウナ tags pages/tags",
-				trie,
-				candidateMap,
-				getFrontMatterInfo,
+				body: "サウナ tags pages/tags",
+				frontmatter: "",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
 			}),
 		).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
 	});
@@ -708,11 +785,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "アジャイルリーダーコンピテンシーマップ",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "アジャイルリーダーコンピテンシーマップ",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 		});
@@ -725,11 +804,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "[[アジャイルリーダーコンピテンシーマップ]]",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "[[アジャイルリーダーコンピテンシーマップ]]",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 		});
@@ -744,11 +825,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "obsidian/automatic linker",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "obsidian/automatic linker",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[obsidian/automatic linker]]");
 		});
@@ -761,11 +844,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent: "- https://example.com",
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: "- https://example.com",
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe("- https://example.com");
 			}
@@ -774,12 +859,13 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(fileNames);
 				expect(
 					await replaceLinks({
-						filePath: "journals/2022-01-01",
-						fileContent:
-							"- https://x.com/xxxx/status/12345?t=25S02Tda",
-						trie,
-						candidateMap,
-						getFrontMatterInfo,
+						body: "- https://x.com/xxxx/status/12345?t=25S02Tda",
+						frontmatter: "",
+						linkResolverContext: {
+							filePath: "journals/2022-01-01",
+							trie,
+							candidateMap,
+						},
 					}),
 				).toBe("- https://x.com/xxxx/status/12345?t=25S02Tda");
 			}
@@ -795,11 +881,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "- https://example.com https://example1.com",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "- https://example.com https://example1.com",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("- https://example.com https://example1.com");
 		});
@@ -815,12 +903,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent:
-						"- https://example.com https://example1.com link",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "- https://example.com https://example1.com link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("- https://example.com https://example1.com [[link]]");
 		});
@@ -837,11 +926,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "- [title](https://example.com)",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "- [title](https://example.com)",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("- [title](https://example.com)");
 		});
@@ -858,12 +949,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent:
-						"- [title1](https://example1.com) [title2](https://example2.com)",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "- [title1](https://example1.com) [title2](https://example2.com)",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe(
 				"- [title1](https://example1.com) [title2](https://example2.com)",
@@ -883,12 +975,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent:
-						"- [title1](https://example1.com) [title2](https://example2.com) link",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "- [title1](https://example1.com) [title2](https://example2.com) link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe(
 				"- [title1](https://example1.com) [title2](https://example2.com) [[link]]",
@@ -902,11 +995,13 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "`code` example",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "`code` example",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("`code` [[example]]");
 		});
@@ -916,26 +1011,32 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "```typescript\nexample\n```",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "```typescript\nexample\n```",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("```typescript\nexample\n```");
 		});
 		it("skips replacement when content is too short", async () => {
 			const fileNames = getSortedFiles(["hello"]);
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			// When minCharCount is higher than the fileContent length, no replacement should occur.
+			// When minCharCount is higher than the body length, no replacement should occur.
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "hello",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
-					minCharCount: 10,
+					body: "hello",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						minCharCount: 10,
+					},
 				}),
 			).toBe("hello");
 		});
@@ -951,31 +1052,37 @@ if (import.meta.vitest) {
 			// "Hello" is registered as an alias with canonical value "pages/HelloWorld|Hello"
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "Hello",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "Hello",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[pages/HelloWorld|Hello]]");
 			// "HW" is treated the same way
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "HW",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "HW",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[pages/HelloWorld|HW]]");
 			// The normal candidate "HelloWorld" is registered normally
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "HelloWorld",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "HelloWorld",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[HelloWorld]]");
 		});
@@ -987,11 +1094,13 @@ if (import.meta.vitest) {
 			// Verify replacement when alias and normal candidate coexist in the text
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "Hello HelloWorld",
-					trie,
-					candidateMap,
-					getFrontMatterInfo,
+					body: "Hello HelloWorld",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
 				}),
 			).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
 		});
@@ -1004,12 +1113,16 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "namespaces/link",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
+					body: "namespaces/link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						namespaceResolution: true,
+					},
 				}),
 			).toBe("[[namespaces/link]]");
 		});
@@ -1020,12 +1133,16 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "link",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
+					body: "link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						namespaceResolution: true,
+					},
 				}),
 			).toBe("[[link]]");
 		});
@@ -1037,63 +1154,18 @@ if (import.meta.vitest) {
 			const { candidateMap, trie } = buildCandidateTrie(fileNames);
 			expect(
 				await replaceLinks({
-					filePath: "journals/2022-01-01",
-					fileContent: "2025-02-08",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
+					body: "2025-02-08",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						namespaceResolution: true,
+					},
 				}),
 			).toBe("2025-02-08");
-		});
-	});
-
-	describe("namespace resolution nearlest file path", () => {
-		it("expands shorthand link to full namespaced candidate", async () => {
-			// Test that if the candidate has a namespace, using only the shorthand (without the namespace) in the content expands to the full namespaced candidate.
-			const fileNames = getSortedFiles([
-				"namespace1/subnamespace/link",
-				"namespace2/super-super-long-long-directory/link",
-				"namespace3/link",
-				"namespace4/a/b/c/d/link",
-				"namespace4/a/b/c/link",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-
-			// closest namespace should be used
-			expect(
-				await replaceLinks({
-					filePath: "namespace4/a/b/c/current-file",
-					fileContent: "link",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
-				}),
-			).toBe("[[namespace4/a/b/c/link]]");
-
-			// closest namespace should be used
-			expect(
-				await replaceLinks({
-					filePath: "namespace2/current-file",
-					fileContent: "link",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
-				}),
-			).toBe("[[namespace2/super-super-long-long-directory/link]]");
-
-			expect(
-				await replaceLinks({
-					filePath: "current-file",
-					fileContent: "link",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
-				}),
-			).toBe("[[namespace2/super-super-long-long-directory/link]]");
 		});
 	});
 
@@ -1145,11 +1217,13 @@ if (import.meta.vitest) {
 		const { candidateMap, trie } = buildCandidateTrie(fileNames);
 		expect(
 			await replaceLinks({
-				filePath: "journals/2022-01-01",
-				fileContent: "01 1 12 namespace/01",
-				trie,
-				candidateMap,
-				getFrontMatterInfo,
+				body: "01 1 12 namespace/01",
+				frontmatter: "",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
 			}),
 		).toBe("01 1 12 [[namespace/01]]");
 	});
