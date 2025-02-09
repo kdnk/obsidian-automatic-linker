@@ -15,7 +15,7 @@ import { buildCandidateTrie, TrieNode } from "./trie";
 export const replaceLinks = async ({
 	body,
 	frontmatter,
-	linkResolverContext: { filePath, trie, candidateMap },
+	linkResolverContext: { filePath, trie, candidateMap, resolveNamespace },
 	settings = {
 		minCharCount: 0,
 		namespaceResolution: true,
@@ -27,6 +27,7 @@ export const replaceLinks = async ({
 		filePath: string;
 		trie: TrieNode;
 		candidateMap: Map<string, string>;
+		resolveNamespace?: boolean;
 	};
 	settings?: {
 		minCharCount?: number;
