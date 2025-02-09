@@ -214,7 +214,11 @@ export const replaceLinks = async ({
 					const filePathDir = filePath.includes("/")
 						? filePath.slice(0, filePath.lastIndexOf("/"))
 						: "";
-					const filePathSegments = filePathDir.split("/");
+					// If there is no directory (i.e. filePath is top‑level), we want to use a different tie-breaker.
+					const useLongerCandidate = filePathDir === "";
+					const filePathSegments = filePathDir
+						? filePathDir.split("/")
+						: [];
 					for (const [key] of candidateMap.entries()) {
 						const slashIndex = key.lastIndexOf("/");
 						if (slashIndex !== -1) {
@@ -249,18 +253,28 @@ export const replaceLinks = async ({
 									score === bestScore &&
 									bestCandidate !== null
 								) {
-									// Tie-breaker: choose the candidate with fewer directory segments.
-									const currentBestDir = bestCandidate.slice(
-										0,
-										bestCandidate.lastIndexOf("/"),
-									);
-									const currentBestSegments =
-										currentBestDir.split("/");
-									if (
-										candidateSegments.length <
-										currentBestSegments.length
-									) {
-										bestCandidate = key;
+									// Tie-breaker:
+									if (useLongerCandidate) {
+										// When there is no namespace in the file path,
+										// choose the candidate with the greater key length.
+										if (key.length > bestCandidate.length) {
+											bestCandidate = key;
+										}
+									} else {
+										// Otherwise, choose the candidate with fewer directory segments.
+										const currentBestDir =
+											bestCandidate.slice(
+												0,
+												bestCandidate.lastIndexOf("/"),
+											);
+										const currentBestSegments =
+											currentBestDir.split("/");
+										if (
+											candidateSegments.length <
+											currentBestSegments.length
+										) {
+											bestCandidate = key;
+										}
 									}
 								}
 							}
@@ -1166,6 +1180,105 @@ if (import.meta.vitest) {
 					},
 				}),
 			).toBe("2025-02-08");
+		});
+	});
+
+	describe("namespace resolution nearlest file path", () => {
+		const fileNames = getSortedFiles([
+			"namespace1/subnamespace/link",
+			"namespace2/super-super-long-long-directory/link",
+			"namespace3/link",
+			"namespace4/a/b/c/d/link",
+			"namespace4/a/b/c/d/e/f/link",
+			"namespace4/a/b/c/link",
+		]);
+		const { candidateMap, trie } = buildCandidateTrie(fileNames);
+
+		it("closest siblings namespace should be used", async () => {
+			// Test that if the candidate has a namespace, using only the shorthand (without the namespace) in the content expands to the full namespaced candidate.
+
+			// siblings
+			expect(
+				await replaceLinks({
+					body: "link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "namespace4/a/b/c/current-file",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						namespaceResolution: true,
+					},
+				}),
+			).toBe("[[namespace4/a/b/c/link]]");
+
+			// siblings
+			expect(
+				await replaceLinks({
+					body: "link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "namespace4/a/b/c/d/current-file",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						namespaceResolution: true,
+					},
+				}),
+			).toBe("[[namespace4/a/b/c/d/link]]");
+
+			// closest namespace should be used
+			expect(
+				await replaceLinks({
+					body: "link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "namespace2/current-file",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						namespaceResolution: true,
+					},
+				}),
+			).toBe("[[namespace2/super-super-long-long-directory/link]]");
+		});
+
+		it("closest children namespace should be used", async () => {
+			// closest children
+			expect(
+				await replaceLinks({
+					body: "link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "namespace4/a/b/current-file",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						namespaceResolution: true,
+					},
+				}),
+			).toBe("[[namespace4/a/b/c/link]]");
+		});
+
+		it("usual process if no closest namespace", async () => {
+			expect(
+				await replaceLinks({
+					body: "link",
+					frontmatter: "",
+					linkResolverContext: {
+						filePath: "current-file",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						namespaceResolution: true,
+					},
+				}),
+			).toBe("[[namespace2/super-super-long-long-directory/link]]");
 		});
 	});
 
