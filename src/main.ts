@@ -117,11 +117,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			new AutomaticLinkerPluginSettingsTab(this.app, this),
 		);
 
-		const getNamespace = (path: string): string => {
-			const segments = path.split("/");
-			return segments.length > 1 ? segments[0] : "";
-		};
-
 		const refreshFileDataAndTrie = () => {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
 			const allFiles: PathAndAliases[] = allMarkdownFiles.map((file) => {
