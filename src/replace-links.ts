@@ -1,17 +1,5 @@
-import { buildCandidateTrie, TrieNode } from "./trie";
+import { buildCandidateTrie, buildTrie, CandidateData, TrieNode } from "./trie";
 
-/**
- * Replaces plain text with wikilinks using the provided Trie and candidateMap.
- *
- * @param filePath - The path of the current file.
- * @param body - The content of the file to process.
- * @param trie - The pre-built Trie for candidate lookup.
- * @param candidateMap - Mapping from candidate string to its canonical replacement.
- * @param minCharCount - Minimum character count required to perform replacement.
- * @param getFrontMatterInfo - Function to get the front matter info.
- * @param namespaceResolution - If false, automatic namespace resolution is skipped.
- * @returns The file content with replaced links.
- */
 export const replaceLinks = async ({
 	body,
 	frontmatter,
@@ -26,7 +14,7 @@ export const replaceLinks = async ({
 	linkResolverContext: {
 		filePath: string;
 		trie: TrieNode;
-		candidateMap: Map<string, string>;
+		candidateMap: Map<string, CandidateData>;
 	};
 	settings?: {
 		minCharCount?: number;
@@ -38,14 +26,14 @@ export const replaceLinks = async ({
 		return frontmatter + body;
 	}
 
-	// Determine if a character is a word boundary.
-	// (Considers any Unicode letter or number, underscore, slash, or hyphen as part of a word.)
+	// Determines whether a character is a word boundary.
+	// (Returns true if the character is undefined or does not match letters, numbers, underscore, slash, or hyphen.)
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
 		return !/[\p{L}\p{N}_/-]/u.test(char);
 	};
 
-	// Determine if the candidate string represents a month note (e.g. "1", "01", ..., "12")
+	// Determines if the candidate string represents a month note.
 	const isMonthNote = (candidate: string): boolean =>
 		!candidate.includes("/") &&
 		/^[0-9]{1,2}$/.test(candidate) &&
@@ -63,6 +51,13 @@ export const replaceLinks = async ({
 	if (/^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/.test(body)) {
 		return frontmatter + body;
 	}
+
+	// Helper to get the current file's top‑level namespace.
+	const getCurrentNamespace = (filePath: string): string => {
+		const segments = filePath.split("/");
+		return segments.length > 1 ? segments[0] : "";
+	};
+	const currentNamespace = getCurrentNamespace(filePath);
 
 	// Helper function to process a plain text segment.
 	const replaceInSegment = (text: string): string => {
@@ -98,73 +93,64 @@ export const replaceLinks = async ({
 			if (lastCandidate) {
 				// Get the candidate string matched from the current position.
 				const candidate = text.substring(i, i + lastCandidate.length);
-
-				// If it's a month note, do not convert.
+				// Skip conversion for month notes.
 				if (isMonthNote(candidate)) {
 					result += candidate;
 					i += lastCandidate.length;
 					continue;
 				}
-
 				if (candidateMap.has(candidate)) {
-					// 判定用の正規表現：
-					// isCjkCandidate は中国語・ひらがな・カタカナ・ハングルのいずれのみで構成されるか
+					const candidateData = candidateMap.get(candidate)!;
+					// Determine if candidate is composed solely of CJK characters.
 					const isCjkCandidate =
 						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
 							candidate,
 						);
-					// isKorean はハングルのみで構成されるか
 					const isKorean = /^[\p{Script=Hangul}]+$/u.test(candidate);
-					// 非 CJK もしくは、CJK であっても韓国語（ハングル）の場合は単語境界チェックを行う
+					// For non‑CJK or Korean candidates, perform word boundary checks.
 					if (!isCjkCandidate || isKorean) {
+						if (isKorean) {
+							// Check for common Korean particle suffix (e.g. "이다" optionally with a period).
+							const remaining = text.slice(i + candidate.length);
+							const suffixMatch = remaining.match(/^(이다\.?)/);
+							if (suffixMatch) {
+								result +=
+									`[[${candidateData.canonical}]]` +
+									suffixMatch[0];
+								i += candidate.length + suffixMatch[0].length;
+								continue outer;
+							}
+						}
 						const left = i > 0 ? text[i - 1] : undefined;
 						const right =
-							i + lastCandidate.length < text.length
-								? text[i + lastCandidate.length]
+							i + candidate.length < text.length
+								? text[i + candidate.length]
 								: undefined;
 						if (!isWordBoundary(left) || !isWordBoundary(right)) {
-							// 韓国語の場合、許容接尾辞 (例: "이다", "이다.") をチェック
-							if (isKorean) {
-								const remaining = text.slice(
-									i + candidate.length,
-								);
-								const suffixMatch =
-									remaining.match(/^(이다\.?)/);
-								if (suffixMatch) {
-									const canonical =
-										candidateMap.get(candidate) ??
-										candidate;
-									result +=
-										`[[${canonical}]]` + suffixMatch[0];
-									i +=
-										candidate.length +
-										suffixMatch[0].length;
-									continue outer;
-								}
-							}
-							// 接尾辞がなければ変換せず、現在の文字を出力して先に進む
 							result += text[i];
 							i++;
 							continue outer;
 						}
-						// 単語境界チェックが通れば変換
-						const canonical =
-							candidateMap.get(candidate) ?? candidate;
-						result += `[[${canonical}]]`;
-						i += lastCandidate.length;
-						continue outer;
-					} else {
-						// 中国語、ひらがな、カタカナなどの非韓国語 CJK はそのまま変換
-						const canonical =
-							candidateMap.get(candidate) ?? candidate;
-						result += `[[${canonical}]]`;
-						i += lastCandidate.length;
+					}
+					// If candidate is non‑Korean CJK, no boundary check is applied.
+					// Additionally, if namespace resolution is enabled and the candidate’s file is restricted,
+					// only replace if the current file's top‑level namespace matches.
+					if (
+						settings.namespaceResolution &&
+						candidateData.restrictNamespace &&
+						candidateData.namespace !== currentNamespace
+					) {
+						result += candidate;
+						i += candidate.length;
 						continue outer;
 					}
+					// Replace candidate with wikilink.
+					result += `[[${candidateData.canonical}]]`;
+					i += candidate.length;
+					continue outer;
 				}
 			}
 
-			// Fallback: namespace resolution if enabled.
 			// Fallback: namespace resolution if enabled.
 			if (settings.namespaceResolution) {
 				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
@@ -172,7 +158,7 @@ export const replaceLinks = async ({
 				if (fallbackMatch) {
 					const word = fallbackMatch[1];
 
-					// For date formats: if the candidate is 2 digits and the result ends with YYYY-MM-, skip conversion.
+					// For date formats: if candidate is 2 digits and result ends with YYYY‑MM‑, skip conversion.
 					if (/^\d{2}$/.test(word) && /\d{4}-\d{2}-$/.test(result)) {
 						result += text[i];
 						i++;
@@ -186,44 +172,54 @@ export const replaceLinks = async ({
 						continue;
 					}
 
-					// Only use the direct candidateMap replacement if there is a single candidate.
+					// Check for a single candidate match.
 					{
 						let count = 0;
-						let singleCandidate: string | undefined;
-						for (const key of candidateMap.keys()) {
+						let singleCandidate: CandidateData | undefined;
+						for (const [key, data] of candidateMap.entries()) {
 							const slashIndex = key.lastIndexOf("/");
 							if (slashIndex !== -1) {
 								const shorthand = key.slice(slashIndex + 1);
 								if (shorthand === word) {
+									if (
+										data.restrictNamespace &&
+										data.namespace !== currentNamespace
+									) {
+										continue;
+									}
 									count++;
-									singleCandidate = key;
+									singleCandidate = data;
 								}
 							}
 						}
 						if (count === 1 && singleCandidate !== undefined) {
-							result += `[[${singleCandidate}]]`;
+							result += `[[${singleCandidate.canonical}]]`;
 							i += word.length;
 							continue;
 						}
 					}
 
-					// Otherwise, try to resolve namespaces by selecting the candidate
-					// whose full path is closest to the current file's path.
-					let bestCandidate: string | null = null;
+					// Otherwise, try to resolve namespaces by selecting the best candidate.
+					let bestCandidateKey: string | null = null;
+					let bestCandidateData: CandidateData | null = null;
 					let bestScore = -1;
 					const filePathDir = filePath.includes("/")
 						? filePath.slice(0, filePath.lastIndexOf("/"))
 						: "";
-					// If there is no directory (i.e. filePath is top‑level), we want to use a different tie-breaker.
 					const useLongerCandidate = filePathDir === "";
 					const filePathSegments = filePathDir
 						? filePathDir.split("/")
 						: [];
-					for (const [key] of candidateMap.entries()) {
+					for (const [key, data] of candidateMap.entries()) {
 						const slashIndex = key.lastIndexOf("/");
 						if (slashIndex !== -1) {
 							const shorthand = key.slice(slashIndex + 1);
 							if (shorthand === word) {
+								if (
+									data.restrictNamespace &&
+									data.namespace !== currentNamespace
+								)
+									continue;
 								const candidateDir = key.slice(0, slashIndex);
 								const candidateSegments =
 									candidateDir.split("/");
@@ -248,24 +244,28 @@ export const replaceLinks = async ({
 								}
 								if (score > bestScore) {
 									bestScore = score;
-									bestCandidate = key;
+									bestCandidateData = data;
+									bestCandidateKey = key;
 								} else if (
 									score === bestScore &&
-									bestCandidate !== null
+									bestCandidateData !== null &&
+									bestCandidateKey !== null
 								) {
 									// Tie-breaker:
 									if (useLongerCandidate) {
-										// When there is no namespace in the file path,
-										// choose the candidate with the greater key length.
-										if (key.length > bestCandidate.length) {
-											bestCandidate = key;
+										if (
+											key.length > bestCandidateKey.length
+										) {
+											bestCandidateData = data;
+											bestCandidateKey = key;
 										}
 									} else {
-										// Otherwise, choose the candidate with fewer directory segments.
 										const currentBestDir =
-											bestCandidate.slice(
+											bestCandidateKey.slice(
 												0,
-												bestCandidate.lastIndexOf("/"),
+												bestCandidateKey.lastIndexOf(
+													"/",
+												),
 											);
 										const currentBestSegments =
 											currentBestDir.split("/");
@@ -273,20 +273,20 @@ export const replaceLinks = async ({
 											candidateSegments.length <
 											currentBestSegments.length
 										) {
-											bestCandidate = key;
+											bestCandidateData = data;
+											bestCandidateKey = key;
 										}
 									}
 								}
 							}
 						}
 					}
-					if (bestCandidate !== null) {
-						result += `[[${bestCandidate}]]`;
+					if (bestCandidateData !== null) {
+						result += `[[${bestCandidateData.canonical}]]`;
 						i += word.length;
 						continue outer;
 					}
 
-					// If no candidate is found, advance one character.
 					result += text[i];
 					i++;
 					continue;
@@ -307,6 +307,7 @@ export const replaceLinks = async ({
 		const mIndex = m.index ?? 0;
 		const segment = body.slice(lastIndex, mIndex);
 		resultBody += replaceInSegment(segment);
+		// Append the protected segment unchanged.
 		resultBody += m[0];
 		lastIndex = mIndex + m[0].length;
 	}
@@ -323,636 +324,595 @@ if (import.meta.vitest) {
 		const sortedFileNames = fileNames
 			.slice()
 			.sort((a, b) => b.length - a.length);
-		return sortedFileNames.map((path) => ({ path, aliases: null }));
+		return sortedFileNames.map((path) => ({
+			path,
+			aliases: null,
+			restrictNamespace: false,
+		}));
 	};
 
 	describe("basic", () => {
 		it("replaces links", async () => {
-			const fileNames = getSortedFiles(["hello"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					frontmatter: "",
-					body: "hello",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-					settings: {
-						minCharCount: 0,
-					},
-				}),
-			).toBe("[[hello]]");
+			const files = getSortedFiles(["hello"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "hello",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0 },
+			});
+			expect(result).toBe("[[hello]]");
 		});
 
 		it("replaces links with bullet", async () => {
-			const fileNames = getSortedFiles(["hello"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					frontmatter: "",
-					body: "- hello",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("- [[hello]]");
+			const files = getSortedFiles(["hello"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "- hello",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("- [[hello]]");
 		});
 
 		it("replaces links with other texts", async () => {
 			{
-				const fileNames = getSortedFiles(["hello"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: "world hello",
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe("world [[hello]]");
+				const files = getSortedFiles(["hello"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "world hello",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("world [[hello]]");
 			}
 			{
-				const fileNames = getSortedFiles(["hello"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: "hello world",
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe("[[hello]] world");
+				const files = getSortedFiles(["hello"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "hello world",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("[[hello]] world");
 			}
 		});
 
 		it("replaces links with other texts and bullet", async () => {
 			{
-				const fileNames = getSortedFiles(["hello"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: "- world hello",
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe("- world [[hello]]");
+				const files = getSortedFiles(["hello"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "- world hello",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("- world [[hello]]");
 			}
 			{
-				const fileNames = getSortedFiles(["hello"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: "- hello world",
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe("- [[hello]] world");
+				const files = getSortedFiles(["hello"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "- hello world",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("- [[hello]] world");
 			}
 		});
 
 		it("replaces multiple links", async () => {
 			{
-				const fileNames = getSortedFiles(["hello", "world"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: "hello world",
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe("[[hello]] [[world]]");
+				const files = getSortedFiles(["hello", "world"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "hello world",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("[[hello]] [[world]]");
 			}
 			{
-				const fileNames = getSortedFiles(["hello", "world"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: `\nhello\nworld\n`,
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe(`\n[[hello]]\n[[world]]\n`);
+				const files = getSortedFiles(["hello", "world"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "\nhello\nworld\n",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("\n[[hello]]\n[[world]]\n");
 			}
 			{
-				const fileNames = getSortedFiles(["hello", "world"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: `\nhello\nworld aaaaa\n`,
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe(`\n[[hello]]\n[[world]] aaaaa\n`);
+				const files = getSortedFiles(["hello", "world"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "\nhello\nworld aaaaa\n",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("\n[[hello]]\n[[world]] aaaaa\n");
 			}
 			{
-				const fileNames = getSortedFiles(["hello", "world"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: `\n aaaaa hello\nworld bbbbb\n`,
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe(`\n aaaaa [[hello]]\n[[world]] bbbbb\n`);
+				const files = getSortedFiles(["hello", "world"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "\n aaaaa hello\nworld bbbbb\n",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("\n aaaaa [[hello]]\n[[world]] bbbbb\n");
 			}
 		});
 	});
 
 	describe("complex fileNames", () => {
 		it("unmatched namespace", async () => {
-			const fileNames = getSortedFiles([
-				"namespace/tag1",
-				"namespace/tag2",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "namespace",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("namespace");
-		});
-
-		it("single namespace", async () => {
-			const fileNames = getSortedFiles([
-				"namespace/tag1",
-				"namespace/tag2",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "namespace/tag1",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[namespace/tag1]]");
-		});
-
-		it("multiple namespaces", async () => {
-			const fileNames = getSortedFiles([
-				"namespace/tag1",
-				"namespace/tag2",
-				"namespace",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "namespace/tag1 namespace/tag2",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[namespace/tag1]] [[namespace/tag2]]");
-		});
-	});
-
-	describe("containing CJK", () => {
-		it("unmatched namespace", async () => {
-			const fileNames = getSortedFiles(["namespace/タグ"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "namespace",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("namespace");
-		});
-
-		it("multiple namespaces", async () => {
-			const fileNames = getSortedFiles([
-				"namespace/tag1",
-				"namespace/tag2",
-				"namespace/タグ3",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "namespace/tag1 namespace/tag2 namespace/タグ3",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[namespace/tag1]] [[namespace/tag2]] [[namespace/タグ3]]");
-		});
-	});
-
-	describe("starting CJK", () => {
-		it("unmatched namespace", async () => {
-			const fileNames = getSortedFiles(["namespace/タグ"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "名前空間",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("名前空間");
-		});
-
-		it("single namespace", async () => {
-			const fileNames = getSortedFiles([
-				"名前空間/tag1",
-				"名前空間/tag2",
-				"名前空間/タグ3",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "名前空間/tag1",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[名前空間/tag1]]");
-		});
-
-		it("multiple namespaces", async () => {
-			const fileNames = getSortedFiles([
-				"名前空間/tag1",
-				"名前空間/tag2",
-				"名前空間/タグ3",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]");
-		});
-
-		it("multiple CJK words", async () => {
-			const fileNames = getSortedFiles(["漢字", "ひらがな"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "- 漢字　ひらがな",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("- [[漢字]]　[[ひらがな]]");
-		});
-
-		it("multiple same CJK words", async () => {
-			const fileNames = getSortedFiles(["ひらがな"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "- ひらがなとひらがな",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("- [[ひらがな]]と[[ひらがな]]");
-		});
-	});
-
-	describe("CJK - Korean", () => {
-		it("converts Korean words to links", async () => {
-			// テスト用の韓国語ファイル名を登録
-			const fileNames = getSortedFiles(["한글", "테스트", "예시"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "한글 테스트 예시",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[한글]] [[테스트]] [[예시]]");
-		});
-
-		it("converts Korean words within sentence", async () => {
-			// 文章中に韓国語の候補が含まれるケース
-			const fileNames = getSortedFiles(["문서"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "이 문서는 문서이다.",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("이 문서는 [[문서]]이다.");
-		});
-	});
-
-	describe("CJK - Chinese", () => {
-		it("converts Chinese words to links", async () => {
-			// テスト用の中国語ファイル名を登録
-			const fileNames = getSortedFiles(["汉字", "测试", "示例"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "汉字 测试 示例",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[汉字]] [[测试]] [[示例]]");
-		});
-
-		it("converts Chinese words within sentence", async () => {
-			// 文章中に中国語の候補が含まれるケース
-			const fileNames = getSortedFiles(["文档"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "这个文档很好。",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("这个[[文档]]很好。");
-		});
-	});
-
-	describe("base character (pages)", () => {
-		it("unmatched namespace", async () => {
-			const fileNames = getSortedFiles(["pages/tags"]);
-			// Pass baseDirs to buildCandidateTrie so that the short candidate is created.
-			const { candidateMap, trie } = buildCandidateTrie(fileNames, [
-				"pages",
-			]);
-			expect(
-				await replaceLinks({
-					body: "tags",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[tags]]");
-		});
-	});
-
-	it("multiple links in the same line", async () => {
-		const fileNames = getSortedFiles(["pages/tags", "サウナ", "tags"]);
-		const { candidateMap, trie } = buildCandidateTrie(fileNames, ["pages"]);
-		expect(
-			await replaceLinks({
-				body: "サウナ tags pages/tags",
+			const files = getSortedFiles(["namespace/tag1", "namespace/tag2"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
 				frontmatter: "",
+				body: "namespace",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
 					trie,
 					candidateMap,
 				},
-			}),
-		).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
+			});
+			expect(result).toBe("namespace");
+		});
+
+		it("single namespace", async () => {
+			const files = getSortedFiles(["namespace/tag1", "namespace/tag2"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "namespace/tag1",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[namespace/tag1]]");
+		});
+
+		it("multiple namespaces", async () => {
+			const files = getSortedFiles([
+				"namespace/tag1",
+				"namespace/tag2",
+				"namespace",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "namespace/tag1 namespace/tag2",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[namespace/tag1]] [[namespace/tag2]]");
+		});
+	});
+
+	describe("containing CJK", () => {
+		it("unmatched namespace", async () => {
+			const files = getSortedFiles(["namespace/タグ"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "namespace",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("namespace");
+		});
+
+		it("multiple namespaces", async () => {
+			const files = getSortedFiles([
+				"namespace/tag1",
+				"namespace/tag2",
+				"namespace/タグ3",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "namespace/tag1 namespace/tag2 namespace/タグ3",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe(
+				"[[namespace/tag1]] [[namespace/tag2]] [[namespace/タグ3]]",
+			);
+		});
+	});
+
+	describe("starting CJK", () => {
+		it("unmatched namespace", async () => {
+			const files = getSortedFiles(["namespace/タグ"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "名前空間",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("名前空間");
+		});
+
+		it("single namespace", async () => {
+			const files = getSortedFiles([
+				"名前空間/tag1",
+				"名前空間/tag2",
+				"名前空間/タグ3",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "名前空間/tag1",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[名前空間/tag1]]");
+		});
+
+		it("multiple namespaces", async () => {
+			const files = getSortedFiles([
+				"名前空間/tag1",
+				"名前空間/tag2",
+				"名前空間/タグ3",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe(
+				"[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]",
+			);
+		});
+
+		it("multiple CJK words", async () => {
+			const files = getSortedFiles(["漢字", "ひらがな"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "- 漢字　ひらがな",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("- [[漢字]]　[[ひらがな]]");
+		});
+
+		it("multiple same CJK words", async () => {
+			const files = getSortedFiles(["ひらがな"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "- ひらがなとひらがな",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("- [[ひらがな]]と[[ひらがな]]");
+		});
+	});
+
+	describe("CJK - Korean", () => {
+		it("converts Korean words to links", async () => {
+			// 韓国語の候補ファイル
+			const files = getSortedFiles(["한글", "테스트", "예시"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "한글 테스트 예시",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[한글]] [[테스트]] [[예시]]");
+		});
+
+		it("converts Korean words within sentence", async () => {
+			const files = getSortedFiles(["문서"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "이 문서는 문서이다.",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("이 문서는 [[문서]]이다.");
+		});
+	});
+
+	describe("CJK - Chinese", () => {
+		it("converts Chinese words to links", async () => {
+			const files = getSortedFiles(["汉字", "测试", "示例"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "汉字 测试 示例",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[汉字]] [[测试]] [[示例]]");
+		});
+
+		it("converts Chinese words within sentence", async () => {
+			const files = getSortedFiles(["文档"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "这个文档很好。",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("这个[[文档]]很好。");
+		});
+	});
+
+	describe("base character (pages)", () => {
+		it("unmatched namespace", async () => {
+			const files = getSortedFiles(["pages/tags"]);
+			// baseDirs 指定により、短縮候補も登録される
+			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "tags",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[tags]]");
+		});
+	});
+
+	it("multiple links in the same line", async () => {
+		const files = getSortedFiles(["pages/tags", "サウナ", "tags"]);
+		const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
+		const result = await replaceLinks({
+			frontmatter: "",
+			body: "サウナ tags pages/tags",
+			linkResolverContext: {
+				filePath: "journals/2022-01-01",
+				trie,
+				candidateMap,
+			},
+		});
+		expect(result).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
 	});
 
 	describe("nested links", () => {
 		it("", async () => {
-			const fileNames = getSortedFiles([
+			const files = getSortedFiles([
 				"アジャイルリーダーコンピテンシーマップ",
 				"リーダー",
 			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "アジャイルリーダーコンピテンシーマップ",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "アジャイルリーダーコンピテンシーマップ",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 		});
 
 		it("existing links", async () => {
-			const fileNames = getSortedFiles([
+			const files = getSortedFiles([
 				"アジャイルリーダーコンピテンシーマップ",
 				"リーダー",
 			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "[[アジャイルリーダーコンピテンシーマップ]]",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "[[アジャイルリーダーコンピテンシーマップ]]",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 		});
 	});
 
 	describe("with space", () => {
 		it("", async () => {
-			const fileNames = getSortedFiles([
+			const files = getSortedFiles([
 				"obsidian/automatic linker",
 				"obsidian",
 			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "obsidian/automatic linker",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[obsidian/automatic linker]]");
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "obsidian/automatic linker",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[obsidian/automatic linker]]");
 		});
 	});
 
 	describe("ignore url", () => {
 		it("one url", async () => {
 			{
-				const fileNames = getSortedFiles(["example", "http", "https"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: "- https://example.com",
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe("- https://example.com");
-			}
-			{
-				const fileNames = getSortedFiles(["st"]);
-				const { candidateMap, trie } = buildCandidateTrie(fileNames);
-				expect(
-					await replaceLinks({
-						body: "- https://x.com/xxxx/status/12345?t=25S02Tda",
-						frontmatter: "",
-						linkResolverContext: {
-							filePath: "journals/2022-01-01",
-							trie,
-							candidateMap,
-						},
-					}),
-				).toBe("- https://x.com/xxxx/status/12345?t=25S02Tda");
-			}
-		});
-
-		it("multiple urls", async () => {
-			const fileNames = getSortedFiles([
-				"example",
-				"example1",
-				"https",
-				"http",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "- https://example.com https://example1.com",
+				const files = getSortedFiles(["example", "http", "https"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
 					frontmatter: "",
+					body: "- https://example.com",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
 						trie,
 						candidateMap,
 					},
-				}),
-			).toBe("- https://example.com https://example1.com");
+				});
+				expect(result).toBe("- https://example.com");
+			}
+			{
+				const files = getSortedFiles(["st"]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+				const result = await replaceLinks({
+					frontmatter: "",
+					body: "- https://x.com/xxxx/status/12345?t=25S02Tda",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe(
+					"- https://x.com/xxxx/status/12345?t=25S02Tda",
+				);
+			}
+		});
+
+		it("multiple urls", async () => {
+			const files = getSortedFiles([
+				"example",
+				"example1",
+				"https",
+				"http",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "- https://example.com https://example1.com",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("- https://example.com https://example1.com");
 		});
 
 		it("multiple urls with links", async () => {
-			const fileNames = getSortedFiles([
+			const files = getSortedFiles([
 				"example1",
 				"example",
 				"link",
 				"https",
 				"http",
 			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "- https://example.com https://example1.com link",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("- https://example.com https://example1.com [[link]]");
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "- https://example.com https://example1.com link",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe(
+				"- https://example.com https://example1.com [[link]]",
+			);
 		});
 	});
 
 	describe("ignore markdown url", () => {
 		it("one url", async () => {
-			const fileNames = getSortedFiles([
-				"example",
-				"title",
-				"https",
-				"http",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "- [title](https://example.com)",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("- [title](https://example.com)");
+			const files = getSortedFiles(["example", "title", "https", "http"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "- [title](https://example.com)",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("- [title](https://example.com)");
 		});
 
 		it("multiple urls", async () => {
-			const fileNames = getSortedFiles([
+			const files = getSortedFiles([
 				"example1",
 				"example2",
 				"title1",
@@ -960,24 +920,23 @@ if (import.meta.vitest) {
 				"https",
 				"http",
 			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "- [title1](https://example1.com) [title2](https://example2.com)",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe(
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "- [title1](https://example1.com) [title2](https://example2.com)",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe(
 				"- [title1](https://example1.com) [title2](https://example2.com)",
 			);
 		});
 
 		it("multiple urls with links", async () => {
-			const fileNames = getSortedFiles([
+			const files = getSortedFiles([
 				"example1",
 				"example2",
 				"title1",
@@ -986,18 +945,17 @@ if (import.meta.vitest) {
 				"http",
 				"link",
 			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "- [title1](https://example1.com) [title2](https://example2.com) link",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe(
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "- [title1](https://example1.com) [title2](https://example2.com) link",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe(
 				"- [title1](https://example1.com) [title2](https://example2.com) [[link]]",
 			);
 		});
@@ -1005,186 +963,170 @@ if (import.meta.vitest) {
 
 	describe("ignore code", () => {
 		it("inline code", async () => {
-			const fileNames = getSortedFiles(["example", "code"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "`code` example",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("`code` [[example]]");
+			const files = getSortedFiles(["example", "code"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "`code` example",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("`code` [[example]]");
 		});
 
 		it("code block", async () => {
-			const fileNames = getSortedFiles(["example", "typescript"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "```typescript\nexample\n```",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("```typescript\nexample\n```");
+			const files = getSortedFiles(["example", "typescript"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "```typescript\nexample\n```",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("```typescript\nexample\n```");
 		});
+
 		it("skips replacement when content is too short", async () => {
-			const fileNames = getSortedFiles(["hello"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			// When minCharCount is higher than the body length, no replacement should occur.
-			expect(
-				await replaceLinks({
-					body: "hello",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-					settings: {
-						minCharCount: 10,
-					},
-				}),
-			).toBe("hello");
+			const files = getSortedFiles(["hello"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "hello",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 10 },
+			});
+			expect(result).toBe("hello");
 		});
 	});
 
 	describe("aliases", () => {
 		it("replaces alias with canonical form using file path and alias", async () => {
-			// File information with aliases
-			const files = [
-				{ path: "pages/HelloWorld", aliases: ["Hello", "HW"] },
+			const files: FileObject[] = [
+				{
+					path: "pages/HelloWorld",
+					aliases: ["Hello", "HW"],
+					restrictNamespace: false,
+				},
 			];
 			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
-			// "Hello" is registered as an alias with canonical value "pages/HelloWorld|Hello"
-			expect(
-				await replaceLinks({
-					body: "Hello",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[pages/HelloWorld|Hello]]");
-			// "HW" is treated the same way
-			expect(
-				await replaceLinks({
-					body: "HW",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[pages/HelloWorld|HW]]");
-			// The normal candidate "HelloWorld" is registered normally
-			expect(
-				await replaceLinks({
-					body: "HelloWorld",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[HelloWorld]]");
+			const result1 = await replaceLinks({
+				frontmatter: "",
+				body: "Hello",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result1).toBe("[[pages/HelloWorld|Hello]]");
+
+			const result2 = await replaceLinks({
+				frontmatter: "",
+				body: "HW",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result2).toBe("[[pages/HelloWorld|HW]]");
+
+			const result3 = await replaceLinks({
+				frontmatter: "",
+				body: "HelloWorld",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result3).toBe("[[HelloWorld]]");
 		});
 
 		it("replaces multiple occurrences of alias and normal candidate", async () => {
-			// File information with aliases
-			const files = [{ path: "pages/HelloWorld", aliases: ["Hello"] }];
+			const files: FileObject[] = [
+				{
+					path: "pages/HelloWorld",
+					aliases: ["Hello"],
+					restrictNamespace: false,
+				},
+			];
 			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
-			// Verify replacement when alias and normal candidate coexist in the text
-			expect(
-				await replaceLinks({
-					body: "Hello HelloWorld",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-				}),
-			).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "Hello HelloWorld",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
 		});
 	});
 
 	describe("namespace resolution", () => {
 		it("replaces candidate with namespace when full candidate is provided", async () => {
-			// Test that a candidate including a namespace is correctly replaced when the full candidate string is used in the content.
-			const fileNames = getSortedFiles(["namespaces/link"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "namespaces/link",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-					settings: {
-						namespaceResolution: true,
-					},
-				}),
-			).toBe("[[namespaces/link]]");
+			const files = getSortedFiles(["namespaces/link"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "namespaces/link",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: { namespaceResolution: true },
+			});
+			expect(result).toBe("[[namespaces/link]]");
 		});
 
 		it("replaces candidate without namespace correctly", async () => {
-			// Test that a candidate without any namespace is correctly replaced.
-			const fileNames = getSortedFiles(["link"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "link",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-					settings: {
-						namespaceResolution: true,
-					},
-				}),
-			).toBe("[[link]]");
+			const files = getSortedFiles(["link"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "link",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: { namespaceResolution: true },
+			});
+			expect(result).toBe("[[link]]");
 		});
 
 		it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
-			// Test that if the candidate has a namespace, using a YYY-MM-DD formatted date
-			// (with hyphens instead of slashes) does not trigger a replacement.
-			const fileNames = getSortedFiles(["2025/02/08"]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-			expect(
-				await replaceLinks({
-					body: "2025-02-08",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "journals/2022-01-01",
-						trie,
-						candidateMap,
-					},
-					settings: {
-						namespaceResolution: true,
-					},
-				}),
-			).toBe("2025-02-08");
+			const files = getSortedFiles(["2025/02/08"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "2025-02-08",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: { namespaceResolution: true },
+			});
+			expect(result).toBe("2025-02-08");
 		});
 	});
 
 	describe("namespace resolution nearlest file path", () => {
-		const fileNames = getSortedFiles([
+		const files = getSortedFiles([
 			"namespace1/subnamespace/link",
 			"namespace2/super-super-long-long-directory/link",
 			"namespace3/link",
@@ -1192,98 +1134,85 @@ if (import.meta.vitest) {
 			"namespace4/a/b/c/d/e/f/link",
 			"namespace4/a/b/c/link",
 		]);
-		const { candidateMap, trie } = buildCandidateTrie(fileNames);
+		const { candidateMap, trie } = buildCandidateTrie(files);
 
 		it("closest siblings namespace should be used", async () => {
-			// Test that if the candidate has a namespace, using only the shorthand (without the namespace) in the content expands to the full namespaced candidate.
-
-			// siblings
-			expect(
-				await replaceLinks({
-					body: "link",
+			{
+				const result = await replaceLinks({
 					frontmatter: "",
+					body: "link",
 					linkResolverContext: {
 						filePath: "namespace4/a/b/c/current-file",
 						trie,
 						candidateMap,
 					},
-					settings: {
-						namespaceResolution: true,
-					},
-				}),
-			).toBe("[[namespace4/a/b/c/link]]");
-
-			// siblings
-			expect(
-				await replaceLinks({
-					body: "link",
+					settings: { namespaceResolution: true },
+				});
+				expect(result).toBe("[[namespace4/a/b/c/link]]");
+			}
+			{
+				const result = await replaceLinks({
 					frontmatter: "",
+					body: "link",
 					linkResolverContext: {
 						filePath: "namespace4/a/b/c/d/current-file",
 						trie,
 						candidateMap,
 					},
-					settings: {
-						namespaceResolution: true,
-					},
-				}),
-			).toBe("[[namespace4/a/b/c/d/link]]");
-
-			// closest namespace should be used
-			expect(
-				await replaceLinks({
-					body: "link",
+					settings: { namespaceResolution: true },
+				});
+				expect(result).toBe("[[namespace4/a/b/c/d/link]]");
+			}
+			{
+				const result = await replaceLinks({
 					frontmatter: "",
+					body: "link",
 					linkResolverContext: {
 						filePath: "namespace2/current-file",
 						trie,
 						candidateMap,
 					},
-					settings: {
-						namespaceResolution: true,
-					},
-				}),
-			).toBe("[[namespace2/super-super-long-long-directory/link]]");
+					settings: { namespaceResolution: true },
+				});
+				expect(result).toBe(
+					"[[namespace2/super-super-long-long-directory/link]]",
+				);
+			}
 		});
 
 		it("closest children namespace should be used", async () => {
-			// closest children
-			expect(
-				await replaceLinks({
-					body: "link",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "namespace4/a/b/current-file",
-						trie,
-						candidateMap,
-					},
-					settings: {
-						namespaceResolution: true,
-					},
-				}),
-			).toBe("[[namespace4/a/b/c/link]]");
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "link",
+				linkResolverContext: {
+					filePath: "namespace4/a/b/current-file",
+					trie,
+					candidateMap,
+				},
+				settings: { namespaceResolution: true },
+			});
+			expect(result).toBe("[[namespace4/a/b/c/link]]");
 		});
 
 		it("usual process if no closest namespace", async () => {
-			expect(
-				await replaceLinks({
-					body: "link",
-					frontmatter: "",
-					linkResolverContext: {
-						filePath: "current-file",
-						trie,
-						candidateMap,
-					},
-					settings: {
-						namespaceResolution: true,
-					},
-				}),
-			).toBe("[[namespace2/super-super-long-long-directory/link]]");
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "link",
+				linkResolverContext: {
+					filePath: "current-file",
+					trie,
+					candidateMap,
+				},
+				settings: { namespaceResolution: true },
+			});
+			expect(result).toBe(
+				"[[namespace2/super-super-long-long-directory/link]]",
+			);
 		});
 	});
 
 	it("ignore month notes", async () => {
-		const fileNames = getSortedFiles([
+		const files = getSortedFiles([
 			"01",
 			"02",
 			"03",
@@ -1327,17 +1256,231 @@ if (import.meta.vitest) {
 			"namespace/8",
 			"namespace/9",
 		]);
-		const { candidateMap, trie } = buildCandidateTrie(fileNames);
-		expect(
-			await replaceLinks({
-				body: "01 1 12 namespace/01",
-				frontmatter: "",
-				linkResolverContext: {
-					filePath: "journals/2022-01-01",
-					trie,
-					candidateMap,
+		const { candidateMap, trie } = buildCandidateTrie(files);
+		const result = await replaceLinks({
+			frontmatter: "",
+			body: "01 1 12 namespace/01",
+			linkResolverContext: {
+				filePath: "journals/2022-01-01",
+				trie,
+				candidateMap,
+			},
+		});
+		expect(result).toBe("01 1 12 [[namespace/01]]");
+	});
+
+	describe("replaceLinks (manual candidateMap/trie)", () => {
+		const candidateMap = new Map<string, CandidateData>([
+			[
+				"x",
+				{
+					canonical: "namespace/x",
+					restrictNamespace: true,
+					namespace: "namespace",
 				},
-			}),
-		).toBe("01 1 12 [[namespace/01]]");
+			],
+			[
+				"z",
+				{
+					canonical: "namespace/y/z",
+					restrictNamespace: true,
+					namespace: "namespace",
+				},
+			],
+			[
+				"root",
+				{
+					canonical: "root-note",
+					restrictNamespace: true,
+					namespace: "",
+				},
+			],
+			[
+				"free",
+				{
+					canonical: "free-note",
+					restrictNamespace: false,
+					namespace: "other",
+				},
+			],
+			// alias 用
+			[
+				"pages/HelloWorld",
+				{
+					canonical: "pages/HelloWorld",
+					restrictNamespace: false,
+					namespace: "pages",
+				},
+			],
+			[
+				"Hello",
+				{
+					canonical: "pages/HelloWorld|Hello",
+					restrictNamespace: false,
+					namespace: "pages",
+				},
+			],
+			[
+				"HelloWorld",
+				{
+					canonical: "HelloWorld",
+					restrictNamespace: false,
+					namespace: "pages",
+				},
+			],
+			[
+				"pages/tags",
+				{
+					canonical: "pages/tags",
+					restrictNamespace: false,
+					namespace: "pages",
+				},
+			],
+			[
+				"tags",
+				{
+					canonical: "tags",
+					restrictNamespace: false,
+					namespace: "pages",
+				},
+			],
+			// 韓国語
+			[
+				"문서",
+				{
+					canonical: "문서",
+					restrictNamespace: false,
+					namespace: "namespace",
+				},
+			],
+			// 日本語
+			[
+				"ひらがな",
+				{
+					canonical: "ひらがな",
+					restrictNamespace: false,
+					namespace: "namespace",
+				},
+			],
+			// 中国語
+			[
+				"文档",
+				{
+					canonical: "文档",
+					restrictNamespace: false,
+					namespace: "namespace",
+				},
+			],
+		]);
+		const trie = buildTrie(Array.from(candidateMap.keys()));
+
+		describe("replaceLinks", () => {
+			it("CJK - Korean > converts Korean words within sentence", async () => {
+				const body = "이 문서는 문서이다.";
+				const result = await replaceLinks({
+					frontmatter: "",
+					body,
+					linkResolverContext: {
+						filePath: "namespace/note",
+						trie,
+						candidateMap,
+					},
+					settings: { minCharCount: 0, namespaceResolution: true },
+				});
+				expect(result).toBe("이 문서는 [[문서]]이다.");
+			});
+
+			it("starting CJK > multiple same CJK words", async () => {
+				const body = "- ひらがなとひらがな";
+				const result = await replaceLinks({
+					frontmatter: "",
+					body,
+					linkResolverContext: {
+						filePath: "namespace/note",
+						trie,
+						candidateMap,
+					},
+					settings: { minCharCount: 0, namespaceResolution: true },
+				});
+				expect(result).toBe("- [[ひらがな]]と[[ひらがな]]");
+			});
+
+			it("CJK - Chinese > converts Chinese words within sentence", async () => {
+				const body = "这个文档很好。";
+				const result = await replaceLinks({
+					frontmatter: "",
+					body,
+					linkResolverContext: {
+						filePath: "namespace/note",
+						trie,
+						candidateMap,
+					},
+					settings: { minCharCount: 0, namespaceResolution: true },
+				});
+				expect(result).toBe("这个[[文档]]很好。");
+			});
+
+			it("base character (pages) > unmatched namespace", async () => {
+				const body = "tags";
+				const result = await replaceLinks({
+					frontmatter: "",
+					body,
+					linkResolverContext: {
+						filePath: "root-note",
+						trie,
+						candidateMap,
+					},
+					settings: { minCharCount: 0, namespaceResolution: true },
+				});
+				expect(result).toBe("[[tags]]");
+			});
+
+			it("aliases > replaces alias with canonical form using file path and alias", async () => {
+				const body = "HelloWorld";
+				const result = await replaceLinks({
+					frontmatter: "",
+					body,
+					linkResolverContext: {
+						filePath: "pages/Note",
+						trie,
+						candidateMap,
+					},
+					settings: { minCharCount: 0, namespaceResolution: true },
+				});
+				expect(result).toBe("[[HelloWorld]]");
+			});
+
+			it("aliases > replaces multiple occurrences of alias and normal candidate", async () => {
+				const body = "Hello HelloWorld";
+				const result = await replaceLinks({
+					frontmatter: "",
+					body,
+					linkResolverContext: {
+						filePath: "pages/Note",
+						trie,
+						candidateMap,
+					},
+					settings: { minCharCount: 0, namespaceResolution: true },
+				});
+				expect(result).toBe(
+					"[[pages/HelloWorld|Hello]] [[HelloWorld]]",
+				);
+			});
+
+			it("replaceLinks > should not replace when inside a protected segment", async () => {
+				const body = "Some text `x` more text";
+				const result = await replaceLinks({
+					frontmatter: "",
+					body,
+					linkResolverContext: {
+						filePath: "namespace/note",
+						trie,
+						candidateMap,
+					},
+					settings: { minCharCount: 0, namespaceResolution: true },
+				});
+				expect(result).toBe("Some text `x` more text");
+			});
+		});
 	});
 }

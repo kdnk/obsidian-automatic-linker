@@ -1,35 +1,3 @@
-import { PathAndAliases } from "./path-and-aliases.types";
-
-/**
- * Type definition for a node in the Trie.
- */
-export interface TrieNode {
-	children: Map<string, TrieNode>;
-	// If this node marks the end of a candidate string, store the candidate.
-	candidate?: string;
-}
-
-/**
- * Helper function to build a Trie from a list of words.
- *
- * @param words - List of candidate words.
- * @returns The root of the Trie.
- */
-export const buildTrie = (words: string[]): TrieNode => {
-	const root: TrieNode = { children: new Map() };
-	for (const word of words) {
-		let node = root;
-		for (const ch of word) {
-			if (!node.children.has(ch)) {
-				node.children.set(ch, { children: new Map() });
-			}
-			node = node.children.get(ch)!;
-		}
-		node.candidate = word;
-	}
-	return root;
-};
-
 /**
  * Builds a candidate map and Trie from a list of file names.
  *
@@ -43,14 +11,64 @@ export const buildTrie = (words: string[]): TrieNode => {
  * @param baseDirs - List of base directories to consider for short names.
  * @returns An object containing the candidateMap and Trie.
  */
+// src/trie.ts
+
+import { PathAndAliases } from "./path-and-aliases.types";
+
+export interface TrieNode {
+	children: Map<string, TrieNode>;
+	/** このノードで完結する候補文字列（あれば） */
+	candidate?: string;
+}
+
+// Helper function to get the top‑level namespace of a path.
+// If the file path contains at least one "/" then return the first segment; otherwise return an empty string.
+const getNamespace = (path: string): string => {
+	const segments = path.split("/");
+	return segments.length > 1 ? segments[0] : "";
+};
+
+/** 単語リストから Trie を構築 */
+export const buildTrie = (words: string[]): TrieNode => {
+	const root: TrieNode = { children: new Map() };
+	for (const word of words) {
+		let node = root;
+		for (const char of word) {
+			if (!node.children.has(char)) {
+				node.children.set(char, { children: new Map() });
+			}
+			node = node.children.get(char)!;
+		}
+		node.candidate = word;
+	}
+	return root;
+};
+
+// CandidateData holds the canonical replacement string as well as namespace‐設定
+export interface CandidateData {
+	canonical: string;
+	restrictNamespace: boolean;
+	namespace: string;
+}
+
 export const buildCandidateTrie = (
 	allFiles: PathAndAliases[],
 	baseDirs: string[] = ["pages"],
 ) => {
-	// Process candidate strings (create normal candidates from file paths)
-	type Candidate = { full: string; short: string | null };
+	// Process candidate strings from file paths.
+	type Candidate = {
+		full: string;
+		short: string | null;
+		restrictNamespace: boolean;
+		namespace: string;
+	};
 	const candidates: Candidate[] = allFiles.map((f) => {
-		const candidate: Candidate = { full: f.path, short: null };
+		const candidate: Candidate = {
+			full: f.path,
+			short: null,
+			restrictNamespace: f.restrictNamespace,
+			namespace: getNamespace(f.path),
+		};
 		for (const dir of baseDirs) {
 			const prefix = `${dir}/`;
 			if (f.path.startsWith(prefix)) {
@@ -61,31 +79,55 @@ export const buildCandidateTrie = (
 		return candidate;
 	});
 
-	// Build a mapping from candidate string to its canonical replacement.
-	const candidateMap = new Map<string, string>();
+	// Build a mapping from candidate string to its CandidateData.
+	const candidateMap = new Map<string, CandidateData>();
 
 	// Register normal candidates.
-	for (const { full, short } of candidates) {
-		candidateMap.set(full, full);
+	for (const { full, short, restrictNamespace, namespace } of candidates) {
+		// Register the full path candidate with canonical equal to the full path.
+		candidateMap.set(full, {
+			canonical: full,
+			restrictNamespace,
+			namespace,
+		});
+		// If a shorthand exists, register it with canonical equal to the shorthand.
 		if (short && !candidateMap.has(short)) {
-			candidateMap.set(short, short);
+			candidateMap.set(short, {
+				canonical: short,
+				restrictNamespace,
+				namespace,
+			});
 		}
 	}
 
 	// Register alias candidates.
 	for (const file of allFiles) {
 		if (file.aliases) {
+			// Determine shorthand candidate for the file if available.
+			let short: string | null = null;
+			for (const dir of baseDirs) {
+				const prefix = `${dir}/`;
+				if (file.path.startsWith(prefix)) {
+					short = file.path.slice(prefix.length);
+					break;
+				}
+			}
 			for (const alias of file.aliases) {
-				// Add only if the same alias does not already exist.
+				// If alias equals the shorthand, use alias as canonical; otherwise use "full|alias".
+				const canonicalForAlias =
+					short && alias === short ? alias : `${file.path}|${alias}`;
 				if (!candidateMap.has(alias)) {
-					// For an alias, register the canonical value as "file.path|alias"
-					candidateMap.set(alias, `${file.path}|${alias}`);
+					candidateMap.set(alias, {
+						canonical: canonicalForAlias,
+						restrictNamespace: file.restrictNamespace,
+						namespace: getNamespace(file.path),
+					});
 				}
 			}
 		}
 	}
 
-	// Build a Trie from the keys of the candidate map.
+	// Build a Trie from the keys of the candidateMap.
 	const trie = buildTrie(Array.from(candidateMap.keys()));
 
 	return { candidateMap, trie };

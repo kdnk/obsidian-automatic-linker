@@ -4,6 +4,7 @@ import {
 	Notice,
 	Plugin,
 	PluginManifest,
+	TFile,
 } from "obsidian";
 import { replaceLinks } from "./replace-links";
 import {
@@ -13,7 +14,7 @@ import {
 } from "./settings";
 import PCancelable from "p-cancelable";
 import throttle from "just-throttle";
-import { buildCandidateTrie, TrieNode } from "./trie";
+import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
 import { getAliases } from "./get-aliases";
 import { PathAndAliases } from "./path-and-aliases.types";
 
@@ -23,8 +24,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	private allFiles: PathAndAliases[] = [];
 	// Pre-built Trie for link candidate lookup
 	private trie: TrieNode | null = null;
-	// Mapping from candidate string to its canonical replacement
-	private candidateMap: Map<string, string> | null = null;
+	private candidateMap: Map<string, CandidateData> | null = null;
 	// Holds the currently running modifyLinks task (cancelable)
 	private currentModifyLinks: PCancelable<void> | null = null;
 	// Backup storage to hold original file content before modification (keyed by file path)
@@ -117,21 +117,31 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			new AutomaticLinkerPluginSettingsTab(this.app, this),
 		);
 
-		// Function to load file data and build the Trie.
+		const getNamespace = (path: string): string => {
+			const segments = path.split("/");
+			return segments.length > 1 ? segments[0] : "";
+		};
+
 		const refreshFileDataAndTrie = () => {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
 			const allFiles: PathAndAliases[] = allMarkdownFiles.map((file) => {
+				// Remove the .md extension
 				const path = file.path.replace(/\.md$/, "");
+				const metadata =
+					this.app.metadataCache.getFileCache(file)?.frontmatter;
+				const restrictNamespace =
+					metadata?.["automatic-linker-restrict-namespace"] === true;
 				return {
 					path,
 					aliases: getAliases(this.app, file, this.settings),
+					restrictNamespace,
 				};
 			});
 			// Sort filenames in descending order (longer paths first)
 			allFiles.sort((a, b) => b.path.length - a.path.length);
 			this.allFiles = allFiles;
 
-			// Build candidateMap and Trie using the helper function from trie.ts.
+			// Build candidateMap and Trie using the helper function.
 			const { candidateMap, trie } = buildCandidateTrie(
 				allFiles,
 				this.settings.baseDirs ?? ["pages"],
