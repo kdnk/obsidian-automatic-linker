@@ -1,3 +1,4 @@
+import { PathAndAliases } from "./path-and-aliases.types";
 import { buildCandidateTrie, buildTrie, CandidateData, TrieNode } from "./trie";
 
 export const replaceLinks = async ({
@@ -1011,7 +1012,7 @@ if (import.meta.vitest) {
 
 	describe("aliases", () => {
 		it("replaces alias with canonical form using file path and alias", async () => {
-			const files: FileObject[] = [
+			const files: PathAndAliases[] = [
 				{
 					path: "pages/HelloWorld",
 					aliases: ["Hello", "HW"],
@@ -1054,7 +1055,7 @@ if (import.meta.vitest) {
 		});
 
 		it("replaces multiple occurrences of alias and normal candidate", async () => {
-			const files: FileObject[] = [
+			const files: PathAndAliases[] = [
 				{
 					path: "pages/HelloWorld",
 					aliases: ["Hello"],

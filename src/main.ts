@@ -4,7 +4,6 @@ import {
 	Notice,
 	Plugin,
 	PluginManifest,
-	TFile,
 } from "obsidian";
 import { replaceLinks } from "./replace-links";
 import {
@@ -76,7 +75,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					// Fallback to an empty trie if not built.
 					const { contentStart } = getFrontMatterInfo(fileContent);
 					const updatedContent = await replaceLinks({
-						body: "",
+						body: fileContent.slice(contentStart),
 						frontmatter: fileContent.slice(0, contentStart),
 						linkResolverContext: {
 							filePath: activeFile.path.replace(/\.md$/, ""),
