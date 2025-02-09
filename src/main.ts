@@ -5,6 +5,7 @@ import {
 	Plugin,
 	PluginManifest,
 } from "obsidian";
+import AsyncLock from "async-lock";
 import { replaceLinks } from "./replace-links";
 import {
 	AutomaticLinkerPluginSettingsTab,
@@ -37,77 +38,45 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 	// Cancelable function to modify links in the active file
 	async modifyLinks() {
-		// If a previous task is running, cancel it first.
-		if (this.currentModifyLinks) {
-			this.currentModifyLinks.cancel();
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			return;
 		}
 
-		const cancelableTask = new PCancelable<void>(
-			async (resolve, reject, onCancel) => {
-				const activeFile = this.app.workspace.getActiveFile();
-				if (!activeFile) {
-					resolve();
-					return;
-				}
+		try {
+			// Read the current file content
+			const fileContent = (
+				await this.app.vault.read(activeFile)
+			).normalize("NFC");
+			// Save a backup before making any modifications
+			this.backupContent.set(activeFile.path, fileContent);
 
-				let canceled = false;
-				onCancel(() => {
-					canceled = true;
-				});
+			console.log(new Date().toISOString(), "modifyLinks started");
 
-				try {
-					// Read the current file content
-					const fileContent = (
-						await this.app.vault.read(activeFile)
-					).normalize("NFC");
-					// Save a backup before making any modifications
-					this.backupContent.set(activeFile.path, fileContent);
+			// Use the pre-built trie and candidateMap to replace links.
+			// Fallback to an empty trie if not built.
+			const { contentStart } = getFrontMatterInfo(fileContent);
+			const updatedContent = await replaceLinks({
+				body: fileContent.slice(contentStart),
+				frontmatter: fileContent.slice(0, contentStart),
+				linkResolverContext: {
+					filePath: activeFile.path.replace(/\.md$/, ""),
+					trie: this.trie ?? buildCandidateTrie([]).trie,
+					candidateMap: this.candidateMap ?? new Map(),
+				},
+				settings: {
+					minCharCount: this.settings.minCharCount,
+					namespaceResolution: this.settings.namespaceResolution,
+				},
+			});
 
-					if (canceled) {
-						return reject(new PCancelable.CancelError());
-					}
-					console.log(
-						new Date().toISOString(),
-						"modifyLinks started",
-					);
+			console.log(new Date().toISOString(), "modifyLinks finished");
 
-					// Use the pre-built trie and candidateMap to replace links.
-					// Fallback to an empty trie if not built.
-					const { contentStart } = getFrontMatterInfo(fileContent);
-					const updatedContent = await replaceLinks({
-						body: fileContent.slice(contentStart),
-						frontmatter: fileContent.slice(0, contentStart),
-						linkResolverContext: {
-							filePath: activeFile.path.replace(/\.md$/, ""),
-							trie: this.trie ?? buildCandidateTrie([]).trie,
-							candidateMap: this.candidateMap ?? new Map(),
-						},
-						settings: {
-							minCharCount: this.settings.minCharCount,
-							namespaceResolution:
-								this.settings.namespaceResolution,
-						},
-					});
-
-					console.log(
-						new Date().toISOString(),
-						"modifyLinks finished",
-					);
-
-					if (canceled) {
-						return reject(new PCancelable.CancelError());
-					}
-					// Overwrite the file with the updated content.
-					await this.app.vault.modify(activeFile, updatedContent);
-					resolve();
-				} catch (error) {
-					reject(error);
-				}
-			},
-		);
-
-		this.currentModifyLinks = cancelableTask;
-		return cancelableTask;
+			// Overwrite the file with the updated content.
+			await this.app.vault.modify(activeFile, updatedContent);
+		} catch (error) {
+			// noop
+		}
 	}
 
 	async onload() {
@@ -220,6 +189,14 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 		});
 
+		const lock = new AsyncLock();
+		const safeWrite = (
+			key: string,
+			writeOperation: () => Promise<void>,
+		): Promise<void> => {
+			return lock.acquire(key, writeOperation);
+		};
+
 		// Optionally, override the default save command to run modifyLinks (throttled).
 		const saveCommandDefinition =
 			// @ts-expect-error
@@ -245,8 +222,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				{ leading: true },
 			);
 			saveCommandDefinition.callback = async () => {
-				await throttledModifyLinks();
-				await save?.();
+				safeWrite("save", async () => {
+					await throttledModifyLinks();
+				});
+				safeWrite("save", async () => {
+					await save?.();
+				});
 			};
 		}
 	}

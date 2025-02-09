@@ -29,14 +29,13 @@ export const replaceLinks = async ({
 		return frontmatter + body;
 	}
 
-	// Determines whether a character is a word boundary.
-	// (Returns true if the character is undefined or does not match letters, numbers, underscore, slash, or hyphen.)
+	// Utility: returns true if a character is a word boundary.
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
 		return !/[\p{L}\p{N}_/-]/u.test(char);
 	};
 
-	// Determines if the candidate string represents a month note.
+	// Utility: returns true if the candidate string represents a month note.
 	const isMonthNote = (candidate: string): boolean =>
 		!candidate.includes("/") &&
 		/^[0-9]{1,2}$/.test(candidate) &&
@@ -55,9 +54,24 @@ export const replaceLinks = async ({
 		return frontmatter + body;
 	}
 
+	// Precompute fallbackIndex: a mapping from shorthand (the part after the last "/")
+	// to an array of candidateMap entries.
+	const fallbackIndex = new Map<string, Array<[string, CandidateData]>>();
+	for (const [key, data] of candidateMap.entries()) {
+		const slashIndex = key.lastIndexOf("/");
+		if (slashIndex === -1) continue;
+		const shorthand = key.slice(slashIndex + 1);
+		let arr = fallbackIndex.get(shorthand);
+		if (!arr) {
+			arr = [];
+			fallbackIndex.set(shorthand, arr);
+		}
+		arr.push([key, data]);
+	}
+
 	/**
-	 * Returns the effective namespace for the given file path.
-	 * If the filePath starts with one of the baseDirs (e.g. "pages/"), then the directory
+	 * Returns the effective namespace for a given file path.
+	 * If the file path starts with one of the baseDirs (e.g. "pages/"), then the directory
 	 * immediately under the baseDir is considered the effective namespace.
 	 */
 	const getEffectiveNamespace = (
@@ -76,7 +90,7 @@ export const replaceLinks = async ({
 		return segments[0] || "";
 	};
 
-	// Compute current file's effective namespace using settings.baseDirs if provided.
+	// Compute the current file's effective namespace.
 	const currentNamespace = settings.baseDirs
 		? getEffectiveNamespace(filePath, settings.baseDirs)
 		: (function () {
@@ -84,7 +98,7 @@ export const replaceLinks = async ({
 				return segments[0] || "";
 			})();
 
-	// Helper function to process a plain text segment.
+	// Helper function to process an unprotected segment.
 	const replaceInSegment = (text: string): string => {
 		let result = "";
 		let i = 0;
@@ -116,7 +130,6 @@ export const replaceLinks = async ({
 				j++;
 			}
 			if (lastCandidate) {
-				// Get the candidate string matched from the current position.
 				const candidate = text.substring(i, i + lastCandidate.length);
 				// Skip conversion for month notes.
 				if (isMonthNote(candidate)) {
@@ -135,7 +148,6 @@ export const replaceLinks = async ({
 					// For non-CJK or Korean candidates, perform word boundary checks.
 					if (!isCjkCandidate || isKorean) {
 						if (isKorean) {
-							// Check for common Korean particle suffix (e.g. "이다" optionally with a period).
 							const remaining = text.slice(i + candidate.length);
 							const suffixMatch = remaining.match(/^(이다\.?)/);
 							if (suffixMatch) {
@@ -157,9 +169,7 @@ export const replaceLinks = async ({
 							continue outer;
 						}
 					}
-					// For non-Korean CJK candidates, no boundary check is applied.
-					// Additionally, if namespace resolution is enabled and the candidate’s file is restricted,
-					// only replace if the current file's effective namespace matches.
+					// If namespace resolution is enabled and candidate is restricted, check namespaces.
 					if (
 						settings.namespaceResolution &&
 						candidateData.restrictNamespace &&
@@ -176,7 +186,7 @@ export const replaceLinks = async ({
 				}
 			}
 
-			// Fallback: namespace resolution if enabled.
+			// Fallback: if no candidate was found via the Trie.
 			if (settings.namespaceResolution) {
 				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
 				const fallbackMatch = text.slice(i).match(fallbackRegex);
@@ -197,54 +207,35 @@ export const replaceLinks = async ({
 						continue;
 					}
 
-					// Check for a single candidate match.
-					{
-						let count = 0;
-						let singleCandidate: CandidateData | undefined;
-						for (const [key, data] of candidateMap.entries()) {
-							const slashIndex = key.lastIndexOf("/");
-							if (slashIndex !== -1) {
-								const shorthand = key.slice(slashIndex + 1);
-								if (shorthand === word) {
-									if (
-										data.restrictNamespace &&
-										data.namespace !== currentNamespace
-									) {
-										continue;
-									}
-									count++;
-									singleCandidate = data;
-								}
-							}
-						}
-						if (count === 1 && singleCandidate !== undefined) {
-							result += `[[${singleCandidate.canonical}]]`;
-							i += word.length;
-							continue;
-						}
-					}
-
-					// Otherwise, try to resolve namespaces by selecting the best candidate.
-					let bestCandidateKey: string | null = null;
-					let bestCandidateData: CandidateData | null = null;
-					let bestScore = -1;
-					const filePathDir = filePath.includes("/")
-						? filePath.slice(0, filePath.lastIndexOf("/"))
-						: "";
-					const useLongerCandidate = filePathDir === "";
-					const filePathSegments = filePathDir
-						? filePathDir.split("/")
-						: [];
-					for (const [key, data] of candidateMap.entries()) {
-						const slashIndex = key.lastIndexOf("/");
-						if (slashIndex !== -1) {
-							const shorthand = key.slice(slashIndex + 1);
-							if (shorthand === word) {
-								if (
+					// Quickly retrieve matching candidate entries using fallbackIndex.
+					const candidateList = fallbackIndex.get(word);
+					if (candidateList) {
+						const filteredCandidates = candidateList.filter(
+							([, data]) =>
+								!(
 									data.restrictNamespace &&
 									data.namespace !== currentNamespace
-								)
-									continue;
+								),
+						);
+
+						if (filteredCandidates.length === 1) {
+							const candidateData = filteredCandidates[0][1];
+							result += `[[${candidateData.canonical}]]`;
+							i += word.length;
+							continue outer;
+						} else if (filteredCandidates.length > 1) {
+							let bestCandidate: [string, CandidateData] | null =
+								null;
+							let bestScore = -1;
+							const filePathDir = filePath.includes("/")
+								? filePath.slice(0, filePath.lastIndexOf("/"))
+								: "";
+							const useLongerCandidate = filePathDir === "";
+							const filePathSegments = filePathDir
+								? filePathDir.split("/")
+								: [];
+							for (const [key, data] of filteredCandidates) {
+								const slashIndex = key.lastIndexOf("/");
 								const candidateDir = key.slice(0, slashIndex);
 								const candidateSegments =
 									candidateDir.split("/");
@@ -269,26 +260,22 @@ export const replaceLinks = async ({
 								}
 								if (score > bestScore) {
 									bestScore = score;
-									bestCandidateData = data;
-									bestCandidateKey = key;
+									bestCandidate = [key, data];
 								} else if (
 									score === bestScore &&
-									bestCandidateData !== null &&
-									bestCandidateKey !== null
+									bestCandidate !== null
 								) {
-									// Tie-breaker:
 									if (useLongerCandidate) {
 										if (
-											key.length > bestCandidateKey.length
+											key.length > bestCandidate[0].length
 										) {
-											bestCandidateData = data;
-											bestCandidateKey = key;
+											bestCandidate = [key, data];
 										}
 									} else {
 										const currentBestDir =
-											bestCandidateKey.slice(
+											bestCandidate[0].slice(
 												0,
-												bestCandidateKey.lastIndexOf(
+												bestCandidate[0].lastIndexOf(
 													"/",
 												),
 											);
@@ -298,27 +285,25 @@ export const replaceLinks = async ({
 											candidateSegments.length <
 											currentBestSegments.length
 										) {
-											bestCandidateData = data;
-											bestCandidateKey = key;
+											bestCandidate = [key, data];
 										}
 									}
 								}
 							}
+							if (bestCandidate !== null) {
+								result += `[[${bestCandidate[1].canonical}]]`;
+								i += word.length;
+								continue outer;
+							}
 						}
 					}
-					if (bestCandidateData !== null) {
-						result += `[[${bestCandidateData.canonical}]]`;
-						i += word.length;
-						continue outer;
-					}
-
 					result += text[i];
 					i++;
 					continue;
 				}
 			}
 
-			// If no rules apply, output the current character as is.
+			// If no rule applies, output the current character.
 			result += text[i];
 			i++;
 		}

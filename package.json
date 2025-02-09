@@ -28,6 +28,8 @@
 		"@rollup/rollup-linux-x64-gnu": "4.6.1"
 	},
 	"dependencies": {
+		"@types/async-lock": "^1.4.2",
+		"async-lock": "^1.4.1",
 		"just-throttle": "^4.2.0"
 	}
 }
