@@ -1030,51 +1030,6 @@ if (import.meta.vitest) {
 			).toBe("[[link]]");
 		});
 
-		it("expands shorthand link to full namespaced candidate", async () => {
-			// Test that if the candidate has a namespace, using only the shorthand (without the namespace) in the content expands to the full namespaced candidate.
-			const fileNames = getSortedFiles([
-				"namespace1/subnamespace/link",
-				"namespace2/link",
-				"namespace3/link",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(fileNames);
-
-			// closest namespace should be used
-			expect(
-				await replaceLinks({
-					filePath: "namespace1/subnamespace/current-file",
-					fileContent: "link",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
-				}),
-			).toBe("[[namespace1/subnamespace/link]]");
-
-			// closest namespace should be used
-			expect(
-				await replaceLinks({
-					filePath: "namespace2/current-file",
-					fileContent: "link",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
-				}),
-			).toBe("[[namespace2/link]]");
-
-			expect(
-				await replaceLinks({
-					filePath: "current-file",
-					fileContent: "link",
-					trie,
-					candidateMap,
-					namespaceResolution: true,
-					getFrontMatterInfo,
-				}),
-			).toBe("[[namespace1/subnamespace/link]]");
-		});
-
 		it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
 			// Test that if the candidate has a namespace, using a YYY-MM-DD formatted date
 			// (with hyphens instead of slashes) does not trigger a replacement.
@@ -1090,6 +1045,55 @@ if (import.meta.vitest) {
 					getFrontMatterInfo,
 				}),
 			).toBe("2025-02-08");
+		});
+	});
+
+	describe("namespace resolution nearlest file path", () => {
+		it("expands shorthand link to full namespaced candidate", async () => {
+			// Test that if the candidate has a namespace, using only the shorthand (without the namespace) in the content expands to the full namespaced candidate.
+			const fileNames = getSortedFiles([
+				"namespace1/subnamespace/link",
+				"namespace2/super-super-long-long-directory/link",
+				"namespace3/link",
+				"namespace4/a/b/c/d/link",
+				"namespace4/a/b/c/link",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(fileNames);
+
+			// closest namespace should be used
+			expect(
+				await replaceLinks({
+					filePath: "namespace4/a/b/c/current-file",
+					fileContent: "link",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[namespace4/a/b/c/link]]");
+
+			// closest namespace should be used
+			expect(
+				await replaceLinks({
+					filePath: "namespace2/current-file",
+					fileContent: "link",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[namespace2/super-super-long-long-directory/link]]");
+
+			expect(
+				await replaceLinks({
+					filePath: "current-file",
+					fileContent: "link",
+					trie,
+					candidateMap,
+					namespaceResolution: true,
+					getFrontMatterInfo,
+				}),
+			).toBe("[[namespace2/super-super-long-long-directory/link]]");
 		});
 	});
 
