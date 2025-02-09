@@ -8,6 +8,7 @@ export const replaceLinks = async ({
 	settings = {
 		minCharCount: 0,
 		namespaceResolution: true,
+		baseDirs: undefined,
 	},
 }: {
 	body: string;
@@ -20,6 +21,7 @@ export const replaceLinks = async ({
 	settings?: {
 		minCharCount?: number;
 		namespaceResolution?: boolean;
+		baseDirs?: string[];
 	};
 }): Promise<string> => {
 	// Return content as-is if it's shorter than the minimum character count.
@@ -53,12 +55,34 @@ export const replaceLinks = async ({
 		return frontmatter + body;
 	}
 
-	// Helper to get the current file's top‑level namespace.
-	const getCurrentNamespace = (filePath: string): string => {
+	/**
+	 * Returns the effective namespace for the given file path.
+	 * If the filePath starts with one of the baseDirs (e.g. "pages/"), then the directory
+	 * immediately under the baseDir is considered the effective namespace.
+	 */
+	const getEffectiveNamespace = (
+		filePath: string,
+		baseDirs: string[],
+	): string => {
+		for (const baseDir of baseDirs) {
+			const prefix = baseDir + "/";
+			if (filePath.startsWith(prefix)) {
+				const rest = filePath.slice(prefix.length);
+				const segments = rest.split("/");
+				return segments[0] || "";
+			}
+		}
 		const segments = filePath.split("/");
-		return segments.length > 1 ? segments[0] : "";
+		return segments[0] || "";
 	};
-	const currentNamespace = getCurrentNamespace(filePath);
+
+	// Compute current file's effective namespace using settings.baseDirs if provided.
+	const currentNamespace = settings.baseDirs
+		? getEffectiveNamespace(filePath, settings.baseDirs)
+		: (function () {
+				const segments = filePath.split("/");
+				return segments[0] || "";
+			})();
 
 	// Helper function to process a plain text segment.
 	const replaceInSegment = (text: string): string => {
@@ -108,7 +132,7 @@ export const replaceLinks = async ({
 							candidate,
 						);
 					const isKorean = /^[\p{Script=Hangul}]+$/u.test(candidate);
-					// For non‑CJK or Korean candidates, perform word boundary checks.
+					// For non-CJK or Korean candidates, perform word boundary checks.
 					if (!isCjkCandidate || isKorean) {
 						if (isKorean) {
 							// Check for common Korean particle suffix (e.g. "이다" optionally with a period).
@@ -133,9 +157,9 @@ export const replaceLinks = async ({
 							continue outer;
 						}
 					}
-					// If candidate is non‑Korean CJK, no boundary check is applied.
+					// For non-Korean CJK candidates, no boundary check is applied.
 					// Additionally, if namespace resolution is enabled and the candidate’s file is restricted,
-					// only replace if the current file's top‑level namespace matches.
+					// only replace if the current file's effective namespace matches.
 					if (
 						settings.namespaceResolution &&
 						candidateData.restrictNamespace &&
@@ -1296,6 +1320,7 @@ if (import.meta.vitest) {
 					namespace: "",
 				},
 			],
+			// Candidate without namespace restriction.
 			[
 				"free",
 				{
@@ -1304,7 +1329,8 @@ if (import.meta.vitest) {
 					namespace: "other",
 				},
 			],
-			// alias 用
+			// For alias testing:
+			// Assume file "pages/HelloWorld" with shorthand "HelloWorld"
 			[
 				"pages/HelloWorld",
 				{
@@ -1313,6 +1339,7 @@ if (import.meta.vitest) {
 					namespace: "pages",
 				},
 			],
+			// Alias "Hello" is different from the shorthand, so canonical becomes "pages/HelloWorld|Hello".
 			[
 				"Hello",
 				{
@@ -1321,6 +1348,7 @@ if (import.meta.vitest) {
 					namespace: "pages",
 				},
 			],
+			// Also register the shorthand candidate.
 			[
 				"HelloWorld",
 				{
@@ -1329,6 +1357,7 @@ if (import.meta.vitest) {
 					namespace: "pages",
 				},
 			],
+			// For "tags" test: candidate key "tags" should map to canonical "tags"
 			[
 				"pages/tags",
 				{
@@ -1345,7 +1374,7 @@ if (import.meta.vitest) {
 					namespace: "pages",
 				},
 			],
-			// 韓国語
+			// For Korean test, add candidate "문서"
 			[
 				"문서",
 				{
@@ -1354,7 +1383,7 @@ if (import.meta.vitest) {
 					namespace: "namespace",
 				},
 			],
-			// 日本語
+			// For Japanese test, add candidate "ひらがな"
 			[
 				"ひらがな",
 				{
@@ -1363,7 +1392,7 @@ if (import.meta.vitest) {
 					namespace: "namespace",
 				},
 			],
-			// 中国語
+			// For Chinese test, add candidate "文档"
 			[
 				"文档",
 				{
@@ -1373,114 +1402,164 @@ if (import.meta.vitest) {
 				},
 			],
 		]);
-		const trie = buildTrie(Array.from(candidateMap.keys()));
 
-		describe("replaceLinks", () => {
-			it("CJK - Korean > converts Korean words within sentence", async () => {
-				const body = "이 문서는 문서이다.";
+		it("CJK - Korean > converts Korean words within sentence", async () => {
+			const trie = buildTrie(Array.from(candidateMap.keys()));
+			const body = "이 문서는 문서이다.";
+			const result = await replaceLinks({
+				frontmatter: "",
+				body,
+				linkResolverContext: {
+					filePath: "namespace/note",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0, namespaceResolution: true },
+			});
+			expect(result).toBe("이 문서는 [[문서]]이다.");
+		});
+
+		it("starting CJK > multiple same CJK words", async () => {
+			const trie = buildTrie(Array.from(candidateMap.keys()));
+			const body = "- ひらがなとひらがな";
+			const result = await replaceLinks({
+				frontmatter: "",
+				body,
+				linkResolverContext: {
+					filePath: "namespace/note",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0, namespaceResolution: true },
+			});
+			expect(result).toBe("- [[ひらがな]]と[[ひらがな]]");
+		});
+
+		it("CJK - Chinese > converts Chinese words within sentence", async () => {
+			const trie = buildTrie(Array.from(candidateMap.keys()));
+			const body = "这个文档很好。";
+			const result = await replaceLinks({
+				frontmatter: "",
+				body,
+				linkResolverContext: {
+					filePath: "namespace/note",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0, namespaceResolution: true },
+			});
+			expect(result).toBe("这个[[文档]]很好。");
+		});
+
+		it("base character (pages) > unmatched namespace", async () => {
+			const trie = buildTrie(Array.from(candidateMap.keys()));
+			const body = "tags";
+			const result = await replaceLinks({
+				frontmatter: "",
+				body,
+				linkResolverContext: {
+					filePath: "root-note",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0, namespaceResolution: true },
+			});
+			expect(result).toBe("[[tags]]");
+		});
+
+		it("aliases > replaces alias with canonical form using file path and alias", async () => {
+			const trie = buildTrie(Array.from(candidateMap.keys()));
+			const body = "HelloWorld";
+			const result = await replaceLinks({
+				frontmatter: "",
+				body,
+				linkResolverContext: {
+					filePath: "pages/Note",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0, namespaceResolution: true },
+			});
+			expect(result).toBe("[[HelloWorld]]");
+		});
+
+		it("aliases > replaces multiple occurrences of alias and normal candidate", async () => {
+			const trie = buildTrie(Array.from(candidateMap.keys()));
+			const body = "Hello HelloWorld";
+			const result = await replaceLinks({
+				frontmatter: "",
+				body,
+				linkResolverContext: {
+					filePath: "pages/Note",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0, namespaceResolution: true },
+			});
+			expect(result).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
+		});
+
+		it("replaceLinks > should not replace when inside a protected segment", async () => {
+			const trie = buildTrie(Array.from(candidateMap.keys()));
+			const body = "Some text `x` more text";
+			const result = await replaceLinks({
+				frontmatter: "",
+				body,
+				linkResolverContext: {
+					filePath: "namespace/note",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0, namespaceResolution: true },
+			});
+			expect(result).toBe("Some text `x` more text");
+		});
+
+		describe("automatic-linker-restrict-namespace and base dir", () => {
+			// Add candidate "a" corresponding to a file at "pages/set/a"
+			// with restrictNamespace enabled and an effective namespace of "set".
+			candidateMap.set("a", {
+				canonical: "set/a",
+				restrictNamespace: true,
+				namespace: "set",
+			});
+			const trie = buildTrie(Array.from(candidateMap.keys()));
+
+			it("should replace candidate with restrictNamespace when effective namespace matches", async () => {
+				// Current file is in "pages/set/...", so effective namespace is "set"
+				const body = "a";
+				const frontmatter = "";
+				const filePath = "pages/set/current";
 				const result = await replaceLinks({
-					frontmatter: "",
 					body,
-					linkResolverContext: {
-						filePath: "namespace/note",
-						trie,
-						candidateMap,
+					frontmatter,
+					linkResolverContext: { filePath, trie, candidateMap },
+					settings: {
+						minCharCount: 0,
+						namespaceResolution: true,
+						baseDirs: ["pages"],
 					},
-					settings: { minCharCount: 0, namespaceResolution: true },
 				});
-				expect(result).toBe("이 문서는 [[문서]]이다.");
+				expect(result).toBe("[[set/a]]");
 			});
 
-			it("starting CJK > multiple same CJK words", async () => {
-				const body = "- ひらがなとひらがな";
+			it("should not replace candidate with restrictNamespace when effective namespace does not match", async () => {
+				// Current file is in "pages/other/...", so effective namespace is "other"
+				const body = "a";
+				const frontmatter = "";
+				const filePath = "pages/other/current";
 				const result = await replaceLinks({
-					frontmatter: "",
 					body,
-					linkResolverContext: {
-						filePath: "namespace/note",
-						trie,
-						candidateMap,
+					frontmatter,
+					linkResolverContext: { filePath, trie, candidateMap },
+					settings: {
+						minCharCount: 0,
+						namespaceResolution: true,
+						baseDirs: ["pages"],
 					},
-					settings: { minCharCount: 0, namespaceResolution: true },
 				});
-				expect(result).toBe("- [[ひらがな]]と[[ひらがな]]");
-			});
-
-			it("CJK - Chinese > converts Chinese words within sentence", async () => {
-				const body = "这个文档很好。";
-				const result = await replaceLinks({
-					frontmatter: "",
-					body,
-					linkResolverContext: {
-						filePath: "namespace/note",
-						trie,
-						candidateMap,
-					},
-					settings: { minCharCount: 0, namespaceResolution: true },
-				});
-				expect(result).toBe("这个[[文档]]很好。");
-			});
-
-			it("base character (pages) > unmatched namespace", async () => {
-				const body = "tags";
-				const result = await replaceLinks({
-					frontmatter: "",
-					body,
-					linkResolverContext: {
-						filePath: "root-note",
-						trie,
-						candidateMap,
-					},
-					settings: { minCharCount: 0, namespaceResolution: true },
-				});
-				expect(result).toBe("[[tags]]");
-			});
-
-			it("aliases > replaces alias with canonical form using file path and alias", async () => {
-				const body = "HelloWorld";
-				const result = await replaceLinks({
-					frontmatter: "",
-					body,
-					linkResolverContext: {
-						filePath: "pages/Note",
-						trie,
-						candidateMap,
-					},
-					settings: { minCharCount: 0, namespaceResolution: true },
-				});
-				expect(result).toBe("[[HelloWorld]]");
-			});
-
-			it("aliases > replaces multiple occurrences of alias and normal candidate", async () => {
-				const body = "Hello HelloWorld";
-				const result = await replaceLinks({
-					frontmatter: "",
-					body,
-					linkResolverContext: {
-						filePath: "pages/Note",
-						trie,
-						candidateMap,
-					},
-					settings: { minCharCount: 0, namespaceResolution: true },
-				});
-				expect(result).toBe(
-					"[[pages/HelloWorld|Hello]] [[HelloWorld]]",
-				);
-			});
-
-			it("replaceLinks > should not replace when inside a protected segment", async () => {
-				const body = "Some text `x` more text";
-				const result = await replaceLinks({
-					frontmatter: "",
-					body,
-					linkResolverContext: {
-						filePath: "namespace/note",
-						trie,
-						candidateMap,
-					},
-					settings: { minCharCount: 0, namespaceResolution: true },
-				});
-				expect(result).toBe("Some text `x` more text");
+				// Since effective namespace does not match ("set" vs "other"), no replacement occurs.
+				expect(result).toBe("a");
 			});
 		});
 	});

@@ -21,11 +21,23 @@ export interface TrieNode {
 	candidate?: string;
 }
 
-// Helper function to get the top‑level namespace of a path.
-// If the file path contains at least one "/" then return the first segment; otherwise return an empty string.
-const getNamespace = (path: string): string => {
+/**
+ * Returns the effective namespace for a given file path.
+ * If the path starts with one of the baseDirs (e.g. "pages/"), the directory immediately
+ * under the baseDir is considered the effective namespace.
+ */
+const getEffectiveNamespace = (path: string, baseDirs: string[]): string => {
+	for (const baseDir of baseDirs) {
+		const prefix = baseDir + "/";
+		if (path.startsWith(prefix)) {
+			const rest = path.slice(prefix.length);
+			const segments = rest.split("/");
+			return segments[0] || "";
+		}
+	}
+	// Fallback: return the first segment
 	const segments = path.split("/");
-	return segments.length > 1 ? segments[0] : "";
+	return segments[0] || "";
 };
 
 /** 単語リストから Trie を構築 */
@@ -60,6 +72,7 @@ export const buildCandidateTrie = (
 		full: string;
 		short: string | null;
 		restrictNamespace: boolean;
+		// Effective namespace computed relative to baseDirs.
 		namespace: string;
 	};
 	const candidates: Candidate[] = allFiles.map((f) => {
@@ -67,7 +80,7 @@ export const buildCandidateTrie = (
 			full: f.path,
 			short: null,
 			restrictNamespace: f.restrictNamespace,
-			namespace: getNamespace(f.path),
+			namespace: getEffectiveNamespace(f.path, baseDirs),
 		};
 		for (const dir of baseDirs) {
 			const prefix = `${dir}/`;
@@ -120,7 +133,7 @@ export const buildCandidateTrie = (
 					candidateMap.set(alias, {
 						canonical: canonicalForAlias,
 						restrictNamespace: file.restrictNamespace,
-						namespace: getNamespace(file.path),
+						namespace: getEffectiveNamespace(file.path, baseDirs),
 					});
 				}
 			}
