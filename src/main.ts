@@ -63,6 +63,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				settings: {
 					minCharCount: this.settings.minCharCount,
 					namespaceResolution: this.settings.namespaceResolution,
+					baseDir: this.settings.baseDir,
+					ignoreDateFormats: this.settings.ignoreDateFormats,
 				},
 			});
 

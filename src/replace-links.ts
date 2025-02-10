@@ -147,6 +147,7 @@ export const replaceLinks = async ({
 					continue;
 				}
 				if (candidateMap.has(candidate)) {
+					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					const candidateData = candidateMap.get(candidate)!;
 					// Determine if candidate is composed solely of CJK characters.
 					const isCjkCandidate =
@@ -767,8 +768,7 @@ if (import.meta.vitest) {
 	describe("base character (pages)", () => {
 		it("unmatched namespace", async () => {
 			const files = getSortedFiles(["pages/tags"]);
-			// baseDir 指定により、短縮候補も登録される
-			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
+			const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 			const result = await replaceLinks({
 				frontmatter: "",
 				body: "tags",
@@ -784,7 +784,7 @@ if (import.meta.vitest) {
 
 	it("multiple links in the same line", async () => {
 		const files = getSortedFiles(["pages/tags", "サウナ", "tags"]);
-		const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
+		const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 		const result = await replaceLinks({
 			frontmatter: "",
 			body: "サウナ tags pages/tags",
@@ -1056,7 +1056,7 @@ if (import.meta.vitest) {
 					restrictNamespace: false,
 				},
 			];
-			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
+			const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 			const result1 = await replaceLinks({
 				frontmatter: "",
 				body: "Hello",
@@ -1099,7 +1099,7 @@ if (import.meta.vitest) {
 					restrictNamespace: false,
 				},
 			];
-			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
+			const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 			const result = await replaceLinks({
 				frontmatter: "",
 				body: "Hello HelloWorld",
@@ -1347,8 +1347,7 @@ if (import.meta.vitest) {
 
 	describe("ignoreDateFormats setting", () => {
 		it("should not replace date format when ignoreDateFormats is true", async () => {
-			// 候補として "2025-02-10" を登録
-			const files = getSortedFiles(["2025-02-10"]);
+			const files = getSortedFiles(["2025-02-10", "journals/2025-02-10"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				frontmatter: "",
@@ -1368,7 +1367,6 @@ if (import.meta.vitest) {
 		});
 
 		it("should replace date format when ignoreDateFormats is false", async () => {
-			// 候補として "2025-02-10" を登録
 			const files = getSortedFiles(["2025-02-10"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
