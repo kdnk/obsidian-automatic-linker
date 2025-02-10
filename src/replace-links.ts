@@ -193,7 +193,7 @@ export const replaceLinks = async ({
 				if (fallbackMatch) {
 					const word = fallbackMatch[1];
 
-					// For date formats: if candidate is 2 digits and result ends with YYYY‑MM‑, skip conversion.
+					// For date formats: if candidate is 2 digits and result ends with YYYY-MM-, skip conversion.
 					if (/^\d{2}$/.test(word) && /\d{4}-\d{2}-$/.test(result)) {
 						result += text[i];
 						i++;
@@ -227,10 +227,10 @@ export const replaceLinks = async ({
 							let bestCandidate: [string, CandidateData] | null =
 								null;
 							let bestScore = -1;
+							// Get directory part of current file (if any)
 							const filePathDir = filePath.includes("/")
 								? filePath.slice(0, filePath.lastIndexOf("/"))
 								: "";
-							const useLongerCandidate = filePathDir === "";
 							const filePathSegments = filePathDir
 								? filePathDir.split("/")
 								: [];
@@ -265,13 +265,15 @@ export const replaceLinks = async ({
 									score === bestScore &&
 									bestCandidate !== null
 								) {
-									if (useLongerCandidate) {
+									if (filePathDir === "") {
+										// When current file is in base directory, choose the candidate with the shorter key
 										if (
-											key.length > bestCandidate[0].length
+											key.length < bestCandidate[0].length
 										) {
 											bestCandidate = [key, data];
 										}
 									} else {
+										// For non-base directories, choose candidate with fewer directory segments.
 										const currentBestDir =
 											bestCandidate[0].slice(
 												0,
@@ -283,7 +285,11 @@ export const replaceLinks = async ({
 											currentBestDir.split("/");
 										if (
 											candidateSegments.length <
-											currentBestSegments.length
+												currentBestSegments.length ||
+											(candidateSegments.length ===
+												currentBestSegments.length &&
+												key.length <
+													bestCandidate[0].length)
 										) {
 											bestCandidate = [key, data];
 										}
