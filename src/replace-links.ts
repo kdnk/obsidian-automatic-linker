@@ -1225,11 +1225,12 @@ if (import.meta.vitest) {
 			expect(result).toBe("[[namespace/a/b/c/link]]");
 		});
 
-		it("usual process if no closest namespace", async () => {
+		it("find closest path if no closest child namespace", async () => {
 			const files = getSortedFiles([
-				"namespace1/subnamespace/link",
-				"namespace2/super-super-long-long-directory/link",
-				"namespace3/link",
+				"namespace-super-super-long-long-long-long/link",
+				"namespace/link",
+				"namespace/a/link",
+				"namespace/a/b/link",
 				"namespace/a/b/c/link",
 				"namespace/a/b/c/d/link",
 				"namespace/a/b/c/d/e/f/link",
@@ -1245,9 +1246,7 @@ if (import.meta.vitest) {
 				},
 				settings: { namespaceResolution: true },
 			});
-			expect(result).toBe(
-				"[[namespace2/super-super-long-long-directory/link]]",
-			);
+			expect(result).toBe("[[namespace/link]]");
 		});
 	});
 
