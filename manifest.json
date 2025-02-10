@@ -1,7 +1,7 @@
 {
 	"id": "automatic-linker",
 	"name": "Automatic Linker",
-	"version": "0.12.1",
+	"version": "0.12.2",
 	"minAppVersion": "0.18.0",
 	"description": "Automatically converts plain text file references into Obsidian wiki links (i.e. `[[...]]`)",
 	"author": "Kodai Nakamura",
