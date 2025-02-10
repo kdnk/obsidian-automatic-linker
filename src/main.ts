@@ -2,6 +2,7 @@ import {
 	App,
 	getFrontMatterInfo,
 	Notice,
+	parseFrontMatterAliases,
 	Plugin,
 	PluginManifest,
 } from "obsidian";
@@ -15,7 +16,6 @@ import {
 import PCancelable from "p-cancelable";
 import throttle from "just-throttle";
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
-import { getAliases } from "./get-aliases";
 import { PathAndAliases } from "./path-and-aliases.types";
 
 export default class AutomaticLinkerPlugin extends Plugin {
@@ -93,9 +93,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					this.app.metadataCache.getFileCache(file)?.frontmatter;
 				const restrictNamespace =
 					metadata?.["automatic-linker-restrict-namespace"] === true;
+				const aliases = (() => {
+					if (this.settings.considerAliases) {
+						const frontmatter =
+							this.app.metadataCache.getFileCache(
+								file,
+							)?.frontmatter;
+						const aliases = parseFrontMatterAliases(frontmatter);
+						return aliases;
+					} else {
+						return null;
+					}
+				})();
 				return {
 					path,
-					aliases: getAliases(this.app, file, this.settings),
+					aliases,
 					restrictNamespace,
 				};
 			});
