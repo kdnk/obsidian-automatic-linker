@@ -1225,7 +1225,7 @@ if (import.meta.vitest) {
 			expect(result).toBe("[[namespace/a/b/c/link]]");
 		});
 
-		it("find closest path if no closest child namespace", async () => {
+		it("find closest path if the current path is in base dir and the candidate is not", async () => {
 			const files = getSortedFiles([
 				"namespace-super-super-long-long-long-long/link",
 				"namespace/link",
@@ -1247,6 +1247,18 @@ if (import.meta.vitest) {
 				settings: { namespaceResolution: true },
 			});
 			expect(result).toBe("[[namespace/link]]");
+
+			const result2 = await replaceLinks({
+				frontmatter: "",
+				body: "link",
+				linkResolverContext: {
+					filePath: "current-file",
+					trie,
+					candidateMap,
+				},
+				settings: { namespaceResolution: false },
+			});
+			expect(result2).toBe("link");
 		});
 	});
 
