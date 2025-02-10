@@ -330,14 +330,17 @@ if (import.meta.vitest) {
 	const { it, expect, describe } = import.meta.vitest;
 
 	// Helper to sort file names and create file objects.
-	const getSortedFiles = (fileNames: string[]) => {
+	const getSortedFiles = (
+		fileNames: string[],
+		restrictNamespace?: boolean,
+	) => {
 		const sortedFileNames = fileNames
 			.slice()
 			.sort((a, b) => b.length - a.length);
 		return sortedFileNames.map((path) => ({
 			path,
 			aliases: null,
-			restrictNamespace: false,
+			restrictNamespace: restrictNamespace ?? false,
 		}));
 	};
 
@@ -1136,75 +1139,102 @@ if (import.meta.vitest) {
 	});
 
 	describe("namespace resolution nearlest file path", () => {
-		const files = getSortedFiles([
-			"namespace1/subnamespace/link",
-			"namespace2/super-super-long-long-directory/link",
-			"namespace3/link",
-			"namespace4/a/b/c/d/link",
-			"namespace4/a/b/c/d/e/f/link",
-			"namespace4/a/b/c/link",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
-
 		it("closest siblings namespace should be used", async () => {
 			{
+				const files = getSortedFiles([
+					"namespace/a/b/c/d/link",
+					"namespace/a/b/c/d/e/f/link",
+					"namespace/a/b/c/link",
+				]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
+
 				const result = await replaceLinks({
 					frontmatter: "",
 					body: "link",
 					linkResolverContext: {
-						filePath: "namespace4/a/b/c/current-file",
+						filePath: "namespace/a/b/c/current-file",
 						trie,
 						candidateMap,
 					},
 					settings: { namespaceResolution: true },
 				});
-				expect(result).toBe("[[namespace4/a/b/c/link]]");
+				expect(result).toBe("[[namespace/a/b/c/link]]");
 			}
 			{
+				const files = getSortedFiles([
+					"namespace/a/b/c/link",
+					"namespace/a/b/c/d/link",
+					"namespace/a/b/c/d/e/f/link",
+				]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
 					frontmatter: "",
 					body: "link",
 					linkResolverContext: {
-						filePath: "namespace4/a/b/c/d/current-file",
+						filePath: "namespace/a/b/c/d/current-file",
 						trie,
 						candidateMap,
 					},
 					settings: { namespaceResolution: true },
 				});
-				expect(result).toBe("[[namespace4/a/b/c/d/link]]");
+				expect(result).toBe("[[namespace/a/b/c/d/link]]");
 			}
 			{
+				const files = getSortedFiles([
+					"namespace/xxx/link",
+					"another-namespace/link",
+					"another-namespace/a/b/c/link",
+					"another-namespace/a/b/c/d/link",
+					"another-namespace/a/b/c/d/e/f/link",
+				]);
+				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
 					frontmatter: "",
 					body: "link",
 					linkResolverContext: {
-						filePath: "namespace2/current-file",
+						filePath: "namespace/current-file",
 						trie,
 						candidateMap,
 					},
 					settings: { namespaceResolution: true },
 				});
-				expect(result).toBe(
-					"[[namespace2/super-super-long-long-directory/link]]",
-				);
+				expect(result).toBe("[[namespace/xxx/link]]");
 			}
 		});
 
 		it("closest children namespace should be used", async () => {
+			const files = getSortedFiles([
+				"namespace1/subnamespace/link",
+				"namespace2/super-super-long-long-directory/link",
+				"namespace3/link",
+				"namespace/a/b/c/link",
+				"namespace/a/b/c/d/link",
+				"namespace/a/b/c/d/e/f/link",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				frontmatter: "",
 				body: "link",
 				linkResolverContext: {
-					filePath: "namespace4/a/b/current-file",
+					filePath: "namespace/a/b/current-file",
 					trie,
 					candidateMap,
 				},
 				settings: { namespaceResolution: true },
 			});
-			expect(result).toBe("[[namespace4/a/b/c/link]]");
+			expect(result).toBe("[[namespace/a/b/c/link]]");
 		});
 
 		it("usual process if no closest namespace", async () => {
+			const files = getSortedFiles([
+				"namespace1/subnamespace/link",
+				"namespace2/super-super-long-long-directory/link",
+				"namespace3/link",
+				"namespace/a/b/c/link",
+				"namespace/a/b/c/d/link",
+				"namespace/a/b/c/d/e/f/link",
+			]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				frontmatter: "",
 				body: "link",
