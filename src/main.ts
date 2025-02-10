@@ -52,9 +52,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// Use the pre-built trie and candidateMap to replace links.
 			// Fallback to an empty trie if not built.
 			const { contentStart } = getFrontMatterInfo(fileContent);
-			const updatedContent = await replaceLinks({
+
+			const frontmatter = fileContent.slice(0, contentStart);
+			const updatedBody = await replaceLinks({
 				body: fileContent.slice(contentStart),
-				frontmatter: fileContent.slice(0, contentStart),
 				linkResolverContext: {
 					filePath: activeFile.path.replace(/\.md$/, ""),
 					trie: this.trie ?? buildCandidateTrie([]).trie,
@@ -71,7 +72,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			console.log(new Date().toISOString(), "modifyLinks finished");
 
 			// Overwrite the file with the updated content.
-			await this.app.vault.modify(activeFile, updatedContent);
+			await this.app.vault.modify(activeFile, frontmatter + updatedBody);
 		} catch (error) {
 			// noop
 		}

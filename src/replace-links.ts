@@ -3,7 +3,6 @@ import { buildCandidateTrie, buildTrie, CandidateData, TrieNode } from "./trie";
 
 export const replaceLinks = async ({
 	body,
-	frontmatter,
 	linkResolverContext: { filePath, trie, candidateMap },
 	settings = {
 		minCharCount: 0,
@@ -13,7 +12,6 @@ export const replaceLinks = async ({
 	},
 }: {
 	body: string;
-	frontmatter: string;
 	linkResolverContext: {
 		filePath: string;
 		trie: TrieNode;
@@ -28,7 +26,7 @@ export const replaceLinks = async ({
 }): Promise<string> => {
 	// Return content as-is if it's shorter than the minimum character count.
 	if (body.length <= (settings.minCharCount ?? 0)) {
-		return frontmatter + body;
+		return body;
 	}
 
 	// Utility: returns true if a character is a word boundary.
@@ -53,7 +51,7 @@ export const replaceLinks = async ({
 
 	// If the body consists solely of a protected link, return it unchanged.
 	if (/^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/.test(body)) {
-		return frontmatter + body;
+		return body;
 	}
 
 	// Precompute fallbackIndex: a mapping from shorthand (the part after the last "/")
@@ -349,7 +347,7 @@ export const replaceLinks = async ({
 	}
 	resultBody += replaceInSegment(body.slice(lastIndex));
 
-	return frontmatter + resultBody;
+	return resultBody;
 };
 
 if (import.meta.vitest) {
@@ -375,7 +373,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["hello"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -391,7 +388,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["hello"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "- hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -407,7 +403,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["hello"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "world hello",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -421,7 +416,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["hello"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "hello world",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -438,7 +432,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["hello"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "- world hello",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -452,7 +445,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["hello"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "- hello world",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -469,7 +461,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["hello", "world"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "hello world",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -483,7 +474,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["hello", "world"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "\nhello\nworld\n",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -497,7 +487,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["hello", "world"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "\nhello\nworld aaaaa\n",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -511,7 +500,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["hello", "world"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "\n aaaaa hello\nworld bbbbb\n",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -529,7 +517,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["namespace/tag1", "namespace/tag2"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "namespace",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -544,7 +531,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["namespace/tag1", "namespace/tag2"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "namespace/tag1",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -563,7 +549,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "namespace/tag1 namespace/tag2",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -580,7 +565,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["namespace/タグ"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "namespace",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -599,7 +583,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "namespace/tag1 namespace/tag2 namespace/タグ3",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -618,7 +601,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["namespace/タグ"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "名前空間",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -637,7 +619,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "名前空間/tag1",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -656,7 +637,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -673,7 +653,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["漢字", "ひらがな"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "- 漢字　ひらがな",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -688,7 +667,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["ひらがな"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "- ひらがなとひらがな",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -706,7 +684,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["한글", "테스트", "예시"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "한글 테스트 예시",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -721,7 +698,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["문서"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "이 문서는 문서이다.",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -738,7 +714,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["汉字", "测试", "示例"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "汉字 测试 示例",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -753,7 +728,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["文档"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "这个文档很好。",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -770,7 +744,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["pages/tags"]);
 			const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "tags",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -786,7 +759,6 @@ if (import.meta.vitest) {
 		const files = getSortedFiles(["pages/tags", "サウナ", "tags"]);
 		const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 		const result = await replaceLinks({
-			frontmatter: "",
 			body: "サウナ tags pages/tags",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -805,7 +777,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "アジャイルリーダーコンピテンシーマップ",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -823,7 +794,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "[[アジャイルリーダーコンピテンシーマップ]]",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -843,7 +813,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "obsidian/automatic linker",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -861,7 +830,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["example", "http", "https"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "- https://example.com",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -875,7 +843,6 @@ if (import.meta.vitest) {
 				const files = getSortedFiles(["st"]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "- https://x.com/xxxx/status/12345?t=25S02Tda",
 					linkResolverContext: {
 						filePath: "journals/2022-01-01",
@@ -898,7 +865,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "- https://example.com https://example1.com",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -919,7 +885,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "- https://example.com https://example1.com link",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -938,7 +903,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["example", "title", "https", "http"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "- [title](https://example.com)",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -960,7 +924,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "- [title1](https://example1.com) [title2](https://example2.com)",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -985,7 +948,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "- [title1](https://example1.com) [title2](https://example2.com) link",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1004,7 +966,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["example", "code"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "`code` example",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1019,7 +980,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["example", "typescript"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "```typescript\nexample\n```",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1034,7 +994,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["hello"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1058,7 +1017,6 @@ if (import.meta.vitest) {
 			];
 			const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 			const result1 = await replaceLinks({
-				frontmatter: "",
 				body: "Hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1069,7 +1027,6 @@ if (import.meta.vitest) {
 			expect(result1).toBe("[[pages/HelloWorld|Hello]]");
 
 			const result2 = await replaceLinks({
-				frontmatter: "",
 				body: "HW",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1080,7 +1037,6 @@ if (import.meta.vitest) {
 			expect(result2).toBe("[[pages/HelloWorld|HW]]");
 
 			const result3 = await replaceLinks({
-				frontmatter: "",
 				body: "HelloWorld",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1101,7 +1057,6 @@ if (import.meta.vitest) {
 			];
 			const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "Hello HelloWorld",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1118,7 +1073,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["namespaces/link"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "namespaces/link",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1134,7 +1088,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["link"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "link",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1150,7 +1103,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["2025/02/08"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "2025-02-08",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1174,7 +1126,6 @@ if (import.meta.vitest) {
 				const { candidateMap, trie } = buildCandidateTrie(files);
 
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "link",
 					linkResolverContext: {
 						filePath: "namespace/a/b/c/current-file",
@@ -1193,7 +1144,6 @@ if (import.meta.vitest) {
 				]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "link",
 					linkResolverContext: {
 						filePath: "namespace/a/b/c/d/current-file",
@@ -1214,7 +1164,6 @@ if (import.meta.vitest) {
 				]);
 				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
-					frontmatter: "",
 					body: "link",
 					linkResolverContext: {
 						filePath: "namespace/current-file",
@@ -1238,7 +1187,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "link",
 				linkResolverContext: {
 					filePath: "namespace/a/b/current-file",
@@ -1262,7 +1210,6 @@ if (import.meta.vitest) {
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "link",
 				linkResolverContext: {
 					filePath: "current-file",
@@ -1274,7 +1221,6 @@ if (import.meta.vitest) {
 			expect(result).toBe("[[namespace/link]]");
 
 			const result2 = await replaceLinks({
-				frontmatter: "",
 				body: "link",
 				linkResolverContext: {
 					filePath: "current-file",
@@ -1334,7 +1280,6 @@ if (import.meta.vitest) {
 		]);
 		const { candidateMap, trie } = buildCandidateTrie(files);
 		const result = await replaceLinks({
-			frontmatter: "",
 			body: "01 1 12 namespace/01",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -1350,7 +1295,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["2025-02-10", "journals/2025-02-10"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "2025-02-10",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1370,7 +1314,6 @@ if (import.meta.vitest) {
 			const files = getSortedFiles(["2025-02-10"]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				frontmatter: "",
 				body: "2025-02-10",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -1500,7 +1443,6 @@ if (import.meta.vitest) {
 			const trie = buildTrie(Array.from(candidateMap.keys()));
 			const body = "이 문서는 문서이다.";
 			const result = await replaceLinks({
-				frontmatter: "",
 				body,
 				linkResolverContext: {
 					filePath: "namespace/note",
@@ -1516,7 +1458,6 @@ if (import.meta.vitest) {
 			const trie = buildTrie(Array.from(candidateMap.keys()));
 			const body = "- ひらがなとひらがな";
 			const result = await replaceLinks({
-				frontmatter: "",
 				body,
 				linkResolverContext: {
 					filePath: "namespace/note",
@@ -1532,7 +1473,6 @@ if (import.meta.vitest) {
 			const trie = buildTrie(Array.from(candidateMap.keys()));
 			const body = "这个文档很好。";
 			const result = await replaceLinks({
-				frontmatter: "",
 				body,
 				linkResolverContext: {
 					filePath: "namespace/note",
@@ -1548,7 +1488,6 @@ if (import.meta.vitest) {
 			const trie = buildTrie(Array.from(candidateMap.keys()));
 			const body = "tags";
 			const result = await replaceLinks({
-				frontmatter: "",
 				body,
 				linkResolverContext: {
 					filePath: "root-note",
@@ -1564,7 +1503,6 @@ if (import.meta.vitest) {
 			const trie = buildTrie(Array.from(candidateMap.keys()));
 			const body = "HelloWorld";
 			const result = await replaceLinks({
-				frontmatter: "",
 				body,
 				linkResolverContext: {
 					filePath: "pages/Note",
@@ -1580,7 +1518,6 @@ if (import.meta.vitest) {
 			const trie = buildTrie(Array.from(candidateMap.keys()));
 			const body = "Hello HelloWorld";
 			const result = await replaceLinks({
-				frontmatter: "",
 				body,
 				linkResolverContext: {
 					filePath: "pages/Note",
@@ -1596,7 +1533,6 @@ if (import.meta.vitest) {
 			const trie = buildTrie(Array.from(candidateMap.keys()));
 			const body = "Some text `x` more text";
 			const result = await replaceLinks({
-				frontmatter: "",
 				body,
 				linkResolverContext: {
 					filePath: "namespace/note",
@@ -1621,11 +1557,9 @@ if (import.meta.vitest) {
 			it("should replace candidate with restrictNamespace when effective namespace matches", async () => {
 				// Current file is in "pages/set/...", so effective namespace is "set"
 				const body = "a";
-				const frontmatter = "";
 				const filePath = "pages/set/current";
 				const result = await replaceLinks({
 					body,
-					frontmatter,
 					linkResolverContext: { filePath, trie, candidateMap },
 					settings: {
 						minCharCount: 0,
@@ -1639,11 +1573,9 @@ if (import.meta.vitest) {
 			it("should not replace candidate with restrictNamespace when effective namespace does not match", async () => {
 				// Current file is in "pages/other/...", so effective namespace is "other"
 				const body = "a";
-				const frontmatter = "";
 				const filePath = "pages/other/current";
 				const result = await replaceLinks({
 					body,
-					frontmatter,
 					linkResolverContext: { filePath, trie, candidateMap },
 					settings: {
 						minCharCount: 0,
