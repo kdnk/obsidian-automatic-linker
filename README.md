@@ -32,6 +32,12 @@ Automatic Linker Plugin automatically converts plain text file references into O
 - **Month Note Ignorance:**  
   File references that consist solely of one or two digits (e.g. `1`, `01`, `12`) are commonly used to denote month notes. The plugin automatically ignores these as candidates unless they are explicitly namespaced (e.g. `namespace/01`), preventing unwanted link conversion.
 
+- **Ignore Date Formats:**  
+  When enabled, links that match date formats (e.g. `2025-02-10`) are ignored. This helps maintain compatibility with Obsidian Tasks and similar plugins.
+
+- **Show Load Notice:**  
+  When enabled, a notice is displayed each time markdown files are loaded.
+
 ## Usage
 
 - **Automatic Conversion:**  
@@ -47,8 +53,11 @@ The plugin settings are available under the **Automatic Linker Plugin** settings
 - **Format on Save:**  
   When enabled, the plugin will automatically convert links when you save a file.
 
-- **Base Directories:**  
-  Enter one or more directory names (one per line) that should be treated as base. For example, if you enter `pages`, then file links like `pages/tags` can be referenced simply as `tags`. The folder immediately under the base directory is considered the effective namespace for link resolution.
+- **Base Directory:**  
+  Enter the directory that should be treated as base. For example, if you enter `pages`, then file links like `pages/tags` can be referenced simply as `tags`. The folder immediately under the base directory is considered the effective namespace for link resolution.
+
+- **Show Load Notice:**  
+  When enabled, a notice will be displayed when markdown files are loaded.
 
 - **Minimum Character Count:**  
   Set the minimum number of characters required for the file content to be processed. If the file content is shorter than this value, link conversion will be skipped.
@@ -60,3 +69,6 @@ The plugin settings are available under the **Automatic Linker Plugin** settings
 - **Automatic Namespace Resolution:**  
   When enabled, the plugin will automatically resolve namespaces for shorthand links.  
   If multiple candidates share the same shorthand, the candidate whose full path is closest to the current file (i.e. shares the most common path segments or has the shallowest relative depth when the current file is in a base directory) will be selected. Additionally, if a candidate is marked with `automatic-linker-restrict-namespace` in its frontmatter, link conversion is performed only if its effective namespace (derived from the configured base directory) matches that of the current file.
+
+- **Ignore Date Formats:**  
+  When enabled, links that match date formats (e.g. `2025-02-10`) will be ignored. This helps maintain compatibility with Obsidian Tasks and similar plugins.
