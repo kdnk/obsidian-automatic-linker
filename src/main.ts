@@ -107,7 +107,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// Build candidateMap and Trie using the helper function.
 			const { candidateMap, trie } = buildCandidateTrie(
 				allFiles,
-				this.settings.baseDirs ?? ["pages"],
+				this.settings.baseDir,
 			);
 			this.candidateMap = candidateMap;
 			this.trie = trie;

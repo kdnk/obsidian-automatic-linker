@@ -3,7 +3,7 @@ import AutomaticLinkerPlugin from "./main";
 
 export type AutomaticLinkerSettings = {
 	formatOnSave: boolean;
-	baseDirs: string[];
+	baseDir: string;
 	showNotice: boolean;
 	minCharCount: number; // Minimum character count setting
 	considerAliases: boolean; // Consider aliases when linking
@@ -12,7 +12,7 @@ export type AutomaticLinkerSettings = {
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	formatOnSave: false,
-	baseDirs: ["pages"],
+	baseDir: "pages",
 	showNotice: false,
 	minCharCount: 0, // Default value: 0 (always replace links)
 	considerAliases: false, // Default: do not consider aliases
@@ -47,18 +47,15 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Setting for base directories.
 		new Setting(containerEl)
-			.setName("Base Directories")
+			.setName("Base Directory")
 			.setDesc(
-				"Enter directories (one per line) that should be treated as base. For example, 'pages' will allow links to be formatted without the 'pages/' prefix.",
+				"Enter directory that should be treated as base. For example, 'pages' will allow links to be formatted without the 'pages/' prefix.",
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("e.g. pages\n")
-					.setValue(this.plugin.settings.baseDirs.join("\n"))
+					.setValue(this.plugin.settings.baseDir)
 					.onChange(async (value) => {
-						this.plugin.settings.baseDirs = value
-							.split(/\r?\n/)
-							.map((s) => s.trim())
-							.filter((s) => s.length > 0);
+						this.plugin.settings.baseDir = value;
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});

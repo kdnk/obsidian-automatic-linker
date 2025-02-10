@@ -8,7 +8,7 @@ export const replaceLinks = async ({
 	settings = {
 		minCharCount: 0,
 		namespaceResolution: true,
-		baseDirs: undefined,
+		baseDir: undefined,
 	},
 }: {
 	body: string;
@@ -21,7 +21,7 @@ export const replaceLinks = async ({
 	settings?: {
 		minCharCount?: number;
 		namespaceResolution?: boolean;
-		baseDirs?: string[];
+		baseDir?: string;
 	};
 }): Promise<string> => {
 	// Return content as-is if it's shorter than the minimum character count.
@@ -71,28 +71,26 @@ export const replaceLinks = async ({
 
 	/**
 	 * Returns the effective namespace for a given file path.
-	 * If the file path starts with one of the baseDirs (e.g. "pages/"), then the directory
+	 * If the file path starts with one of the baseDir (e.g. "pages/"), then the directory
 	 * immediately under the baseDir is considered the effective namespace.
 	 */
 	const getEffectiveNamespace = (
 		filePath: string,
-		baseDirs: string[],
+		baseDir?: string,
 	): string => {
-		for (const baseDir of baseDirs) {
-			const prefix = baseDir + "/";
-			if (filePath.startsWith(prefix)) {
-				const rest = filePath.slice(prefix.length);
-				const segments = rest.split("/");
-				return segments[0] || "";
-			}
+		const prefix = baseDir + "/";
+		if (filePath.startsWith(prefix)) {
+			const rest = filePath.slice(prefix.length);
+			const segments = rest.split("/");
+			return segments[0] || "";
 		}
 		const segments = filePath.split("/");
 		return segments[0] || "";
 	};
 
 	// Compute the current file's effective namespace.
-	const currentNamespace = settings.baseDirs
-		? getEffectiveNamespace(filePath, settings.baseDirs)
+	const currentNamespace = settings.baseDir
+		? getEffectiveNamespace(filePath, settings.baseDir)
 		: (function () {
 				const segments = filePath.split("/");
 				return segments[0] || "";
@@ -748,7 +746,7 @@ if (import.meta.vitest) {
 	describe("base character (pages)", () => {
 		it("unmatched namespace", async () => {
 			const files = getSortedFiles(["pages/tags"]);
-			// baseDirs 指定により、短縮候補も登録される
+			// baseDir 指定により、短縮候補も登録される
 			const { candidateMap, trie } = buildCandidateTrie(files, ["pages"]);
 			const result = await replaceLinks({
 				frontmatter: "",
@@ -1569,7 +1567,7 @@ if (import.meta.vitest) {
 					settings: {
 						minCharCount: 0,
 						namespaceResolution: true,
-						baseDirs: ["pages"],
+						baseDir: "pages",
 					},
 				});
 				expect(result).toBe("[[set/a]]");
@@ -1587,7 +1585,7 @@ if (import.meta.vitest) {
 					settings: {
 						minCharCount: 0,
 						namespaceResolution: true,
-						baseDirs: ["pages"],
+						baseDir: "pages",
 					},
 				});
 				// Since effective namespace does not match ("set" vs "other"), no replacement occurs.

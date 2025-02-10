@@ -8,7 +8,7 @@
  * For an alias, the canonical replacement is "file.path|alias" (e.g. [[file.path|alias]]).
  *
  * @param allFiles - List of files (without the ".md" extension).
- * @param baseDirs - List of base directories to consider for short names.
+ * @param baseDir - List of base directories to consider for short names.
  * @returns An object containing the candidateMap and Trie.
  */
 // src/trie.ts
@@ -23,12 +23,12 @@ export interface TrieNode {
 
 /**
  * Returns the effective namespace for a given file path.
- * If the path starts with one of the baseDirs (e.g. "pages/"), the directory immediately
+ * If the path starts with one of the baseDir (e.g. "pages/"), the directory immediately
  * under the baseDir is considered the effective namespace.
  */
-const getEffectiveNamespace = (path: string, baseDirs: string[]): string => {
-	for (const baseDir of baseDirs) {
-		const prefix = baseDir + "/";
+const getEffectiveNamespace = (path: string, baseDir?: string): string => {
+	const prefix = baseDir + "/";
+	if (baseDir) {
 		if (path.startsWith(prefix)) {
 			const rest = path.slice(prefix.length);
 			const segments = rest.split("/");
@@ -65,14 +65,14 @@ export interface CandidateData {
 
 export const buildCandidateTrie = (
 	allFiles: PathAndAliases[],
-	baseDirs: string[] = ["pages"],
+	baseDir = "pages",
 ) => {
 	// Process candidate strings from file paths.
 	type Candidate = {
 		full: string;
 		short: string | null;
 		restrictNamespace: boolean;
-		// Effective namespace computed relative to baseDirs.
+		// Effective namespace computed relative to baseDir.
 		namespace: string;
 	};
 	const candidates: Candidate[] = allFiles.map((f) => {
@@ -80,13 +80,12 @@ export const buildCandidateTrie = (
 			full: f.path,
 			short: null,
 			restrictNamespace: f.restrictNamespace,
-			namespace: getEffectiveNamespace(f.path, baseDirs),
+			namespace: getEffectiveNamespace(f.path, baseDir),
 		};
-		for (const dir of baseDirs) {
-			const prefix = `${dir}/`;
+		if (baseDir) {
+			const prefix = `${baseDir}/`;
 			if (f.path.startsWith(prefix)) {
 				candidate.short = f.path.slice(prefix.length);
-				break;
 			}
 		}
 		return candidate;
@@ -118,11 +117,10 @@ export const buildCandidateTrie = (
 		if (file.aliases) {
 			// Determine shorthand candidate for the file if available.
 			let short: string | null = null;
-			for (const dir of baseDirs) {
-				const prefix = `${dir}/`;
+			if (baseDir) {
+				const prefix = `${baseDir}/`;
 				if (file.path.startsWith(prefix)) {
 					short = file.path.slice(prefix.length);
-					break;
 				}
 			}
 			for (const alias of file.aliases) {
@@ -133,7 +131,7 @@ export const buildCandidateTrie = (
 					candidateMap.set(alias, {
 						canonical: canonicalForAlias,
 						restrictNamespace: file.restrictNamespace,
-						namespace: getEffectiveNamespace(file.path, baseDirs),
+						namespace: getEffectiveNamespace(file.path, baseDir),
 					});
 				}
 			}
