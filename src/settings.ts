@@ -8,6 +8,7 @@ export type AutomaticLinkerSettings = {
 	minCharCount: number; // Minimum character count setting
 	considerAliases: boolean; // Consider aliases when linking
 	namespaceResolution: boolean; // Automatically resolve namespaces for shorthand links
+	ignoreDateFormats: boolean; // Ignore date formatted links (e.g. 2025-02-10)
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -17,6 +18,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	minCharCount: 0, // Default value: 0 (always replace links)
 	considerAliases: false, // Default: do not consider aliases
 	namespaceResolution: false, // Default: disable automatic namespace resolution
+	ignoreDateFormats: true, // Default: ignore date formats (e.g. 2025-02-10)
 };
 
 export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
@@ -118,6 +120,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.namespaceResolution)
 					.onChange(async (value) => {
 						this.plugin.settings.namespaceResolution = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		// Toggle for ignoring date formats.
+		new Setting(containerEl)
+			.setName("Ignore Date Formats")
+			.setDesc(
+				"When enabled, links that match date formats (e.g. 2025-02-10) will be ignored. This helps maintain compatibility with Obsidian Tasks.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.ignoreDateFormats)
+					.onChange(async (value) => {
+						this.plugin.settings.ignoreDateFormats = value;
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});

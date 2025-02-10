@@ -9,6 +9,7 @@ export const replaceLinks = async ({
 		minCharCount: 0,
 		namespaceResolution: true,
 		baseDir: undefined,
+		ignoreDateFormats: true,
 	},
 }: {
 	body: string;
@@ -22,6 +23,7 @@ export const replaceLinks = async ({
 		minCharCount?: number;
 		namespaceResolution?: boolean;
 		baseDir?: string;
+		ignoreDateFormats?: boolean;
 	};
 }): Promise<string> => {
 	// Return content as-is if it's shorter than the minimum character count.
@@ -129,6 +131,15 @@ export const replaceLinks = async ({
 			}
 			if (lastCandidate) {
 				const candidate = text.substring(i, i + lastCandidate.length);
+				// 追加: ignoreDateFormats が有効で、候補が YYYY-MM-DD 形式の場合は変換せずそのまま出力
+				if (
+					settings.ignoreDateFormats &&
+					/^\d{4}-\d{2}-\d{2}$/.test(candidate)
+				) {
+					result += candidate;
+					i += lastCandidate.length;
+					continue outer;
+				}
 				// Skip conversion for month notes.
 				if (isMonthNote(candidate)) {
 					result += candidate;
@@ -191,11 +202,21 @@ export const replaceLinks = async ({
 				if (fallbackMatch) {
 					const word = fallbackMatch[1];
 
+					// 追加: ignoreDateFormats が有効で、word が YYYY-MM-DD 形式の場合は変換せずそのまま出力
+					if (
+						settings.ignoreDateFormats &&
+						/^\d{4}-\d{2}-\d{2}$/.test(word)
+					) {
+						result += word;
+						i += word.length;
+						continue outer;
+					}
+
 					// For date formats: if candidate is 2 digits and result ends with YYYY-MM-, skip conversion.
 					if (/^\d{2}$/.test(word) && /\d{4}-\d{2}-$/.test(result)) {
 						result += text[i];
 						i++;
-						continue;
+						continue outer;
 					}
 
 					// Skip conversion for month notes.
@@ -1322,6 +1343,50 @@ if (import.meta.vitest) {
 			},
 		});
 		expect(result).toBe("01 1 12 [[namespace/01]]");
+	});
+
+	describe("ignoreDateFormats setting", () => {
+		it("should not replace date format when ignoreDateFormats is true", async () => {
+			// 候補として "2025-02-10" を登録
+			const files = getSortedFiles(["2025-02-10"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "2025-02-10",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: {
+					minCharCount: 0,
+					namespaceResolution: true,
+					ignoreDateFormats: true,
+				},
+			});
+			expect(result).toBe("2025-02-10");
+		});
+
+		it("should replace date format when ignoreDateFormats is false", async () => {
+			// 候補として "2025-02-10" を登録
+			const files = getSortedFiles(["2025-02-10"]);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				frontmatter: "",
+				body: "2025-02-10",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: {
+					minCharCount: 0,
+					namespaceResolution: true,
+					ignoreDateFormats: false,
+				},
+			});
+			expect(result).toBe("[[2025-02-10]]");
+		});
 	});
 
 	describe("replaceLinks (manual candidateMap/trie)", () => {
