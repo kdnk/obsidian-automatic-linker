@@ -1229,15 +1229,18 @@ if (import.meta.vitest) {
 		it("find closest path if the current path is in base dir and the candidate is not", async () => {
 			const files = getSortedFiles([
 				"namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link",
-				"base/super-super-long-long-long-long-closest-dir/link",
-				"base/super-super-long-long-long-long-closest-dir/super-super-long-long-long-long-closest-sub-dir/link",
+				"namespace1/link2",
+				"namespace2/link2",
+				"namespace3/aaaaaa/bbbbbb/link2",
+				"base/looooooooooooooooooooooooooooooooooooooong/link",
+				"base/looooooooooooooooooooooooooooooooooooooong/super-super-long-long-long-long-closest-sub-dir/link",
 				"base/a/b/c/link",
 				"base/a/b/c/d/link",
 				"base/a/b/c/d/e/f/link",
 			]);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
-				body: "link",
+				body: "link link2",
 				linkResolverContext: {
 					filePath: "base/current-file",
 					trie,
@@ -1246,19 +1249,19 @@ if (import.meta.vitest) {
 				settings: { namespaceResolution: true, baseDir: "base" },
 			});
 			expect(result).toBe(
-				"[[base/super-super-long-long-long-long-closest-dir/link]]",
+				"[[base/looooooooooooooooooooooooooooooooooooooong/link]] [[namespace1/link2]]",
 			);
 
 			const result2 = await replaceLinks({
-				body: "link",
+				body: "link link2",
 				linkResolverContext: {
-					filePath: "current-file",
+					filePath: "base/current-file",
 					trie,
 					candidateMap,
 				},
-				settings: { namespaceResolution: false },
+				settings: { namespaceResolution: false, baseDir: "base" },
 			});
-			expect(result2).toBe("link");
+			expect(result2).toBe("link link2");
 		});
 	});
 
