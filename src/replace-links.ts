@@ -37,25 +37,25 @@ export const replaceLinks = async ({
 		ignoreDateFormats?: boolean;
 	};
 }): Promise<string> => {
-	// Return content as-is if it's shorter than the minimum character count.
+	// Return the body unchanged if its length is below the minimum character count.
 	if (body.length <= (settings.minCharCount ?? 0)) {
 		return body;
 	}
 
-	// Utility: returns true if a character is a word boundary.
+	// Utility: Check if a character is a word boundary.
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
 		return !/[\p{L}\p{N}_/-]/u.test(char);
 	};
 
-	// Utility: returns true if the candidate string represents a month note.
+	// Utility: Check if a candidate represents a month note (only digits from 1 to 12).
 	const isMonthNote = (candidate: string): boolean =>
 		!candidate.includes("/") &&
 		/^[0-9]{1,2}$/.test(candidate) &&
 		parseInt(candidate, 10) >= 1 &&
 		parseInt(candidate, 10) <= 12;
 
-	// Regex to match protected segments (code blocks, inline code, wikilinks, Markdown links)
+	// Regex to protect code blocks, inline code, wikilinks, and Markdown links.
 	const protectedRegex =
 		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/g;
 
@@ -67,8 +67,8 @@ export const replaceLinks = async ({
 		return body;
 	}
 
-	// Precompute fallbackIndex: a mapping from shorthand (the part after the last "/")
-	// to an array of candidateMap entries.
+	// Precompute the fallback index: Map the candidate's shorthand (the substring after the last "/")
+	// to an array of entries from candidateMap.
 	const fallbackIndex = new Map<string, Array<[string, CandidateData]>>();
 	for (const [key, data] of candidateMap.entries()) {
 		const slashIndex = key.lastIndexOf("/");
@@ -82,13 +82,7 @@ export const replaceLinks = async ({
 		arr.push([key, data]);
 	}
 
-	/**
-	 * Returns the effective namespace for a given file path.
-	 * If the file path starts with one of the baseDir (e.g. "pages/"), then the directory
-	 * immediately under the baseDir is considered the effective namespace.
-	 */
-
-	// Compute the current file's effective namespace.
+	// Determine the effective namespace of the current file.
 	const currentNamespace = settings.baseDir
 		? getEffectiveNamespace(filePath, settings.baseDir)
 		: (function () {
@@ -96,7 +90,7 @@ export const replaceLinks = async ({
 				return segments[0] || "";
 			})();
 
-	// Helper function to process an unprotected segment.
+	// Helper function to process an unprotected text segment.
 	const replaceInSegment = (text: string): string => {
 		let result = "";
 		let i = 0;
@@ -109,7 +103,7 @@ export const replaceLinks = async ({
 				continue;
 			}
 
-			// Use the Trie to find a candidate.
+			// Use the trie to find a candidate.
 			let node = trie;
 			let lastCandidate: { candidate: string; length: number } | null =
 				null;
@@ -129,7 +123,7 @@ export const replaceLinks = async ({
 			}
 			if (lastCandidate) {
 				const candidate = text.substring(i, i + lastCandidate.length);
-				// 追加: ignoreDateFormats が有効で、候補が YYYY-MM-DD 形式の場合は変換せずそのまま出力
+				// If ignoreDateFormats is enabled and the candidate matches YYYY-MM-DD, skip conversion.
 				if (
 					settings.ignoreDateFormats &&
 					/^\d{4}-\d{2}-\d{2}$/.test(candidate)
@@ -147,7 +141,7 @@ export const replaceLinks = async ({
 				if (candidateMap.has(candidate)) {
 					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
 					const candidateData = candidateMap.get(candidate)!;
-					// Determine if candidate is composed solely of CJK characters.
+					// Determine if the candidate is composed solely of CJK characters.
 					const isCjkCandidate =
 						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
 							candidate,
@@ -177,7 +171,8 @@ export const replaceLinks = async ({
 							continue outer;
 						}
 					}
-					// If namespace resolution is enabled and candidate is restricted, check namespaces.
+					// If namespaceResolution is enabled and candidateData has a namespace restriction,
+					// skip conversion if its namespace does not match the current namespace.
 					if (
 						settings.namespaceResolution &&
 						candidateData.restrictNamespace &&
@@ -187,21 +182,21 @@ export const replaceLinks = async ({
 						i += candidate.length;
 						continue outer;
 					}
-					// Replace candidate with wikilink.
+					// Replace candidate with wikilink format.
 					result += `[[${candidateData.canonical}]]`;
 					i += candidate.length;
 					continue outer;
 				}
 			}
 
-			// Fallback: if no candidate was found via the Trie.
+			// Fallback: if no candidate was found via the trie.
 			if (settings.namespaceResolution) {
 				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
 				const fallbackMatch = text.slice(i).match(fallbackRegex);
 				if (fallbackMatch) {
 					const word = fallbackMatch[1];
 
-					// 追加: ignoreDateFormats が有効で、word が YYYY-MM-DD 形式の場合は変換せずそのまま出力
+					// If the word is in YYYY-MM-DD format and ignoreDateFormats is enabled, do not convert.
 					if (
 						settings.ignoreDateFormats &&
 						/^\d{4}-\d{2}-\d{2}$/.test(word)
@@ -211,7 +206,8 @@ export const replaceLinks = async ({
 						continue outer;
 					}
 
-					// For date formats: if candidate is 2 digits and result ends with YYYY-MM-, skip conversion.
+					// For date formats: if the word is two digits and the result ends with "YYYY-MM-",
+					// skip conversion.
 					if (/^\d{2}$/.test(word) && /\d{4}-\d{2}-$/.test(result)) {
 						result += text[i];
 						i++;
@@ -228,6 +224,7 @@ export const replaceLinks = async ({
 					// Quickly retrieve matching candidate entries using fallbackIndex.
 					const candidateList = fallbackIndex.get(word);
 					if (candidateList) {
+						// Filter candidates that comply with the current namespace restrictions.
 						const filteredCandidates = candidateList.filter(
 							([, data]) =>
 								!(
@@ -245,7 +242,7 @@ export const replaceLinks = async ({
 							let bestCandidate: [string, CandidateData] | null =
 								null;
 							let bestScore = -1;
-							// Get directory part of current file (if any)
+							// Get the directory portion of the current file (if any)
 							const filePathDir = filePath.includes("/")
 								? filePath.slice(0, filePath.lastIndexOf("/"))
 								: "";
@@ -283,15 +280,44 @@ export const replaceLinks = async ({
 									score === bestScore &&
 									bestCandidate !== null
 								) {
-									if (filePathDir === "") {
-										// When current file is in base directory, choose the candidate with the shorter key
+									if (
+										filePathDir === "" &&
+										settings.baseDir
+									) {
+										// When the current file is in the base directory, compare candidates by relative depth.
+										const basePrefix =
+											settings.baseDir + "/";
+										const getRelativeDepth = (
+											k: string,
+										): number => {
+											if (k.startsWith(basePrefix)) {
+												// Remove the baseDir part and count the remaining segments (excluding the filename)
+												const relativeParts = k
+													.slice(basePrefix.length)
+													.split("/");
+												return relativeParts.length - 1;
+											}
+											return Infinity;
+										};
+
+										const candidateDepth =
+											getRelativeDepth(key);
+										const bestCandidateDepth =
+											getRelativeDepth(bestCandidate[0]);
+
+										// Prefer the candidate with fewer directory segments (i.e., lower depth).
 										if (
-											key.length < bestCandidate[0].length
+											candidateDepth <
+												bestCandidateDepth ||
+											(candidateDepth ===
+												bestCandidateDepth &&
+												key.length <
+													bestCandidate[0].length)
 										) {
 											bestCandidate = [key, data];
 										}
 									} else {
-										// For non-base directories, choose candidate with fewer directory segments.
+										// Otherwise, choose the candidate with fewer directory segments.
 										const currentBestDir =
 											bestCandidate[0].slice(
 												0,
@@ -334,7 +360,7 @@ export const replaceLinks = async ({
 		return result;
 	};
 
-	// Process the body while preserving protected segments.
+	// Process the entire body while preserving protected segments.
 	let resultBody = "";
 	let lastIndex = 0;
 	for (const m of body.matchAll(protectedRegex)) {
@@ -1204,7 +1230,7 @@ if (import.meta.vitest) {
 			const files = getSortedFiles([
 				"namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link",
 				"namespace/super-super-long-long-long-long-closest-dir/link",
-				"namespace/a/b/link",
+				"namespace/super-super-long-long-long-long-closest-dir/super-super-long-long-long-long-closest-sub-dir/link",
 				"namespace/a/b/c/link",
 				"namespace/a/b/c/d/link",
 				"namespace/a/b/c/d/e/f/link",
@@ -1217,7 +1243,7 @@ if (import.meta.vitest) {
 					trie,
 					candidateMap,
 				},
-				settings: { namespaceResolution: true },
+				settings: { namespaceResolution: true, baseDir: "namespace" },
 			});
 			expect(result).toBe(
 				"[[namespace/super-super-long-long-long-long-closest-dir/link]]",
