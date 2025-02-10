@@ -17,7 +17,6 @@ import { PathAndAliases } from "./path-and-aliases.types";
 
 export interface TrieNode {
 	children: Map<string, TrieNode>;
-	/** このノードで完結する候補文字列（あれば） */
 	candidate?: string;
 }
 
@@ -40,19 +39,22 @@ const getEffectiveNamespace = (path: string, baseDir?: string): string => {
 	return segments[0] || "";
 };
 
-/** 単語リストから Trie を構築 */
 export const buildTrie = (words: string[]): TrieNode => {
 	const root: TrieNode = { children: new Map() };
+
 	for (const word of words) {
 		let node = root;
 		for (const char of word) {
-			if (!node.children.has(char)) {
-				node.children.set(char, { children: new Map() });
+			let child = node.children.get(char);
+			if (!child) {
+				child = { children: new Map() };
+				node.children.set(char, child);
 			}
-			node = node.children.get(char)!;
+			node = child;
 		}
 		node.candidate = word;
 	}
+
 	return root;
 };
 
@@ -143,3 +145,70 @@ export const buildCandidateTrie = (
 
 	return { candidateMap, trie };
 };
+
+if (import.meta.vitest) {
+	const { it, expect, describe } = import.meta.vitest;
+
+	// Test for getEffectiveNamespace
+	describe("getEffectiveNamespace", () => {
+		it("should return the first directory after the baseDir", () => {
+			expect(getEffectiveNamespace("pages/docs/file", "pages")).toBe(
+				"docs",
+			);
+			expect(getEffectiveNamespace("pages/home/readme", "pages")).toBe(
+				"home",
+			);
+		});
+
+		it("should return the first segment if baseDir is not found", () => {
+			expect(getEffectiveNamespace("docs/file")).toBe("docs");
+			expect(getEffectiveNamespace("home/readme")).toBe("home");
+		});
+	});
+
+	// Test for buildTrie
+	describe("buildTrie", () => {
+		it("should build a Trie with the given words", () => {
+			const words = ["hello", "world", "hi"];
+			const trie = buildTrie(words);
+
+			expect(trie.children.has("h")).toBe(true);
+			expect(trie.children.has("w")).toBe(true);
+			expect(trie.children.get("h")?.children.has("e")).toBe(true);
+			expect(trie.children.get("h")?.children.get("i")?.candidate).toBe(
+				"hi",
+			);
+		});
+	});
+
+	// Test for buildCandidateTrie
+	describe("buildCandidateTrie", () => {
+		it("should build a candidate map and trie", () => {
+			const allFiles: PathAndAliases[] = [
+				{
+					path: "pages/docs/readme",
+					restrictNamespace: false,
+					aliases: ["intro"],
+				},
+				{
+					path: "pages/home/index",
+					restrictNamespace: false,
+					aliases: [],
+				},
+			];
+
+			const { candidateMap, trie } = buildCandidateTrie(
+				allFiles,
+				"pages",
+			);
+
+			expect(candidateMap.has("pages/docs/readme")).toBe(true);
+			expect(candidateMap.has("docs/readme")).toBe(true);
+			expect(candidateMap.get("intro")?.canonical).toBe(
+				"pages/docs/readme|intro",
+			);
+			expect(trie.children.has("d")).toBe(true);
+			expect(trie.children.has("h")).toBe(true);
+		});
+	});
+}

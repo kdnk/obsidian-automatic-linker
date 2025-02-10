@@ -139,14 +139,20 @@ export const replaceLinks = async ({
 					continue;
 				}
 				if (candidateMap.has(candidate)) {
-					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-					const candidateData = candidateMap.get(candidate)!;
+					const candidateData = candidateMap.get(candidate);
+					// Although candidateMap.has(candidate) returned true, TypeScript still requires a check for undefined.
+					if (!candidateData) {
+						// If candidateData is not found, skip to the next iteration.
+						continue outer;
+					}
+
 					// Determine if the candidate is composed solely of CJK characters.
 					const isCjkCandidate =
 						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
 							candidate,
 						);
 					const isKorean = /^[\p{Script=Hangul}]+$/u.test(candidate);
+
 					// For non-CJK or Korean candidates, perform word boundary checks.
 					if (!isCjkCandidate || isKorean) {
 						if (isKorean) {
@@ -171,7 +177,8 @@ export const replaceLinks = async ({
 							continue outer;
 						}
 					}
-					// If namespaceResolution is enabled and candidateData has a namespace restriction,
+
+					// If namespace resolution is enabled and candidateData has a namespace restriction,
 					// skip conversion if its namespace does not match the current namespace.
 					if (
 						settings.namespaceResolution &&
@@ -182,7 +189,8 @@ export const replaceLinks = async ({
 						i += candidate.length;
 						continue outer;
 					}
-					// Replace candidate with wikilink format.
+
+					// Replace the candidate with the wikilink format.
 					result += `[[${candidateData.canonical}]]`;
 					i += candidate.length;
 					continue outer;
