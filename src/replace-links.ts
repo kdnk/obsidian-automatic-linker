@@ -1,6 +1,19 @@
 import { PathAndAliases } from "./path-and-aliases.types";
 import { buildCandidateTrie, buildTrie, CandidateData, TrieNode } from "./trie";
 
+const getEffectiveNamespace = (filePath: string, baseDir?: string): string => {
+	if (baseDir) {
+		const prefix = baseDir + "/";
+		if (filePath.startsWith(prefix)) {
+			const rest = filePath.slice(prefix.length);
+			const segments = rest.split("/");
+			return segments[0] || "";
+		}
+	}
+	const segments = filePath.split("/");
+	return segments[0] || "";
+};
+
 export const replaceLinks = async ({
 	body,
 	linkResolverContext: { filePath, trie, candidateMap },
@@ -74,19 +87,6 @@ export const replaceLinks = async ({
 	 * If the file path starts with one of the baseDir (e.g. "pages/"), then the directory
 	 * immediately under the baseDir is considered the effective namespace.
 	 */
-	const getEffectiveNamespace = (
-		filePath: string,
-		baseDir?: string,
-	): string => {
-		const prefix = baseDir + "/";
-		if (filePath.startsWith(prefix)) {
-			const rest = filePath.slice(prefix.length);
-			const segments = rest.split("/");
-			return segments[0] || "";
-		}
-		const segments = filePath.split("/");
-		return segments[0] || "";
-	};
 
 	// Compute the current file's effective namespace.
 	const currentNamespace = settings.baseDir
@@ -357,6 +357,7 @@ if (import.meta.vitest) {
 	const getSortedFiles = (
 		fileNames: string[],
 		restrictNamespace?: boolean,
+		baseDir?: string,
 	) => {
 		const sortedFileNames = fileNames
 			.slice()
@@ -365,6 +366,7 @@ if (import.meta.vitest) {
 			path,
 			aliases: null,
 			restrictNamespace: restrictNamespace ?? false,
+			namespace: getEffectiveNamespace(path, baseDir),
 		}));
 	};
 
