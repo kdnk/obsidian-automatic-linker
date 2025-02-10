@@ -53,7 +53,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 			.setDesc(
 				"Enter directory that should be treated as base. For example, 'pages' will allow links to be formatted without the 'pages/' prefix.",
 			)
-			.addTextArea((text) => {
+			.addText((text) => {
 				text.setPlaceholder("e.g. pages\n")
 					.setValue(this.plugin.settings.baseDir)
 					.onChange(async (value) => {
