@@ -20,13 +20,9 @@ import { PathAndAliases } from "./path-and-aliases.types";
 
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
-	// List of markdown file paths (without the ".md" extension)
-	private allFiles: PathAndAliases[] = [];
 	// Pre-built Trie for link candidate lookup
 	private trie: TrieNode | null = null;
 	private candidateMap: Map<string, CandidateData> | null = null;
-	// Holds the currently running modifyLinks task (cancelable)
-	private currentModifyLinks: PCancelable<void> | null = null;
 	// Backup storage to hold original file content before modification (keyed by file path)
 	private backupContent: Map<string, string> = new Map();
 	// Preserved callback for the original save command
@@ -102,7 +98,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			});
 			// Sort filenames in descending order (longer paths first)
 			allFiles.sort((a, b) => b.path.length - a.path.length);
-			this.allFiles = allFiles;
 
 			// Build candidateMap and Trie using the helper function.
 			const { candidateMap, trie } = buildCandidateTrie(
