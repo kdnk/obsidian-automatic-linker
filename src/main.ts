@@ -13,7 +13,6 @@ import {
 	AutomaticLinkerSettings,
 	DEFAULT_SETTINGS,
 } from "./settings";
-import PCancelable from "p-cancelable";
 import throttle from "just-throttle";
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
 import { PathAndAliases } from "./path-and-aliases.types";
@@ -74,7 +73,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// Overwrite the file with the updated content.
 			await this.app.vault.modify(activeFile, frontmatter + updatedBody);
 		} catch (error) {
-			// noop
+			console.error(error);
 		}
 	}
 
@@ -153,11 +152,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				try {
 					await this.modifyLinks();
 				} catch (error) {
-					if (error instanceof PCancelable.CancelError) {
-						console.log("modifyLinks was canceled");
-					} else {
-						console.error(error);
-					}
+					console.error(error);
 				}
 			},
 		});
@@ -222,9 +217,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						try {
 							await this.modifyLinks();
 						} catch (error) {
-							if (!(error instanceof PCancelable.CancelError)) {
-								console.error(error);
-							}
+							console.error(error);
 						}
 					}
 				},
