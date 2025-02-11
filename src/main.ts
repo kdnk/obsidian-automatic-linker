@@ -22,8 +22,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	// Pre-built Trie for link candidate lookup
 	private trie: TrieNode | null = null;
 	private candidateMap: Map<string, CandidateData> | null = null;
-	// Backup storage to hold original file content before modification (keyed by file path)
-	private backupContent: Map<string, string> = new Map();
 	// Preserved callback for the original save command
 	private originalSaveCallback: (() => Promise<void>) | undefined;
 
@@ -43,8 +41,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			const fileContent = (
 				await this.app.vault.read(activeFile)
 			).normalize("NFC");
-			// Save a backup before making any modifications
-			this.backupContent.set(activeFile.path, fileContent);
 
 			console.log(new Date().toISOString(), "modifyLinks started");
 
@@ -152,43 +148,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				try {
 					await this.modifyLinks();
 				} catch (error) {
-					console.error(error);
-				}
-			},
-		});
-
-		// Command: Rollback the last change using the backup.
-		this.addCommand({
-			id: "automatic-linker:rollback-last-change",
-			name: "Rollback Last Change",
-			callback: async () => {
-				const activeFile = this.app.workspace.getActiveFile();
-				if (!activeFile) {
-					new Notice(
-						"Automatic Linker: No active file found for rollback.",
-					);
-					return;
-				}
-				// Check if a backup exists for this file.
-				const backup = this.backupContent.get(activeFile.path);
-				if (!backup) {
-					new Notice(
-						"Automatic Linker: No backup available for rollback.",
-					);
-					return;
-				}
-				try {
-					// Overwrite the file with the backup content.
-					await this.app.vault.modify(activeFile, backup);
-					new Notice(
-						"Automatic Linker: Rollback successful. Changes have been reverted.",
-					);
-					// Remove the backup after a successful rollback.
-					this.backupContent.delete(activeFile.path);
-				} catch (error) {
-					new Notice(
-						"Automatic Linker: Rollback failed. Unable to revert changes.",
-					);
 					console.error(error);
 				}
 			},
