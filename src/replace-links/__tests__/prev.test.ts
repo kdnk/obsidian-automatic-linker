@@ -657,7 +657,7 @@ describe("aliases", () => {
 				restrictNamespace: false,
 			},
 		];
-		const { candidateMap, trie } = buildCandidateTrie(files, "pages");
+		const { candidateMap, trie } = buildCandidateTrie(files);
 		const result1 = await replaceLinks({
 			body: "Hello",
 			linkResolverContext: {
@@ -705,8 +705,11 @@ describe("aliases", () => {
 				trie,
 				candidateMap,
 			},
+			settings: {
+				baseDir: "pages",
+			},
 		});
-		expect(result).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
+		expect(result).toBe("[[HelloWorld|Hello]] [[HelloWorld]]");
 	});
 });
 

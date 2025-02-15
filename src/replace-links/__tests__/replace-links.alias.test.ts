@@ -65,13 +65,14 @@ describe("replaceLinks - alias handling", () => {
 		});
 
 		it("replaces multiple occurrences of alias and normal candidate", async () => {
-			const files: PathAndAliases[] = [
-				{
-					path: "pages/HelloWorld",
-					aliases: ["Hello"],
+			const files = setAliases(
+				getSortedFiles({
+					fileNames: ["pages/HelloWorld"],
 					restrictNamespace: false,
-				},
-			];
+				}),
+				"pages/HelloWorld",
+				["Hello"],
+			);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "Hello HelloWorld",
@@ -91,6 +92,7 @@ describe("replaceLinks - alias handling", () => {
 				getSortedFiles({
 					fileNames: ["pages/set/HelloWorld"],
 					restrictNamespace: true,
+					baseDir: "pages",
 				}),
 				"pages/set/HelloWorld",
 				["HW"],
@@ -162,18 +164,14 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe("[[HelloWorld|HW]]");
+			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 
 		it("should replace alias without baseDir", async () => {
-			const files = setAliases(
-				getSortedFiles({
-					fileNames: ["pages/set/HelloWorld"],
-					restrictNamespace: false,
-				}),
-				"pages/set/HelloWorld",
-				["HW"],
-			);
+			const files = getSortedFiles({
+				fileNames: ["pages/set/HelloWorld"],
+				restrictNamespace: false,
+			});
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "HW",
