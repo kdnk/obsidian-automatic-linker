@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCandidateTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles } from "../test-helpers";
+import { getSortedFiles } from "./test-helpers";
 
 describe("replaceLinks", () => {
 	describe("basic", () => {

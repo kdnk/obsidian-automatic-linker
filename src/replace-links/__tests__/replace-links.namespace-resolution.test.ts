@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCandidateTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles } from "../test-helpers";
+import { getSortedFiles } from "./test-helpers";
 
 describe("replaceLinks - namespace resolution", () => {
 	describe("basic namespace resolution", () => {
@@ -158,6 +158,7 @@ describe("replaceLinks - namespace resolution", () => {
 					"base/a/b/c/d/link",
 					"base/a/b/c/d/e/f/link",
 				],
+				baseDir: "base",
 			});
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
@@ -170,7 +171,7 @@ describe("replaceLinks - namespace resolution", () => {
 				settings: { namespaceResolution: true, baseDir: "base" },
 			});
 			expect(result).toBe(
-				"[[base/looooooooooooooooooooooooooooooooooooooong/link]] [[namespace1/link2]]",
+				"[[looooooooooooooooooooooooooooooooooooooong/link]] [[namespace1/link2]]",
 			);
 
 			const result2 = await replaceLinks({

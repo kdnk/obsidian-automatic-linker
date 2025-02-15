@@ -1,5 +1,5 @@
-import { PathAndAliases } from "../path-and-aliases.types";
-import { getEffectiveNamespace } from "./replace-links";
+import { PathAndAliases } from "../../path-and-aliases.types";
+import { getEffectiveNamespace } from "../replace-links";
 
 export const getSortedFiles = ({
 	fileNames,

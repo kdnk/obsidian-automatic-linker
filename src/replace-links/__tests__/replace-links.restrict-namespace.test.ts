@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCandidateTrie, buildTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles } from "../test-helpers";
+import { getSortedFiles } from "./test-helpers";
 
 describe("replaceLinks - restrict namespace", () => {
 	describe("automatic-linker-restrict-namespace with baseDir", () => {

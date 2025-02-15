@@ -844,17 +844,21 @@ describe("namespace resolution nearlest file path", () => {
 	});
 
 	it("find closest path if the current path is in base dir and the candidate is not", async () => {
-		const files = getSortedFiles([
-			"namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link",
-			"namespace1/link2",
-			"namespace2/link2",
-			"namespace3/aaaaaa/bbbbbb/link2",
-			"base/looooooooooooooooooooooooooooooooooooooong/link",
-			"base/looooooooooooooooooooooooooooooooooooooong/super-super-long-long-long-long-closest-sub-dir/link",
-			"base/a/b/c/link",
-			"base/a/b/c/d/link",
-			"base/a/b/c/d/e/f/link",
-		]);
+		const files = getSortedFiles(
+			[
+				"namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link",
+				"namespace1/link2",
+				"namespace2/link2",
+				"namespace3/aaaaaa/bbbbbb/link2",
+				"base/looooooooooooooooooooooooooooooooooooooong/link",
+				"base/looooooooooooooooooooooooooooooooooooooong/super-super-long-long-long-long-closest-sub-dir/link",
+				"base/a/b/c/link",
+				"base/a/b/c/d/link",
+				"base/a/b/c/d/e/f/link",
+			],
+			false,
+			"base",
+		);
 		const { candidateMap, trie } = buildCandidateTrie(files);
 		const result = await replaceLinks({
 			body: "link link2",
@@ -866,7 +870,7 @@ describe("namespace resolution nearlest file path", () => {
 			settings: { namespaceResolution: true, baseDir: "base" },
 		});
 		expect(result).toBe(
-			"[[base/looooooooooooooooooooooooooooooooooooooong/link]] [[namespace1/link2]]",
+			"[[looooooooooooooooooooooooooooooooooooooong/link]] [[namespace1/link2]]",
 		);
 
 		const result2 = await replaceLinks({

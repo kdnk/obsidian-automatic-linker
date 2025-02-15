@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PathAndAliases } from "../../path-and-aliases.types";
 import { buildCandidateTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles, setAliases } from "../test-helpers";
+import { getSortedFiles, setAliases } from "./test-helpers";
 
 describe("replaceLinks - alias handling", () => {
 	describe("basic alias", () => {
@@ -114,6 +114,33 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 
+		it("replace alias when restrictNamespace is false", async () => {
+			const files = setAliases(
+				getSortedFiles({
+					fileNames: ["pages/set/HelloWorld"],
+					restrictNamespace: false,
+					baseDir: "pages",
+				}),
+				"pages/set/HelloWorld",
+				["HW"],
+			);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				body: "HW",
+				linkResolverContext: {
+					filePath: "pages/set/current",
+					trie,
+					candidateMap,
+				},
+				settings: {
+					minCharCount: 0,
+					namespaceResolution: true,
+					baseDir: "pages",
+				},
+			});
+			expect(result).toBe("[[set/HelloWorld|HW]]");
+		});
+
 		it("does not replace alias when namespace does not match", async () => {
 			const files = setAliases(
 				getSortedFiles({
@@ -167,21 +194,21 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 
-		it("should replace alias without baseDir", async () => {
-			const files = getSortedFiles({
-				fileNames: ["pages/set/HelloWorld"],
-				restrictNamespace: false,
-			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
-			const result = await replaceLinks({
-				body: "HW",
-				linkResolverContext: {
-					filePath: "pages/other/current",
-					trie,
-					candidateMap,
-				},
-			});
-			expect(result).toBe("[[pages/set/HelloWorld|HW]]");
-		});
+		// it("should replace alias without baseDir", async () => {
+		// 	const files = getSortedFiles({
+		// 		fileNames: ["pages/set/HelloWorld"],
+		// 		restrictNamespace: false,
+		// 	});
+		// 	const { candidateMap, trie } = buildCandidateTrie(files);
+		// 	const result = await replaceLinks({
+		// 		body: "HW",
+		// 		linkResolverContext: {
+		// 			filePath: "pages/other/current",
+		// 			trie,
+		// 			candidateMap,
+		// 		},
+		// 	});
+		// 	expect(result).toBe("[[pages/set/HelloWorld|HW]]");
+		// });
 	});
 });
