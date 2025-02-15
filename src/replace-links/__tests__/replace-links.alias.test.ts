@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PathAndAliases } from "../../path-and-aliases.types";
-import { buildCandidateTrie, buildTrie } from "../../trie";
+import { buildCandidateTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
 import { getSortedFiles, setAliases } from "../test-helpers";
 
@@ -139,20 +139,14 @@ describe("replaceLinks - alias handling", () => {
 		});
 	});
 
-	describe("automatic-linker-restrict-namespace and alias", () => {
-		it("should respect restrictNamespace for alias with baseDir", async () => {
+	describe("alias and baseDir", () => {
+		it("should replace alias with baseDir", async () => {
 			const files = getSortedFiles({
-				fileNames: ["pages/set/HelloWorld", "pages/other/current"],
+				fileNames: ["pages/set/HelloWorld"],
 				restrictNamespace: false,
+				baseDir: "pages",
 			});
-			const { candidateMap } = buildCandidateTrie(files);
-			candidateMap.set("HW", {
-				canonical: "set/HelloWorld",
-				restrictNamespace: true,
-				namespace: "set",
-			});
-			const trie = buildTrie(Array.from(candidateMap.keys()));
-
+			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "HW",
 				linkResolverContext: {
@@ -161,27 +155,22 @@ describe("replaceLinks - alias handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
-					namespaceResolution: true,
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe("[[set/HelloWorld|HW]]");
+			expect(result).toBe("[[HelloWorld|HW]]");
 		});
 
-		it("should not replace alias when namespace does not match with baseDir", async () => {
-			const files = getSortedFiles({
-				fileNames: ["pages/set/HelloWorld", "pages/other/current"],
-				restrictNamespace: false,
-			});
-			const { candidateMap } = buildCandidateTrie(files);
-			candidateMap.set("HW", {
-				canonical: "set/HelloWorld",
-				restrictNamespace: true,
-				namespace: "set",
-			});
-			const trie = buildTrie(Array.from(candidateMap.keys()));
-
+		it("should replace alias without baseDir", async () => {
+			const files = setAliases(
+				getSortedFiles({
+					fileNames: ["pages/set/HelloWorld"],
+					restrictNamespace: false,
+				}),
+				"pages/set/HelloWorld",
+				["HW"],
+			);
+			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "HW",
 				linkResolverContext: {
@@ -189,13 +178,8 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					minCharCount: 0,
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
 			});
-			expect(result).toBe("HW");
+			expect(result).toBe("[[pages/set/HelloWorld|HW]]");
 		});
 	});
 });
