@@ -67,7 +67,7 @@ export interface CandidateData {
 
 export const buildCandidateTrie = (
 	allFiles: PathAndAliases[],
-	baseDir = "pages",
+	baseDir?: string,
 ) => {
 	// Process candidate strings from file paths.
 	type Candidate = {
@@ -127,13 +127,23 @@ export const buildCandidateTrie = (
 			}
 			for (const alias of file.aliases) {
 				// If alias equals the shorthand, use alias as canonical; otherwise use "full|alias".
-				const canonicalForAlias =
+				let canonicalForAlias =
 					short && alias === short ? alias : `${file.path}|${alias}`;
+				if (baseDir) {
+					const prefix = `${baseDir}/`;
+					if (file.path.startsWith(prefix)) {
+						const relativePath = file.path.slice(prefix.length);
+						canonicalForAlias =
+							short && alias === short
+								? alias
+								: `${relativePath}|${alias}`;
+					}
+				}
 				if (!candidateMap.has(alias)) {
 					candidateMap.set(alias, {
 						canonical: canonicalForAlias,
 						restrictNamespace: file.restrictNamespace,
-						namespace: getEffectiveNamespace(file.path, baseDir),
+						namespace: getEffectiveNamespace(file.path, baseDir), // エイリアスのネームスペースを再計算
 					});
 				}
 			}
@@ -205,7 +215,7 @@ if (import.meta.vitest) {
 			expect(candidateMap.has("pages/docs/readme")).toBe(true);
 			expect(candidateMap.has("docs/readme")).toBe(true);
 			expect(candidateMap.get("intro")?.canonical).toBe(
-				"pages/docs/readme|intro",
+				"docs/readme|intro",
 			);
 			expect(trie.children.has("d")).toBe(true);
 			expect(trie.children.has("h")).toBe(true);

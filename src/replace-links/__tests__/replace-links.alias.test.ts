@@ -141,11 +141,15 @@ describe("replaceLinks - alias handling", () => {
 
 	describe("alias and baseDir", () => {
 		it("should replace alias with baseDir", async () => {
-			const files = getSortedFiles({
-				fileNames: ["pages/set/HelloWorld"],
-				restrictNamespace: false,
-				baseDir: "pages",
-			});
+			const files = setAliases(
+				getSortedFiles({
+					fileNames: ["pages/set/HelloWorld"],
+					restrictNamespace: false,
+					baseDir: "pages",
+				}),
+				"pages/set/HelloWorld",
+				["HW"],
+			);
 			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "HW",
