@@ -92,15 +92,6 @@ export const replaceLinks = async ({
 				return segments[0] || "";
 			})();
 
-	// When we find a matching candidate, we need to handle the path based on baseDir
-	const formatCanonicalPath = (canonical: string, baseDir?: string): string => {
-		if (!baseDir) return canonical;
-		const baseDirPrefix = baseDir + "/";
-		return canonical.startsWith(baseDirPrefix)
-			? canonical.slice(baseDirPrefix.length)
-			: canonical;
-	};
-
 	// Helper function to process an unprotected text segment.
 	const replaceInSegment = (text: string): string => {
 		let result = "";
@@ -151,19 +142,60 @@ export const replaceLinks = async ({
 				}
 				if (candidateMap.has(candidate)) {
 					const candidateData = candidateMap.get(candidate);
-					if (candidateData) {
-						// Format the canonical path considering baseDir
-						const formattedCanonical = formatCanonicalPath(candidateData.canonical, settings?.baseDir);
+					// Although candidateMap.has(candidate) returned true, TypeScript still requires a check for undefined.
+					if (!candidateData) {
+						// If candidateData is not found, skip to the next iteration.
+						continue outer;
+					}
 
-						// If the candidate is different from its canonical form, use the alias syntax
-						if (candidate !== formattedCanonical && !formattedCanonical.includes("|")) {
-							result += `[[${formattedCanonical}|${candidate}]]`;
-						} else {
-							result += `[[${formattedCanonical}]]`;
+					// Determine if the candidate is composed solely of CJK characters.
+					const isCjkCandidate =
+						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
+							candidate,
+						);
+					const isKorean = /^[\p{Script=Hangul}]+$/u.test(candidate);
+
+					// For non-CJK or Korean candidates, perform word boundary checks.
+					if (!isCjkCandidate || isKorean) {
+						if (isKorean) {
+							const remaining = text.slice(i + candidate.length);
+							const suffixMatch = remaining.match(/^(이다\.?)/);
+							if (suffixMatch) {
+								result +=
+									`[[${candidateData.canonical}]]` +
+									suffixMatch[0];
+								i += candidate.length + suffixMatch[0].length;
+								continue outer;
+							}
 						}
+						const left = i > 0 ? text[i - 1] : undefined;
+						const right =
+							i + candidate.length < text.length
+								? text[i + candidate.length]
+								: undefined;
+						if (!isWordBoundary(left) || !isWordBoundary(right)) {
+							result += text[i];
+							i++;
+							continue outer;
+						}
+					}
+
+					// If namespace resolution is enabled and candidateData has a namespace restriction,
+					// skip conversion if its namespace does not match the current namespace.
+					if (
+						settings.namespaceResolution &&
+						candidateData.restrictNamespace &&
+						candidateData.namespace !== currentNamespace
+					) {
+						result += candidate;
 						i += candidate.length;
 						continue outer;
 					}
+
+					// Replace the candidate with the wikilink format.
+					result += `[[${candidateData.canonical}]]`;
+					i += candidate.length;
+					continue outer;
 				}
 			}
 
