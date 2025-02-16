@@ -6,10 +6,10 @@ describe("replaceLinks - restrict namespace", () => {
 	describe("automatic-linker-restrict-namespace with baseDir", () => {
 		it("should respect restrictNamespace with baseDir", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["pages/set/tag", "pages/other/current"],
-				aliasMap: {
-					"pages/set/tag": [],
-				},
+				files: [
+					{ path: "pages/set/tag", aliases: [] },
+					{ path: "pages/other/current" },
+				],
 				restrictNamespace: true,
 				baseDir: "pages",
 			});
@@ -31,10 +31,10 @@ describe("replaceLinks - restrict namespace", () => {
 
 		it("should not replace when namespace does not match with baseDir", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["pages/set/tag", "pages/other/current"],
-				aliasMap: {
-					"pages/set/tag": [],
-				},
+				files: [
+					{ path: "pages/set/tag" },
+					{ path: "pages/other/current" },
+				],
 				restrictNamespace: true,
 				baseDir: "pages",
 			});
@@ -56,12 +56,11 @@ describe("replaceLinks - restrict namespace", () => {
 
 		it("should handle multiple namespaces with restrictNamespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"pages/set1/tag1",
-					"pages/set2/tag2",
-					"pages/other/current",
+				files: [
+					{ path: "pages/set1/tag1" },
+					{ path: "pages/set2/tag2" },
+					{ path: "pages/other/current" },
 				],
-				aliasMap: {},
 				restrictNamespace: true,
 				baseDir: "pages",
 			});

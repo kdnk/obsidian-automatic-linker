@@ -6,8 +6,7 @@ describe("replaceLinks - CJK handling", () => {
 	describe("containing CJK", () => {
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["namespace/タグ"],
-				aliasMap: {},
+				files: [{ path: "namespace/タグ" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -24,12 +23,11 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("multiple namespaces", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"namespace/tag1",
-					"namespace/tag2",
-					"namespace/タグ3",
+				files: [
+					{ path: "namespace/tag1" },
+					{ path: "namespace/tag2" },
+					{ path: "namespace/タグ3" },
 				],
-				aliasMap: {},
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -50,8 +48,7 @@ describe("replaceLinks - CJK handling", () => {
 	describe("starting CJK", () => {
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["namespace/タグ"],
-				aliasMap: {},
+				files: [{ path: "namespace/タグ" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -68,8 +65,11 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("single namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
-				aliasMap: {},
+				files: [
+					{ path: "名前空間/tag1" },
+					{ path: "名前空間/tag2" },
+					{ path: "名前空間/タグ3" },
+				],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -86,8 +86,11 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("multiple namespaces", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
-				aliasMap: {},
+				files: [
+					{ path: "名前空間/tag1" },
+					{ path: "名前空間/tag2" },
+					{ path: "名前空間/タグ3" },
+				],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -108,10 +111,10 @@ describe("replaceLinks - CJK handling", () => {
 	describe("automatic-linker-restrict-namespace with CJK", () => {
 		it("should respect restrictNamespace for CJK with baseDir", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["pages/セット/タグ", "pages/other/current"],
-				aliasMap: {
-					"pages/セット/タグ": [],
-				},
+				files: [
+					{ path: "pages/セット/タグ", aliases: [] },
+					{ path: "pages/other/current" },
+				],
 				restrictNamespace: true,
 				baseDir: "pages",
 			});
@@ -133,10 +136,10 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("should not replace CJK when namespace does not match with baseDir", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["pages/セット/タグ", "pages/other/current"],
-				aliasMap: {
-					"pages/セット/タグ": [],
-				},
+				files: [
+					{ path: "pages/セット/タグ", aliases: [] },
+					{ path: "pages/other/current" },
+				],
 				restrictNamespace: true,
 				baseDir: "pages",
 			});

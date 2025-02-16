@@ -7,8 +7,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("basic", () => {
 	it("replaces links", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["hello"],
-			aliasMap: {},
+			files: [{ path: "hello" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -26,8 +25,7 @@ describe("basic", () => {
 
 	it("replaces links with bullet", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["hello"],
-			aliasMap: {},
+			files: [{ path: "hello" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -45,8 +43,7 @@ describe("basic", () => {
 	it("replaces links with other texts", async () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -62,8 +59,7 @@ describe("basic", () => {
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -82,8 +78,7 @@ describe("basic", () => {
 	it("replaces links with other texts and bullet", async () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -99,8 +94,7 @@ describe("basic", () => {
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -119,8 +113,7 @@ describe("basic", () => {
 	it("replaces multiple links", async () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello", "world"],
-				aliasMap: {},
+				files: [{ path: "hello" }, { path: "world" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -136,8 +129,7 @@ describe("basic", () => {
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello", "world"],
-				aliasMap: {},
+				files: [{ path: "hello" }, { path: "world" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -153,8 +145,7 @@ describe("basic", () => {
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello", "world"],
-				aliasMap: {},
+				files: [{ path: "hello" }, { path: "world" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -170,8 +161,7 @@ describe("basic", () => {
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello", "world"],
-				aliasMap: {},
+				files: [{ path: "hello" }, { path: "world" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -191,8 +181,7 @@ describe("basic", () => {
 describe("complex fileNames", () => {
 	it("unmatched namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["namespace/tag1", "namespace/tag2"],
-			aliasMap: {},
+			files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -209,8 +198,7 @@ describe("complex fileNames", () => {
 
 	it("single namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["namespace/tag1", "namespace/tag2"],
-			aliasMap: {},
+			files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -227,8 +215,11 @@ describe("complex fileNames", () => {
 
 	it("multiple namespaces", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["namespace/tag1", "namespace/tag2", "namespace"],
-			aliasMap: {},
+			files: [
+				{ path: "namespace/tag1" },
+				{ path: "namespace/tag2" },
+				{ path: "namespace" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -247,8 +238,7 @@ describe("complex fileNames", () => {
 describe("containing CJK", () => {
 	it("unmatched namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["namespace/タグ"],
-			aliasMap: {},
+			files: [{ path: "namespace/タグ" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -265,8 +255,11 @@ describe("containing CJK", () => {
 
 	it("multiple namespaces", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["namespace/tag1", "namespace/tag2", "namespace/タグ3"],
-			aliasMap: {},
+			files: [
+				{ path: "namespace/tag1" },
+				{ path: "namespace/tag2" },
+				{ path: "namespace/タグ3" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -287,8 +280,7 @@ describe("containing CJK", () => {
 describe("starting CJK", () => {
 	it("unmatched namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["namespace/タグ"],
-			aliasMap: {},
+			files: [{ path: "namespace/タグ" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -305,8 +297,11 @@ describe("starting CJK", () => {
 
 	it("single namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
-			aliasMap: {},
+			files: [
+				{ path: "名前空間/tag1" },
+				{ path: "名前空間/tag2" },
+				{ path: "名前空間/タグ3" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -323,8 +318,11 @@ describe("starting CJK", () => {
 
 	it("multiple namespaces", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
-			aliasMap: {},
+			files: [
+				{ path: "名前空間/tag1" },
+				{ path: "名前空間/tag2" },
+				{ path: "名前空間/タグ3" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -343,8 +341,7 @@ describe("starting CJK", () => {
 
 	it("multiple CJK words", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["漢字", "ひらがな"],
-			aliasMap: {},
+			files: [{ path: "漢字" }, { path: "ひらがな" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -361,8 +358,7 @@ describe("starting CJK", () => {
 
 	it("multiple same CJK words", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["ひらがな"],
-			aliasMap: {},
+			files: [{ path: "ひらがな" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -382,8 +378,7 @@ describe("CJK - Korean", () => {
 	it("converts Korean words to links", async () => {
 		// 韓国語の候補ファイル
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["한글", "테스트", "예시"],
-			aliasMap: {},
+			files: [{ path: "한글" }, { path: "테스트" }, { path: "예시" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -400,8 +395,7 @@ describe("CJK - Korean", () => {
 
 	it("converts Korean words within sentence", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["문서"],
-			aliasMap: {},
+			files: [{ path: "문서" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -420,8 +414,7 @@ describe("CJK - Korean", () => {
 describe("CJK - Chinese", () => {
 	it("converts Chinese words to links", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["汉字", "测试", "示例"],
-			aliasMap: {},
+			files: [{ path: "汉字" }, { path: "测试" }, { path: "示例" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -438,8 +431,7 @@ describe("CJK - Chinese", () => {
 
 	it("converts Chinese words within sentence", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["文档"],
-			aliasMap: {},
+			files: [{ path: "文档" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -458,8 +450,7 @@ describe("CJK - Chinese", () => {
 describe("base character (pages)", () => {
 	it("unmatched namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["pages/tags"],
-			aliasMap: {},
+			files: [{ path: "pages/tags" }],
 			restrictNamespace: false,
 			baseDir: "pages",
 		});
@@ -476,15 +467,14 @@ describe("base character (pages)", () => {
 });
 
 it("multiple links in the same line", async () => {
-		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["pages/tags", "サウナ", "tags"],
-			aliasMap: {},
-			restrictNamespace: false,
-			baseDir: "pages",
-		});
-		const result = await replaceLinks({
-			body: "サウナ tags pages/tags",
-			linkResolverContext: {
+	const { candidateMap, trie } = buildCandidateTrieForTest({
+		files: [{ path: "pages/tags" }, { path: "サウナ" }, { path: "tags" }],
+		restrictNamespace: false,
+		baseDir: "pages",
+	});
+	const result = await replaceLinks({
+		body: "サウナ tags pages/tags",
+		linkResolverContext: {
 			filePath: "journals/2022-01-01",
 			trie,
 			candidateMap,
@@ -496,8 +486,10 @@ it("multiple links in the same line", async () => {
 describe("nested links", () => {
 	it("", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["アジャイルリーダーコンピテンシーマップ", "リーダー"],
-			aliasMap: {},
+			files: [
+				{ path: "アジャイルリーダーコンピテンシーマップ" },
+				{ path: "リーダー" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -514,8 +506,10 @@ describe("nested links", () => {
 
 	it("existing links", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["アジャイルリーダーコンピテンシーマップ", "リーダー"],
-			aliasMap: {},
+			files: [
+				{ path: "アジャイルリーダーコンピテンシーマップ" },
+				{ path: "リーダー" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -534,8 +528,10 @@ describe("nested links", () => {
 describe("with space", () => {
 	it("", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["obsidian/automatic linker", "obsidian"],
-			aliasMap: {},
+			files: [
+				{ path: "obsidian/automatic linker" },
+				{ path: "obsidian" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -555,8 +551,11 @@ describe("ignore url", () => {
 	it("one url", async () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["example", "http", "https"],
-				aliasMap: {},
+				files: [
+					{ path: "example" },
+					{ path: "http" },
+					{ path: "https" },
+				],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -572,8 +571,7 @@ describe("ignore url", () => {
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["st"],
-				aliasMap: {},
+				files: [{ path: "st" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -591,8 +589,12 @@ describe("ignore url", () => {
 
 	it("multiple urls", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["example", "example1", "https", "http"],
-			aliasMap: {},
+			files: [
+				{ path: "example" },
+				{ path: "example1" },
+				{ path: "https" },
+				{ path: "http" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -609,8 +611,13 @@ describe("ignore url", () => {
 
 	it("multiple urls with links", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["example1", "example", "link", "https", "http"],
-			aliasMap: {},
+			files: [
+				{ path: "example1" },
+				{ path: "example" },
+				{ path: "link" },
+				{ path: "https" },
+				{ path: "http" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -631,8 +638,12 @@ describe("ignore url", () => {
 describe("ignore markdown url", () => {
 	it("one url", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["example", "title", "https", "http"],
-			aliasMap: {},
+			files: [
+				{ path: "example" },
+				{ path: "title" },
+				{ path: "https" },
+				{ path: "http" },
+			],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -649,15 +660,14 @@ describe("ignore markdown url", () => {
 
 	it("multiple urls", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: [
-				"example1",
-				"example2",
-				"title1",
-				"title2",
-				"https",
-				"http",
+			files: [
+				{ path: "example1" },
+				{ path: "example2" },
+				{ path: "title1" },
+				{ path: "title2" },
+				{ path: "https" },
+				{ path: "http" },
 			],
-			aliasMap: {},
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -676,16 +686,15 @@ describe("ignore markdown url", () => {
 
 	it("multiple urls with links", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: [
-				"example1",
-				"example2",
-				"title1",
-				"title2",
-				"https",
-				"http",
-				"link",
+			files: [
+				{ path: "example1" },
+				{ path: "example2" },
+				{ path: "title1" },
+				{ path: "title2" },
+				{ path: "https" },
+				{ path: "http" },
+				{ path: "link" },
 			],
-			aliasMap: {},
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -706,8 +715,7 @@ describe("ignore markdown url", () => {
 describe("ignore code", () => {
 	it("inline code", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["example", "code"],
-			aliasMap: {},
+			files: [{ path: "example" }, { path: "code" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -724,8 +732,7 @@ describe("ignore code", () => {
 
 	it("code block", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["example", "typescript"],
-			aliasMap: {},
+			files: [{ path: "example" }, { path: "typescript" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -742,8 +749,7 @@ describe("ignore code", () => {
 
 	it("skips replacement when content is too short", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["hello"],
-			aliasMap: {},
+			files: [{ path: "hello" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -763,10 +769,7 @@ describe("ignore code", () => {
 describe("aliases", () => {
 	it("replaces alias with canonical form using file path and alias", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["pages/HelloWorld"],
-			aliasMap: {
-				"pages/HelloWorld": ["Hello", "HW"],
-			},
+			files: [{ path: "pages/HelloWorld", aliases: ["Hello", "HW"] }],
 			restrictNamespace: false,
 			baseDir: "pages",
 		});
@@ -829,8 +832,7 @@ describe("aliases", () => {
 describe("namespace resolution", () => {
 	it("replaces candidate with namespace when full candidate is provided", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["namespaces/link"],
-			aliasMap: {},
+			files: [{ path: "namespaces/link" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -848,8 +850,7 @@ describe("namespace resolution", () => {
 
 	it("replaces candidate without namespace correctly", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["link"],
-			aliasMap: {},
+			files: [{ path: "link" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -867,8 +868,7 @@ describe("namespace resolution", () => {
 
 	it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["2025/02/08"],
-			aliasMap: {},
+			files: [{ path: "2025/02/08" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -889,12 +889,11 @@ describe("namespace resolution nearlest file path", () => {
 	it("closest siblings namespace should be used", async () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"namespace/a/b/c/d/link",
-					"namespace/a/b/c/d/e/f/link",
-					"namespace/a/b/c/link",
+				files: [
+					{ path: "namespace/a/b/c/d/link" },
+					{ path: "namespace/a/b/c/d/e/f/link" },
+					{ path: "namespace/a/b/c/link" },
 				],
-				aliasMap: {},
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -912,12 +911,11 @@ describe("namespace resolution nearlest file path", () => {
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"namespace/a/b/c/link",
-					"namespace/a/b/c/d/link",
-					"namespace/a/b/c/d/e/f/link",
+				files: [
+					{ path: "namespace/a/b/c/link" },
+					{ path: "namespace/a/b/c/d/link" },
+					{ path: "namespace/a/b/c/d/e/f/link" },
 				],
-				aliasMap: {},
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -934,14 +932,13 @@ describe("namespace resolution nearlest file path", () => {
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"namespace/xxx/link",
-					"another-namespace/link",
-					"another-namespace/a/b/c/link",
-					"another-namespace/a/b/c/d/link",
-					"another-namespace/a/b/c/d/e/f/link",
+				files: [
+					{ path: "namespace/xxx/link" },
+					{ path: "another-namespace/link" },
+					{ path: "another-namespace/a/b/c/link" },
+					{ path: "another-namespace/a/b/c/d/link" },
+					{ path: "another-namespace/a/b/c/d/e/f/link" },
 				],
-				aliasMap: {},
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -960,15 +957,14 @@ describe("namespace resolution nearlest file path", () => {
 
 	it("closest children namespace should be used", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: [
-				"namespace1/subnamespace/link",
-				"namespace2/super-super-long-long-directory/link",
-				"namespace3/link",
-				"namespace/a/b/c/link",
-				"namespace/a/b/c/d/link",
-				"namespace/a/b/c/d/e/f/link",
+			files: [
+				{ path: "namespace1/subnamespace/link" },
+				{ path: "namespace2/super-super-long-long-directory/link" },
+				{ path: "namespace3/link" },
+				{ path: "namespace/a/b/c/link" },
+				{ path: "namespace/a/b/c/d/link" },
+				{ path: "namespace/a/b/c/d/e/f/link" },
 			],
-			aliasMap: {},
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -986,18 +982,21 @@ describe("namespace resolution nearlest file path", () => {
 
 	it("find closest path if the current path is in base dir and the candidate is not", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: [
-				"namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link",
-				"namespace1/link2",
-				"namespace2/link2",
-				"namespace3/aaaaaa/bbbbbb/link2",
-				"base/looooooooooooooooooooooooooooooooooooooong/link",
-				"base/looooooooooooooooooooooooooooooooooooooong/super-super-long-long-long-long-closest-sub-dir/link",
-				"base/a/b/c/link",
-				"base/a/b/c/d/link",
-				"base/a/b/c/d/e/f/link",
+			files: [
+				{ path: "namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link" },
+				{ path: "namespace1/link2" },
+				{ path: "namespace2/link2" },
+				{ path: "namespace3/aaaaaa/bbbbbb/link2" },
+				{
+					path: "base/looooooooooooooooooooooooooooooooooooooong/link",
+				},
+				{
+					path: "base/looooooooooooooooooooooooooooooooooooooong/super-super-long-long-long-long-closest-sub-dir/link",
+				},
+				{ path: "base/a/b/c/link" },
+				{ path: "base/a/b/c/d/link" },
+				{ path: "base/a/b/c/d/e/f/link" },
 			],
-			aliasMap: {},
 			restrictNamespace: false,
 			baseDir: "base",
 		});
@@ -1029,51 +1028,50 @@ describe("namespace resolution nearlest file path", () => {
 
 it("ignore month notes", async () => {
 	const { candidateMap, trie } = buildCandidateTrieForTest({
-		fileNames: [
-			"01",
-			"02",
-			"03",
-			"04",
-			"05",
-			"06",
-			"07",
-			"08",
-			"09",
-			"10",
-			"11",
-			"12",
-			"1",
-			"2",
-			"3",
-			"4",
-			"5",
-			"6",
-			"7",
-			"8",
-			"9",
-			"namespace/01",
-			"namespace/02",
-			"namespace/03",
-			"namespace/04",
-			"namespace/05",
-			"namespace/06",
-			"namespace/07",
-			"namespace/08",
-			"namespace/09",
-			"namespace/10",
-			"namespace/11",
-			"namespace/12",
-			"namespace/1",
-			"namespace/2",
-			"namespace/3",
-			"namespace/4",
-			"namespace/5",
-			"namespace/6",
-			"namespace/7",
-			"namespace/8",
-			"namespace/9",
+		files: [
+			{ path: "01" },
+			{ path: "02" },
+			{ path: "03" },
+			{ path: "04" },
+			{ path: "05" },
+			{ path: "06" },
+			{ path: "07" },
+			{ path: "08" },
+			{ path: "09" },
+			{ path: "10" },
+			{ path: "11" },
+			{ path: "12" },
+			{ path: "1" },
+			{ path: "2" },
+			{ path: "3" },
+			{ path: "4" },
+			{ path: "5" },
+			{ path: "6" },
+			{ path: "7" },
+			{ path: "8" },
+			{ path: "9" },
+			{ path: "namespace/01" },
+			{ path: "namespace/02" },
+			{ path: "namespace/03" },
+			{ path: "namespace/04" },
+			{ path: "namespace/05" },
+			{ path: "namespace/06" },
+			{ path: "namespace/07" },
+			{ path: "namespace/08" },
+			{ path: "namespace/09" },
+			{ path: "namespace/10" },
+			{ path: "namespace/11" },
+			{ path: "namespace/12" },
+			{ path: "namespace/1" },
+			{ path: "namespace/2" },
+			{ path: "namespace/3" },
+			{ path: "namespace/4" },
+			{ path: "namespace/5" },
+			{ path: "namespace/6" },
+			{ path: "namespace/7" },
+			{ path: "namespace/8" },
+			{ path: "namespace/9" },
 		],
-		aliasMap: {},
 		restrictNamespace: false,
 		baseDir: undefined,
 	});
@@ -1091,8 +1089,7 @@ it("ignore month notes", async () => {
 describe("ignoreDateFormats setting", () => {
 	it("should not replace date format when ignoreDateFormats is true", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["2025-02-10", "journals/2025-02-10"],
-			aliasMap: {},
+			files: [{ path: "2025-02-10" }, { path: "journals/2025-02-10" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});
@@ -1114,8 +1111,7 @@ describe("ignoreDateFormats setting", () => {
 
 	it("should replace date format when ignoreDateFormats is false", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
-			fileNames: ["2025-02-10"],
-			aliasMap: {},
+			files: [{ path: "2025-02-10" }],
 			restrictNamespace: false,
 			baseDir: undefined,
 		});

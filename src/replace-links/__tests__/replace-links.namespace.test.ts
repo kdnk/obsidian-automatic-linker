@@ -6,8 +6,7 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("complex fileNames", () => {
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["namespace/tag1", "namespace/tag2"],
-				aliasMap: {},
+				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -24,8 +23,7 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("single namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["namespace/tag1", "namespace/tag2"],
-				aliasMap: {},
+				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -42,8 +40,11 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("multiple namespaces", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["namespace/tag1", "namespace/tag2", "namespace"],
-				aliasMap: {},
+				files: [
+					{ path: "namespace/tag1" },
+					{ path: "namespace/tag2" },
+					{ path: "namespace" },
+				],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -62,10 +63,10 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("automatic-linker-restrict-namespace and base dir", () => {
 		it("should replace candidate with restrictNamespace when effective namespace matches", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["pages/set/a", "pages/other/current"],
-				aliasMap: {
-					"pages/set/a": [],
-				},
+				files: [
+					{ path: "pages/set/a" },
+					{ path: "pages/other/current" },
+				],
 				restrictNamespace: true,
 				baseDir: "pages",
 			});
@@ -87,10 +88,10 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("should not replace candidate with restrictNamespace when effective namespace does not match", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["pages/set/a", "pages/other/current"],
-				aliasMap: {
-					"pages/set/a": [],
-				},
+				files: [
+					{ path: "pages/set/a" },
+					{ path: "pages/other/current" },
+				],
 				restrictNamespace: true,
 				baseDir: "pages",
 			});

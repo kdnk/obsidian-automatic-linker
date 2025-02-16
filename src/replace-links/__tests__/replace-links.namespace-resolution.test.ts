@@ -6,8 +6,7 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("basic namespace resolution", () => {
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["namespace/tag1", "namespace/tag2"],
-				aliasMap: {},
+				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -24,8 +23,7 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("single namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["namespace/tag1", "namespace/tag2"],
-				aliasMap: {},
+				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -42,8 +40,11 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("multiple namespaces", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["namespace/tag1", "namespace/tag2", "namespace"],
-				aliasMap: {},
+				files: [
+					{ path: "namespace/tag1" },
+					{ path: "namespace/tag2" },
+					{ path: "namespace" },
+				],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -63,12 +64,11 @@ describe("replaceLinks - namespace resolution", () => {
 		it("closest siblings namespace should be used", async () => {
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
-					fileNames: [
-						"namespace/a/b/c/d/link",
-						"namespace/a/b/c/d/e/f/link",
-						"namespace/a/b/c/link",
+					files: [
+						{ path: "namespace/a/b/c/d/link" },
+						{ path: "namespace/a/b/c/d/e/f/link" },
+						{ path: "namespace/a/b/c/link" },
 					],
-					aliasMap: {},
 					restrictNamespace: false,
 					baseDir: undefined,
 				});
@@ -86,12 +86,11 @@ describe("replaceLinks - namespace resolution", () => {
 			}
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
-					fileNames: [
-						"namespace/a/b/c/link",
-						"namespace/a/b/c/d/link",
-						"namespace/a/b/c/d/e/f/link",
+					files: [
+						{ path: "namespace/a/b/c/link" },
+						{ path: "namespace/a/b/c/d/link" },
+						{ path: "namespace/a/b/c/d/e/f/link" },
 					],
-					aliasMap: {},
 					restrictNamespace: false,
 					baseDir: undefined,
 				});
@@ -108,14 +107,13 @@ describe("replaceLinks - namespace resolution", () => {
 			}
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
-					fileNames: [
-						"namespace/xxx/link",
-						"another-namespace/link",
-						"another-namespace/a/b/c/link",
-						"another-namespace/a/b/c/d/link",
-						"another-namespace/a/b/c/d/e/f/link",
+					files: [
+						{ path: "namespace/xxx/link" },
+						{ path: "another-namespace/link" },
+						{ path: "another-namespace/a/b/c/link" },
+						{ path: "another-namespace/a/b/c/d/link" },
+						{ path: "another-namespace/a/b/c/d/e/f/link" },
 					],
-					aliasMap: {},
 					restrictNamespace: false,
 					baseDir: undefined,
 				});
@@ -134,15 +132,14 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("closest children namespace should be used", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"namespace1/subnamespace/link",
-					"namespace2/super-super-long-long-directory/link",
-					"namespace3/link",
-					"namespace/a/b/c/link",
-					"namespace/a/b/c/d/link",
-					"namespace/a/b/c/d/e/f/link",
+				files: [
+					{ path: "namespace1/subnamespace/link" },
+					{ path: "namespace2/super-super-long-long-directory/link" },
+					{ path: "namespace3/link" },
+					{ path: "namespace/a/b/c/link" },
+					{ path: "namespace/a/b/c/d/link" },
+					{ path: "namespace/a/b/c/d/e/f/link" },
 				],
-				aliasMap: {},
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -160,18 +157,21 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("find closest path if the current path is in base dir and the candidate is not", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link",
-					"namespace1/link2",
-					"namespace2/link2",
-					"namespace3/aaaaaa/bbbbbb/link2",
-					"base/looooooooooooooooooooooooooooooooooooooong/link",
-					"base/looooooooooooooooooooooooooooooooooooooong/super-super-long-long-long-long-closest-sub-dir/link",
-					"base/a/b/c/link",
-					"base/a/b/c/d/link",
-					"base/a/b/c/d/e/f/link",
+				files: [
+					{ path: "namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link" },
+					{ path: "namespace1/link2" },
+					{ path: "namespace2/link2" },
+					{ path: "namespace3/aaaaaa/bbbbbb/link2" },
+					{
+						path: "base/looooooooooooooooooooooooooooooooooooooong/link",
+					},
+					{
+						path: "base/looooooooooooooooooooooooooooooooooooooong/super-super-long-long-long-long-closest-sub-dir/link",
+					},
+					{ path: "base/a/b/c/link" },
+					{ path: "base/a/b/c/d/link" },
+					{ path: "base/a/b/c/d/e/f/link" },
 				],
-				aliasMap: {},
 				restrictNamespace: false,
 				baseDir: "base",
 			});
@@ -204,12 +204,11 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("namespace resoluton with aliases", () => {
 		it("should resolve without aliases", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"namespace/xx/yy/link",
-					"namespace/xx/link",
-					"namespace/link2",
+				files: [
+					{ path: "namespace/xx/yy/link" },
+					{ path: "namespace/xx/link" },
+					{ path: "namespace/link2" },
 				],
-				aliasMap: {},
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -227,14 +226,11 @@ describe("replaceLinks - namespace resolution", () => {
 		it("should resolve aliases", async () => {
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
-					fileNames: [
-						"namespace/xx/yy/link",
-						"namespace/xx/link",
-						"namespace/link2",
+					files: [
+						{ path: "namespace/xx/yy/link" },
+						{ path: "namespace/xx/link", aliases: ["alias"] },
+						{ path: "namespace/link2" },
 					],
-					aliasMap: {
-						"namespace/xx/link": ["alias"],
-					},
 					restrictNamespace: false,
 					baseDir: undefined,
 				});
@@ -250,16 +246,13 @@ describe("replaceLinks - namespace resolution", () => {
 			}
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
-					fileNames: [
-						"namespace/xx/yy/zz/link",
-						"namespace/xx/yy/link",
-						"namespace/xx/link",
-						"namespace/link",
-						"namespace/link2",
+					files: [
+						{ path: "namespace/xx/yy/zz/link" },
+						{ path: "namespace/xx/yy/link", aliases: ["alias"] },
+						{ path: "namespace/xx/link" },
+						{ path: "namespace/link" },
+						{ path: "namespace/link2" },
 					],
-					aliasMap: {
-						"namespace/xx/yy/link": ["alias"],
-					},
 					restrictNamespace: false,
 					baseDir: undefined,
 				});

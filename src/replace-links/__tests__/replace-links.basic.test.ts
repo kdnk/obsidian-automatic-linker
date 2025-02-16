@@ -6,8 +6,7 @@ describe("replaceLinks", () => {
 	describe("basic", () => {
 		it("replaces links", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -25,8 +24,7 @@ describe("replaceLinks", () => {
 
 		it("replaces links with bullet", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -44,8 +42,7 @@ describe("replaceLinks", () => {
 
 		it("replaces links with number", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -63,8 +60,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace links in code blocks", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -82,8 +78,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace links in inline code", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -101,8 +96,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace existing wikilinks", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -120,8 +114,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace existing markdown links", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -139,8 +132,7 @@ describe("replaceLinks", () => {
 
 		it("respects minCharCount", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello"],
-				aliasMap: {},
+				files: [{ path: "hello" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -160,8 +152,7 @@ describe("replaceLinks", () => {
 	describe("multiple links", () => {
 		it("replaces multiple links in the same line", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello", "world"],
-				aliasMap: {},
+				files: [{ path: "hello" }, { path: "world" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});
@@ -179,8 +170,7 @@ describe("replaceLinks", () => {
 
 		it("replaces multiple links in different lines", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: ["hello", "world"],
-				aliasMap: {},
+				files: [{ path: "hello" }, { path: "world" }],
 				restrictNamespace: false,
 				baseDir: undefined,
 			});

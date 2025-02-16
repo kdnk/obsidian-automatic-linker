@@ -5,28 +5,25 @@ import { getEffectiveNamespace } from "../replace-links";
 type Path = string;
 type Alias = string;
 export const buildCandidateTrieForTest = ({
-	fileNames,
-	aliasMap,
+	files,
 	restrictNamespace,
 	baseDir,
 }: {
-	fileNames: string[];
-	aliasMap: Record<Path, Alias[]>;
+	files: { path: string; aliases?: string[] }[];
 	restrictNamespace: boolean;
 	baseDir: string | undefined;
 }) => {
-	const files = getSortedFiles({
-		fileNames,
-		restrictNamespace,
-		baseDir,
-	});
-	// register alias
-	for (const file of files) {
-		if (aliasMap[file.path]) {
-			file.aliases = aliasMap[file.path];
-		}
-	}
-	const { candidateMap, trie } = buildCandidateTrie(files, baseDir);
+	const sortedFiles = files
+		.slice()
+		.sort((a, b) => b.path.length - a.path.length)
+		.map(({ path, aliases }) => ({
+			path,
+			aliases: aliases || null,
+			restrictNamespace,
+			namespace: getEffectiveNamespace(path, baseDir),
+		}));
+
+	const { candidateMap, trie } = buildCandidateTrie(sortedFiles, baseDir);
 	return { candidateMap, trie };
 };
 
