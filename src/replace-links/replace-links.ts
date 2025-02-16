@@ -1,20 +1,4 @@
-import { CandidateData, TrieNode } from "../trie";
-
-export const getEffectiveNamespace = (
-	filePath: string,
-	baseDir?: string,
-): string => {
-	if (baseDir) {
-		const prefix = baseDir + "/";
-		if (filePath.startsWith(prefix)) {
-			const rest = filePath.slice(prefix.length);
-			const segments = rest.split("/");
-			return segments[0] || "";
-		}
-	}
-	const segments = filePath.split("/");
-	return segments[0] || "";
-};
+import { CandidateData, getEffectiveNamespace, TrieNode } from "../trie";
 
 export const replaceLinks = async ({
 	body,
