@@ -774,7 +774,6 @@ describe("aliases", () => {
 			restrictNamespace: false,
 			baseDir: "pages",
 		});
-		console.log(candidateMap);
 		const result1 = await replaceLinks({
 			body: "Hello",
 			linkResolverContext: {

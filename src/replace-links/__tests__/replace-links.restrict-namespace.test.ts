@@ -64,7 +64,6 @@ describe("replaceLinks - restrict namespace", () => {
 				restrictNamespace: true,
 				baseDir: "pages",
 			});
-			console.log(candidateMap);
 			const result = await replaceLinks({
 				body: "tag1 tag2",
 				linkResolverContext: {
