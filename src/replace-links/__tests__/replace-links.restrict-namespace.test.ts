@@ -1,23 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { buildCandidateTrie, buildTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles } from "./test-helpers";
+import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - restrict namespace", () => {
 	describe("automatic-linker-restrict-namespace with baseDir", () => {
 		it("should respect restrictNamespace with baseDir", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["pages/set/tag", "pages/other/current"],
-				restrictNamespace: false,
-			});
-			const { candidateMap } = buildCandidateTrie(files);
-			candidateMap.set("tag", {
-				canonical: "set/tag",
+				aliasMap: {
+					"pages/set/tag": [],
+				},
 				restrictNamespace: true,
-				namespace: "set",
+				baseDir: "pages",
 			});
-			const trie = buildTrie(Array.from(candidateMap.keys()));
-
 			const result = await replaceLinks({
 				body: "tag",
 				linkResolverContext: {
@@ -35,18 +30,14 @@ describe("replaceLinks - restrict namespace", () => {
 		});
 
 		it("should not replace when namespace does not match with baseDir", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["pages/set/tag", "pages/other/current"],
-				restrictNamespace: false,
-			});
-			const { candidateMap } = buildCandidateTrie(files);
-			candidateMap.set("tag", {
-				canonical: "set/tag",
+				aliasMap: {
+					"pages/set/tag": [],
+				},
 				restrictNamespace: true,
-				namespace: "set",
+				baseDir: "pages",
 			});
-			const trie = buildTrie(Array.from(candidateMap.keys()));
-
 			const result = await replaceLinks({
 				body: "tag",
 				linkResolverContext: {
@@ -64,27 +55,17 @@ describe("replaceLinks - restrict namespace", () => {
 		});
 
 		it("should handle multiple namespaces with restrictNamespace", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: [
 					"pages/set1/tag1",
 					"pages/set2/tag2",
 					"pages/other/current",
 				],
-				restrictNamespace: false,
-			});
-			const { candidateMap } = buildCandidateTrie(files);
-			candidateMap.set("tag1", {
-				canonical: "set1/tag1",
+				aliasMap: {},
 				restrictNamespace: true,
-				namespace: "set1",
+				baseDir: "pages",
 			});
-			candidateMap.set("tag2", {
-				canonical: "set2/tag2",
-				restrictNamespace: true,
-				namespace: "set2",
-			});
-			const trie = buildTrie(Array.from(candidateMap.keys()));
-
+			console.log(candidateMap);
 			const result = await replaceLinks({
 				body: "tag1 tag2",
 				linkResolverContext: {

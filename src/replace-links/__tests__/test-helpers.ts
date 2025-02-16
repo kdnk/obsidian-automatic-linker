@@ -1,7 +1,36 @@
 import { PathAndAliases } from "../../path-and-aliases.types";
+import { buildCandidateTrie } from "../../trie";
 import { getEffectiveNamespace } from "../replace-links";
 
-export const getSortedFiles = ({
+type Path = string;
+type Alias = string;
+export const buildCandidateTrieForTest = ({
+	fileNames,
+	aliasMap,
+	restrictNamespace,
+	baseDir,
+}: {
+	fileNames: string[];
+	aliasMap: Record<Path, Alias[]>;
+	restrictNamespace: boolean;
+	baseDir: string | undefined;
+}) => {
+	const files = getSortedFiles({
+		fileNames,
+		restrictNamespace,
+		baseDir,
+	});
+	// register alias
+	for (const file of files) {
+		if (aliasMap[file.path]) {
+			file.aliases = aliasMap[file.path];
+		}
+	}
+	const { candidateMap, trie } = buildCandidateTrie(files, baseDir);
+	return { candidateMap, trie };
+};
+
+const getSortedFiles = ({
 	fileNames,
 	restrictNamespace = false,
 	baseDir,
@@ -19,19 +48,4 @@ export const getSortedFiles = ({
 		restrictNamespace: restrictNamespace ?? false,
 		namespace: getEffectiveNamespace(path, baseDir),
 	}));
-};
-
-export const setAliases = (
-	files: PathAndAliases[],
-	path: string,
-	aliases: string[],
-): PathAndAliases[] => {
-	return files.map((file) =>
-		file.path === path
-			? {
-					...file,
-					aliases,
-				}
-			: file,
-	);
 };

@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildCandidateTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles, setAliases } from "./test-helpers";
+import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - namespace resolution", () => {
 	describe("basic namespace resolution", () => {
 		it("unmatched namespace", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["namespace/tag1", "namespace/tag2"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "namespace",
 				linkResolverContext: {
@@ -22,10 +23,12 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("single namespace", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["namespace/tag1", "namespace/tag2"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "namespace/tag1",
 				linkResolverContext: {
@@ -38,10 +41,12 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("multiple namespaces", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["namespace/tag1", "namespace/tag2", "namespace"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "namespace/tag1 namespace/tag2",
 				linkResolverContext: {
@@ -57,14 +62,16 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("namespace resolution nearest file path", () => {
 		it("closest siblings namespace should be used", async () => {
 			{
-				const files = getSortedFiles({
+				const { candidateMap, trie } = buildCandidateTrieForTest({
 					fileNames: [
 						"namespace/a/b/c/d/link",
 						"namespace/a/b/c/d/e/f/link",
 						"namespace/a/b/c/link",
 					],
+					aliasMap: {},
+					restrictNamespace: false,
+					baseDir: undefined,
 				});
-				const { candidateMap, trie } = buildCandidateTrie(files);
 
 				const result = await replaceLinks({
 					body: "link",
@@ -78,14 +85,16 @@ describe("replaceLinks - namespace resolution", () => {
 				expect(result).toBe("[[namespace/a/b/c/link]]");
 			}
 			{
-				const files = getSortedFiles({
+				const { candidateMap, trie } = buildCandidateTrieForTest({
 					fileNames: [
 						"namespace/a/b/c/link",
 						"namespace/a/b/c/d/link",
 						"namespace/a/b/c/d/e/f/link",
 					],
+					aliasMap: {},
+					restrictNamespace: false,
+					baseDir: undefined,
 				});
-				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
 					body: "link",
 					linkResolverContext: {
@@ -98,7 +107,7 @@ describe("replaceLinks - namespace resolution", () => {
 				expect(result).toBe("[[namespace/a/b/c/d/link]]");
 			}
 			{
-				const files = getSortedFiles({
+				const { candidateMap, trie } = buildCandidateTrieForTest({
 					fileNames: [
 						"namespace/xxx/link",
 						"another-namespace/link",
@@ -106,8 +115,10 @@ describe("replaceLinks - namespace resolution", () => {
 						"another-namespace/a/b/c/d/link",
 						"another-namespace/a/b/c/d/e/f/link",
 					],
+					aliasMap: {},
+					restrictNamespace: false,
+					baseDir: undefined,
 				});
-				const { candidateMap, trie } = buildCandidateTrie(files);
 				const result = await replaceLinks({
 					body: "link",
 					linkResolverContext: {
@@ -122,7 +133,7 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("closest children namespace should be used", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: [
 					"namespace1/subnamespace/link",
 					"namespace2/super-super-long-long-directory/link",
@@ -131,8 +142,10 @@ describe("replaceLinks - namespace resolution", () => {
 					"namespace/a/b/c/d/link",
 					"namespace/a/b/c/d/e/f/link",
 				],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "link",
 				linkResolverContext: {
@@ -146,7 +159,7 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("find closest path if the current path is in base dir and the candidate is not", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: [
 					"namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link",
 					"namespace1/link2",
@@ -158,9 +171,10 @@ describe("replaceLinks - namespace resolution", () => {
 					"base/a/b/c/d/link",
 					"base/a/b/c/d/e/f/link",
 				],
+				aliasMap: {},
+				restrictNamespace: false,
 				baseDir: "base",
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "link link2",
 				linkResolverContext: {
@@ -189,14 +203,16 @@ describe("replaceLinks - namespace resolution", () => {
 
 	describe("namespace resoluton with aliases", () => {
 		it("should resolve without aliases", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: [
 					"namespace/xx/yy/link",
 					"namespace/xx/link",
 					"namespace/link2",
 				],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "link",
 				linkResolverContext: {
@@ -209,18 +225,18 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("should resolve aliases", async () => {
-			const files = setAliases(
-				getSortedFiles({
-					fileNames: [
-						"namespace/xx/yy/link",
-						"namespace/xx/link",
-						"namespace/link2",
-					],
-				}),
-				"namespace/xx/yy/link",
-				["alias"],
-			);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: [
+					"namespace/xx/yy/link",
+					"namespace/xx/link",
+					"namespace/link2",
+				],
+				aliasMap: {
+					"namespace/xx/yy/link": ["alias"],
+				},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "alias",
 				linkResolverContext: {

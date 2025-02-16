@@ -1,29 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { PathAndAliases } from "../../path-and-aliases.types";
 import { buildCandidateTrie, buildTrie, CandidateData } from "../../trie";
-import { getEffectiveNamespace, replaceLinks } from "../replace-links";
-
-// Helper to sort file names and create file objects.
-const getSortedFiles = (
-	fileNames: string[],
-	restrictNamespace?: boolean,
-	baseDir?: string,
-) => {
-	const sortedFileNames = fileNames
-		.slice()
-		.sort((a, b) => b.length - a.length);
-	return sortedFileNames.map((path) => ({
-		path,
-		aliases: null,
-		restrictNamespace: restrictNamespace ?? false,
-		namespace: getEffectiveNamespace(path, baseDir),
-	}));
-};
+import { replaceLinks } from "../replace-links";
+import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("basic", () => {
 	it("replaces links", async () => {
-		const files = getSortedFiles(["hello"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["hello"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "hello",
 			linkResolverContext: {
@@ -37,8 +25,12 @@ describe("basic", () => {
 	});
 
 	it("replaces links with bullet", async () => {
-		const files = getSortedFiles(["hello"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["hello"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "- hello",
 			linkResolverContext: {
@@ -52,8 +44,12 @@ describe("basic", () => {
 
 	it("replaces links with other texts", async () => {
 		{
-			const files = getSortedFiles(["hello"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["hello"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "world hello",
 				linkResolverContext: {
@@ -65,8 +61,12 @@ describe("basic", () => {
 			expect(result).toBe("world [[hello]]");
 		}
 		{
-			const files = getSortedFiles(["hello"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["hello"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "hello world",
 				linkResolverContext: {
@@ -81,8 +81,12 @@ describe("basic", () => {
 
 	it("replaces links with other texts and bullet", async () => {
 		{
-			const files = getSortedFiles(["hello"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["hello"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "- world hello",
 				linkResolverContext: {
@@ -94,8 +98,12 @@ describe("basic", () => {
 			expect(result).toBe("- world [[hello]]");
 		}
 		{
-			const files = getSortedFiles(["hello"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["hello"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "- hello world",
 				linkResolverContext: {
@@ -110,8 +118,12 @@ describe("basic", () => {
 
 	it("replaces multiple links", async () => {
 		{
-			const files = getSortedFiles(["hello", "world"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["hello", "world"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "hello world",
 				linkResolverContext: {
@@ -123,8 +135,12 @@ describe("basic", () => {
 			expect(result).toBe("[[hello]] [[world]]");
 		}
 		{
-			const files = getSortedFiles(["hello", "world"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["hello", "world"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "\nhello\nworld\n",
 				linkResolverContext: {
@@ -136,8 +152,12 @@ describe("basic", () => {
 			expect(result).toBe("\n[[hello]]\n[[world]]\n");
 		}
 		{
-			const files = getSortedFiles(["hello", "world"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["hello", "world"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "\nhello\nworld aaaaa\n",
 				linkResolverContext: {
@@ -149,8 +169,12 @@ describe("basic", () => {
 			expect(result).toBe("\n[[hello]]\n[[world]] aaaaa\n");
 		}
 		{
-			const files = getSortedFiles(["hello", "world"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["hello", "world"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "\n aaaaa hello\nworld bbbbb\n",
 				linkResolverContext: {
@@ -166,8 +190,12 @@ describe("basic", () => {
 
 describe("complex fileNames", () => {
 	it("unmatched namespace", async () => {
-		const files = getSortedFiles(["namespace/tag1", "namespace/tag2"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["namespace/tag1", "namespace/tag2"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "namespace",
 			linkResolverContext: {
@@ -180,8 +208,12 @@ describe("complex fileNames", () => {
 	});
 
 	it("single namespace", async () => {
-		const files = getSortedFiles(["namespace/tag1", "namespace/tag2"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["namespace/tag1", "namespace/tag2"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "namespace/tag1",
 			linkResolverContext: {
@@ -194,12 +226,12 @@ describe("complex fileNames", () => {
 	});
 
 	it("multiple namespaces", async () => {
-		const files = getSortedFiles([
-			"namespace/tag1",
-			"namespace/tag2",
-			"namespace",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["namespace/tag1", "namespace/tag2", "namespace"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "namespace/tag1 namespace/tag2",
 			linkResolverContext: {
@@ -214,8 +246,12 @@ describe("complex fileNames", () => {
 
 describe("containing CJK", () => {
 	it("unmatched namespace", async () => {
-		const files = getSortedFiles(["namespace/タグ"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["namespace/タグ"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "namespace",
 			linkResolverContext: {
@@ -228,12 +264,12 @@ describe("containing CJK", () => {
 	});
 
 	it("multiple namespaces", async () => {
-		const files = getSortedFiles([
-			"namespace/tag1",
-			"namespace/tag2",
-			"namespace/タグ3",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["namespace/tag1", "namespace/tag2", "namespace/タグ3"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "namespace/tag1 namespace/tag2 namespace/タグ3",
 			linkResolverContext: {
@@ -250,8 +286,12 @@ describe("containing CJK", () => {
 
 describe("starting CJK", () => {
 	it("unmatched namespace", async () => {
-		const files = getSortedFiles(["namespace/タグ"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["namespace/タグ"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "名前空間",
 			linkResolverContext: {
@@ -264,12 +304,12 @@ describe("starting CJK", () => {
 	});
 
 	it("single namespace", async () => {
-		const files = getSortedFiles([
-			"名前空間/tag1",
-			"名前空間/tag2",
-			"名前空間/タグ3",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "名前空間/tag1",
 			linkResolverContext: {
@@ -282,12 +322,12 @@ describe("starting CJK", () => {
 	});
 
 	it("multiple namespaces", async () => {
-		const files = getSortedFiles([
-			"名前空間/tag1",
-			"名前空間/tag2",
-			"名前空間/タグ3",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
 			linkResolverContext: {
@@ -302,8 +342,12 @@ describe("starting CJK", () => {
 	});
 
 	it("multiple CJK words", async () => {
-		const files = getSortedFiles(["漢字", "ひらがな"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["漢字", "ひらがな"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "- 漢字　ひらがな",
 			linkResolverContext: {
@@ -316,8 +360,12 @@ describe("starting CJK", () => {
 	});
 
 	it("multiple same CJK words", async () => {
-		const files = getSortedFiles(["ひらがな"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["ひらがな"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "- ひらがなとひらがな",
 			linkResolverContext: {
@@ -333,8 +381,12 @@ describe("starting CJK", () => {
 describe("CJK - Korean", () => {
 	it("converts Korean words to links", async () => {
 		// 韓国語の候補ファイル
-		const files = getSortedFiles(["한글", "테스트", "예시"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["한글", "테스트", "예시"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "한글 테스트 예시",
 			linkResolverContext: {
@@ -347,8 +399,12 @@ describe("CJK - Korean", () => {
 	});
 
 	it("converts Korean words within sentence", async () => {
-		const files = getSortedFiles(["문서"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["문서"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "이 문서는 문서이다.",
 			linkResolverContext: {
@@ -363,8 +419,12 @@ describe("CJK - Korean", () => {
 
 describe("CJK - Chinese", () => {
 	it("converts Chinese words to links", async () => {
-		const files = getSortedFiles(["汉字", "测试", "示例"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["汉字", "测试", "示例"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "汉字 测试 示例",
 			linkResolverContext: {
@@ -377,8 +437,12 @@ describe("CJK - Chinese", () => {
 	});
 
 	it("converts Chinese words within sentence", async () => {
-		const files = getSortedFiles(["文档"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["文档"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "这个文档很好。",
 			linkResolverContext: {
@@ -393,8 +457,12 @@ describe("CJK - Chinese", () => {
 
 describe("base character (pages)", () => {
 	it("unmatched namespace", async () => {
-		const files = getSortedFiles(["pages/tags"]);
-		const { candidateMap, trie } = buildCandidateTrie(files, "pages");
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["pages/tags"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: "pages",
+		});
 		const result = await replaceLinks({
 			body: "tags",
 			linkResolverContext: {
@@ -408,11 +476,15 @@ describe("base character (pages)", () => {
 });
 
 it("multiple links in the same line", async () => {
-	const files = getSortedFiles(["pages/tags", "サウナ", "tags"]);
-	const { candidateMap, trie } = buildCandidateTrie(files, "pages");
-	const result = await replaceLinks({
-		body: "サウナ tags pages/tags",
-		linkResolverContext: {
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["pages/tags", "サウナ", "tags"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: "pages",
+		});
+		const result = await replaceLinks({
+			body: "サウナ tags pages/tags",
+			linkResolverContext: {
 			filePath: "journals/2022-01-01",
 			trie,
 			candidateMap,
@@ -423,11 +495,12 @@ it("multiple links in the same line", async () => {
 
 describe("nested links", () => {
 	it("", async () => {
-		const files = getSortedFiles([
-			"アジャイルリーダーコンピテンシーマップ",
-			"リーダー",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["アジャイルリーダーコンピテンシーマップ", "リーダー"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "アジャイルリーダーコンピテンシーマップ",
 			linkResolverContext: {
@@ -440,11 +513,12 @@ describe("nested links", () => {
 	});
 
 	it("existing links", async () => {
-		const files = getSortedFiles([
-			"アジャイルリーダーコンピテンシーマップ",
-			"リーダー",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["アジャイルリーダーコンピテンシーマップ", "リーダー"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "[[アジャイルリーダーコンピテンシーマップ]]",
 			linkResolverContext: {
@@ -459,8 +533,12 @@ describe("nested links", () => {
 
 describe("with space", () => {
 	it("", async () => {
-		const files = getSortedFiles(["obsidian/automatic linker", "obsidian"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["obsidian/automatic linker", "obsidian"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "obsidian/automatic linker",
 			linkResolverContext: {
@@ -476,8 +554,12 @@ describe("with space", () => {
 describe("ignore url", () => {
 	it("one url", async () => {
 		{
-			const files = getSortedFiles(["example", "http", "https"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["example", "http", "https"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "- https://example.com",
 				linkResolverContext: {
@@ -489,8 +571,12 @@ describe("ignore url", () => {
 			expect(result).toBe("- https://example.com");
 		}
 		{
-			const files = getSortedFiles(["st"]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["st"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "- https://x.com/xxxx/status/12345?t=25S02Tda",
 				linkResolverContext: {
@@ -504,8 +590,12 @@ describe("ignore url", () => {
 	});
 
 	it("multiple urls", async () => {
-		const files = getSortedFiles(["example", "example1", "https", "http"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["example", "example1", "https", "http"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "- https://example.com https://example1.com",
 			linkResolverContext: {
@@ -518,14 +608,12 @@ describe("ignore url", () => {
 	});
 
 	it("multiple urls with links", async () => {
-		const files = getSortedFiles([
-			"example1",
-			"example",
-			"link",
-			"https",
-			"http",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["example1", "example", "link", "https", "http"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "- https://example.com https://example1.com link",
 			linkResolverContext: {
@@ -542,8 +630,12 @@ describe("ignore url", () => {
 
 describe("ignore markdown url", () => {
 	it("one url", async () => {
-		const files = getSortedFiles(["example", "title", "https", "http"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["example", "title", "https", "http"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "- [title](https://example.com)",
 			linkResolverContext: {
@@ -556,15 +648,19 @@ describe("ignore markdown url", () => {
 	});
 
 	it("multiple urls", async () => {
-		const files = getSortedFiles([
-			"example1",
-			"example2",
-			"title1",
-			"title2",
-			"https",
-			"http",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: [
+				"example1",
+				"example2",
+				"title1",
+				"title2",
+				"https",
+				"http",
+			],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "- [title1](https://example1.com) [title2](https://example2.com)",
 			linkResolverContext: {
@@ -579,16 +675,20 @@ describe("ignore markdown url", () => {
 	});
 
 	it("multiple urls with links", async () => {
-		const files = getSortedFiles([
-			"example1",
-			"example2",
-			"title1",
-			"title2",
-			"https",
-			"http",
-			"link",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: [
+				"example1",
+				"example2",
+				"title1",
+				"title2",
+				"https",
+				"http",
+				"link",
+			],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "- [title1](https://example1.com) [title2](https://example2.com) link",
 			linkResolverContext: {
@@ -605,8 +705,12 @@ describe("ignore markdown url", () => {
 
 describe("ignore code", () => {
 	it("inline code", async () => {
-		const files = getSortedFiles(["example", "code"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["example", "code"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "`code` example",
 			linkResolverContext: {
@@ -619,8 +723,12 @@ describe("ignore code", () => {
 	});
 
 	it("code block", async () => {
-		const files = getSortedFiles(["example", "typescript"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["example", "typescript"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "```typescript\nexample\n```",
 			linkResolverContext: {
@@ -633,8 +741,12 @@ describe("ignore code", () => {
 	});
 
 	it("skips replacement when content is too short", async () => {
-		const files = getSortedFiles(["hello"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["hello"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "hello",
 			linkResolverContext: {
@@ -650,14 +762,15 @@ describe("ignore code", () => {
 
 describe("aliases", () => {
 	it("replaces alias with canonical form using file path and alias", async () => {
-		const files: PathAndAliases[] = [
-			{
-				path: "pages/HelloWorld",
-				aliases: ["Hello", "HW"],
-				restrictNamespace: false,
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["pages/HelloWorld"],
+			aliasMap: {
+				"pages/HelloWorld": ["Hello", "HW"],
 			},
-		];
-		const { candidateMap, trie } = buildCandidateTrie(files);
+			restrictNamespace: false,
+			baseDir: "pages",
+		});
+		console.log(candidateMap);
 		const result1 = await replaceLinks({
 			body: "Hello",
 			linkResolverContext: {
@@ -715,8 +828,12 @@ describe("aliases", () => {
 
 describe("namespace resolution", () => {
 	it("replaces candidate with namespace when full candidate is provided", async () => {
-		const files = getSortedFiles(["namespaces/link"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["namespaces/link"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "namespaces/link",
 			linkResolverContext: {
@@ -730,8 +847,12 @@ describe("namespace resolution", () => {
 	});
 
 	it("replaces candidate without namespace correctly", async () => {
-		const files = getSortedFiles(["link"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["link"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "link",
 			linkResolverContext: {
@@ -745,8 +866,12 @@ describe("namespace resolution", () => {
 	});
 
 	it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
-		const files = getSortedFiles(["2025/02/08"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["2025/02/08"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "2025-02-08",
 			linkResolverContext: {
@@ -763,12 +888,16 @@ describe("namespace resolution", () => {
 describe("namespace resolution nearlest file path", () => {
 	it("closest siblings namespace should be used", async () => {
 		{
-			const files = getSortedFiles([
-				"namespace/a/b/c/d/link",
-				"namespace/a/b/c/d/e/f/link",
-				"namespace/a/b/c/link",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: [
+					"namespace/a/b/c/d/link",
+					"namespace/a/b/c/d/e/f/link",
+					"namespace/a/b/c/link",
+				],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 
 			const result = await replaceLinks({
 				body: "link",
@@ -782,12 +911,16 @@ describe("namespace resolution nearlest file path", () => {
 			expect(result).toBe("[[namespace/a/b/c/link]]");
 		}
 		{
-			const files = getSortedFiles([
-				"namespace/a/b/c/link",
-				"namespace/a/b/c/d/link",
-				"namespace/a/b/c/d/e/f/link",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: [
+					"namespace/a/b/c/link",
+					"namespace/a/b/c/d/link",
+					"namespace/a/b/c/d/e/f/link",
+				],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "link",
 				linkResolverContext: {
@@ -800,14 +933,18 @@ describe("namespace resolution nearlest file path", () => {
 			expect(result).toBe("[[namespace/a/b/c/d/link]]");
 		}
 		{
-			const files = getSortedFiles([
-				"namespace/xxx/link",
-				"another-namespace/link",
-				"another-namespace/a/b/c/link",
-				"another-namespace/a/b/c/d/link",
-				"another-namespace/a/b/c/d/e/f/link",
-			]);
-			const { candidateMap, trie } = buildCandidateTrie(files);
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: [
+					"namespace/xxx/link",
+					"another-namespace/link",
+					"another-namespace/a/b/c/link",
+					"another-namespace/a/b/c/d/link",
+					"another-namespace/a/b/c/d/e/f/link",
+				],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
 			const result = await replaceLinks({
 				body: "link",
 				linkResolverContext: {
@@ -822,15 +959,19 @@ describe("namespace resolution nearlest file path", () => {
 	});
 
 	it("closest children namespace should be used", async () => {
-		const files = getSortedFiles([
-			"namespace1/subnamespace/link",
-			"namespace2/super-super-long-long-directory/link",
-			"namespace3/link",
-			"namespace/a/b/c/link",
-			"namespace/a/b/c/d/link",
-			"namespace/a/b/c/d/e/f/link",
-		]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: [
+				"namespace1/subnamespace/link",
+				"namespace2/super-super-long-long-directory/link",
+				"namespace3/link",
+				"namespace/a/b/c/link",
+				"namespace/a/b/c/d/link",
+				"namespace/a/b/c/d/e/f/link",
+			],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "link",
 			linkResolverContext: {
@@ -844,8 +985,8 @@ describe("namespace resolution nearlest file path", () => {
 	});
 
 	it("find closest path if the current path is in base dir and the candidate is not", async () => {
-		const files = getSortedFiles(
-			[
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: [
 				"namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link",
 				"namespace1/link2",
 				"namespace2/link2",
@@ -856,10 +997,10 @@ describe("namespace resolution nearlest file path", () => {
 				"base/a/b/c/d/link",
 				"base/a/b/c/d/e/f/link",
 			],
-			false,
-			"base",
-		);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: "base",
+		});
 		const result = await replaceLinks({
 			body: "link link2",
 			linkResolverContext: {
@@ -887,51 +1028,55 @@ describe("namespace resolution nearlest file path", () => {
 });
 
 it("ignore month notes", async () => {
-	const files = getSortedFiles([
-		"01",
-		"02",
-		"03",
-		"04",
-		"05",
-		"06",
-		"07",
-		"08",
-		"09",
-		"10",
-		"11",
-		"12",
-		"1",
-		"2",
-		"3",
-		"4",
-		"5",
-		"6",
-		"7",
-		"8",
-		"9",
-		"namespace/01",
-		"namespace/02",
-		"namespace/03",
-		"namespace/04",
-		"namespace/05",
-		"namespace/06",
-		"namespace/07",
-		"namespace/08",
-		"namespace/09",
-		"namespace/10",
-		"namespace/11",
-		"namespace/12",
-		"namespace/1",
-		"namespace/2",
-		"namespace/3",
-		"namespace/4",
-		"namespace/5",
-		"namespace/6",
-		"namespace/7",
-		"namespace/8",
-		"namespace/9",
-	]);
-	const { candidateMap, trie } = buildCandidateTrie(files);
+	const { candidateMap, trie } = buildCandidateTrieForTest({
+		fileNames: [
+			"01",
+			"02",
+			"03",
+			"04",
+			"05",
+			"06",
+			"07",
+			"08",
+			"09",
+			"10",
+			"11",
+			"12",
+			"1",
+			"2",
+			"3",
+			"4",
+			"5",
+			"6",
+			"7",
+			"8",
+			"9",
+			"namespace/01",
+			"namespace/02",
+			"namespace/03",
+			"namespace/04",
+			"namespace/05",
+			"namespace/06",
+			"namespace/07",
+			"namespace/08",
+			"namespace/09",
+			"namespace/10",
+			"namespace/11",
+			"namespace/12",
+			"namespace/1",
+			"namespace/2",
+			"namespace/3",
+			"namespace/4",
+			"namespace/5",
+			"namespace/6",
+			"namespace/7",
+			"namespace/8",
+			"namespace/9",
+		],
+		aliasMap: {},
+		restrictNamespace: false,
+		baseDir: undefined,
+	});
 	const result = await replaceLinks({
 		body: "01 1 12 namespace/01",
 		linkResolverContext: {
@@ -945,8 +1090,12 @@ it("ignore month notes", async () => {
 
 describe("ignoreDateFormats setting", () => {
 	it("should not replace date format when ignoreDateFormats is true", async () => {
-		const files = getSortedFiles(["2025-02-10", "journals/2025-02-10"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["2025-02-10", "journals/2025-02-10"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "2025-02-10",
 			linkResolverContext: {
@@ -964,8 +1113,12 @@ describe("ignoreDateFormats setting", () => {
 	});
 
 	it("should replace date format when ignoreDateFormats is false", async () => {
-		const files = getSortedFiles(["2025-02-10"]);
-		const { candidateMap, trie } = buildCandidateTrie(files);
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			fileNames: ["2025-02-10"],
+			aliasMap: {},
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
 		const result = await replaceLinks({
 			body: "2025-02-10",
 			linkResolverContext: {

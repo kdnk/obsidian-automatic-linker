@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildCandidateTrie, buildTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles } from "./test-helpers";
+import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - CJK handling", () => {
 	describe("containing CJK", () => {
 		it("unmatched namespace", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["namespace/タグ"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "namespace",
 				linkResolverContext: {
@@ -22,14 +23,16 @@ describe("replaceLinks - CJK handling", () => {
 		});
 
 		it("multiple namespaces", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: [
 					"namespace/tag1",
 					"namespace/tag2",
 					"namespace/タグ3",
 				],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "namespace/tag1 namespace/tag2 namespace/タグ3",
 				linkResolverContext: {
@@ -46,10 +49,12 @@ describe("replaceLinks - CJK handling", () => {
 
 	describe("starting CJK", () => {
 		it("unmatched namespace", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["namespace/タグ"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "名前空間",
 				linkResolverContext: {
@@ -62,10 +67,12 @@ describe("replaceLinks - CJK handling", () => {
 		});
 
 		it("single namespace", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "名前空間/tag1",
 				linkResolverContext: {
@@ -78,10 +85,12 @@ describe("replaceLinks - CJK handling", () => {
 		});
 
 		it("multiple namespaces", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["名前空間/tag1", "名前空間/tag2", "名前空間/タグ3"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
 				linkResolverContext: {
@@ -98,18 +107,14 @@ describe("replaceLinks - CJK handling", () => {
 
 	describe("automatic-linker-restrict-namespace with CJK", () => {
 		it("should respect restrictNamespace for CJK with baseDir", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["pages/セット/タグ", "pages/other/current"],
-				restrictNamespace: false,
-			});
-			const { candidateMap } = buildCandidateTrie(files);
-			candidateMap.set("タグ", {
-				canonical: "セット/タグ",
+				aliasMap: {
+					"pages/セット/タグ": [],
+				},
 				restrictNamespace: true,
-				namespace: "セット",
+				baseDir: "pages",
 			});
-			const trie = buildTrie(Array.from(candidateMap.keys()));
-
 			const result = await replaceLinks({
 				body: "タグ",
 				linkResolverContext: {
@@ -127,18 +132,14 @@ describe("replaceLinks - CJK handling", () => {
 		});
 
 		it("should not replace CJK when namespace does not match with baseDir", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["pages/セット/タグ", "pages/other/current"],
-				restrictNamespace: false,
-			});
-			const { candidateMap } = buildCandidateTrie(files);
-			candidateMap.set("タグ", {
-				canonical: "セット/タグ",
+				aliasMap: {
+					"pages/セット/タグ": [],
+				},
 				restrictNamespace: true,
-				namespace: "セット",
+				baseDir: "pages",
 			});
-			const trie = buildTrie(Array.from(candidateMap.keys()));
-
 			const result = await replaceLinks({
 				body: "タグ",
 				linkResolverContext: {

@@ -1,15 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { buildCandidateTrie, buildTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles } from "./test-helpers";
+import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - namespace resolution", () => {
 	describe("complex fileNames", () => {
 		it("unmatched namespace", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["namespace/tag1", "namespace/tag2"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "namespace",
 				linkResolverContext: {
@@ -22,10 +23,12 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("single namespace", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["namespace/tag1", "namespace/tag2"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "namespace/tag1",
 				linkResolverContext: {
@@ -38,10 +41,12 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("multiple namespaces", async () => {
-			const files = getSortedFiles({
+			const { candidateMap, trie } = buildCandidateTrieForTest({
 				fileNames: ["namespace/tag1", "namespace/tag2", "namespace"],
+				aliasMap: {},
+				restrictNamespace: false,
+				baseDir: undefined,
 			});
-			const { candidateMap, trie } = buildCandidateTrie(files);
 			const result = await replaceLinks({
 				body: "namespace/tag1 namespace/tag2",
 				linkResolverContext: {
@@ -55,19 +60,15 @@ describe("replaceLinks - namespace resolution", () => {
 	});
 
 	describe("automatic-linker-restrict-namespace and base dir", () => {
-		const files = getSortedFiles({
-			fileNames: ["pages/set/a", "pages/other/current"],
-			restrictNamespace: false,
-		});
-		const { candidateMap } = buildCandidateTrie(files);
-		candidateMap.set("a", {
-			canonical: "set/a",
-			restrictNamespace: true,
-			namespace: "set",
-		});
-		const trie = buildTrie(Array.from(candidateMap.keys()));
-
 		it("should replace candidate with restrictNamespace when effective namespace matches", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["pages/set/a", "pages/other/current"],
+				aliasMap: {
+					"pages/set/a": [],
+				},
+				restrictNamespace: true,
+				baseDir: "pages",
+			});
 			const result = await replaceLinks({
 				body: "a",
 				linkResolverContext: {
@@ -85,6 +86,14 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("should not replace candidate with restrictNamespace when effective namespace does not match", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				fileNames: ["pages/set/a", "pages/other/current"],
+				aliasMap: {
+					"pages/set/a": [],
+				},
+				restrictNamespace: true,
+				baseDir: "pages",
+			});
 			const result = await replaceLinks({
 				body: "a",
 				linkResolverContext: {
