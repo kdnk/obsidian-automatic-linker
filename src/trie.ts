@@ -25,7 +25,10 @@ export interface TrieNode {
  * If the path starts with one of the baseDir (e.g. "pages/"), the directory immediately
  * under the baseDir is considered the effective namespace.
  */
-export const getEffectiveNamespace = (path: string, baseDir?: string): string => {
+export const getEffectiveNamespace = (
+	path: string,
+	baseDir?: string,
+): string => {
 	const prefix = baseDir + "/";
 	if (baseDir) {
 		if (path.startsWith(prefix)) {
@@ -67,7 +70,7 @@ export interface CandidateData {
 
 export const buildCandidateTrie = (
 	allFiles: PathAndAliases[],
-	baseDir?: string,
+	baseDir: string | undefined,
 ) => {
 	// Process candidate strings from file paths.
 	type Candidate = {

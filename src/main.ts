@@ -72,7 +72,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				body: fileContent.slice(contentStart),
 				linkResolverContext: {
 					filePath: activeFile.path.replace(/\.md$/, ""),
-					trie: this.trie ?? buildCandidateTrie([]).trie,
+					trie: this.trie ?? buildCandidateTrie([], undefined).trie,
 					candidateMap: this.candidateMap ?? new Map(),
 				},
 				settings: {
