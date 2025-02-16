@@ -64,13 +64,14 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[pages/HelloWorld|HW]]");
 		});
 
-		it("replaces multiple occurrences of alias and normal candidate", async () => {
+		it("replaces multiple occurrences of alias and normal candidate (with baseDir)", async () => {
 			const files = setAliases(
 				getSortedFiles({
-					fileNames: ["pages/HelloWorld"],
+					fileNames: ["HelloWorld"],
 					restrictNamespace: false,
+					baseDir: "pages",
 				}),
-				"pages/HelloWorld",
+				"HelloWorld",
 				["Hello"],
 			);
 			const { candidateMap, trie } = buildCandidateTrie(files);
@@ -81,8 +82,11 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
+				settings: {
+					baseDir: "pages",
+				},
 			});
-			expect(result).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
+			expect(result).toBe("[[HelloWorld|Hello]] [[HelloWorld]]");
 		});
 	});
 

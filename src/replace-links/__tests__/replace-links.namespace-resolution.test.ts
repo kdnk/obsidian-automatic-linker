@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCandidateTrie } from "../../trie";
 import { replaceLinks } from "../replace-links";
-import { getSortedFiles } from "./test-helpers";
+import { getSortedFiles, setAliases } from "./test-helpers";
 
 describe("replaceLinks - namespace resolution", () => {
 	describe("basic namespace resolution", () => {
@@ -184,6 +184,52 @@ describe("replaceLinks - namespace resolution", () => {
 				settings: { namespaceResolution: false, baseDir: "base" },
 			});
 			expect(result2).toBe("link link2");
+		});
+	});
+
+	describe("namespace resoluton with aliases", () => {
+		it("should resolve without aliases", async () => {
+			const files = getSortedFiles({
+				fileNames: [
+					"namespace/xx/yy/link",
+					"namespace/xx/link",
+					"namespace/link2",
+				],
+			});
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				body: "link",
+				linkResolverContext: {
+					filePath: "namespace/xx/current-file",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[namespace/xx/link]]");
+		});
+
+		it("should resolve aliases", async () => {
+			const files = setAliases(
+				getSortedFiles({
+					fileNames: [
+						"namespace/xx/yy/link",
+						"namespace/xx/link",
+						"namespace/link2",
+					],
+				}),
+				"namespace/xx/yy/link",
+				["alias"],
+			);
+			const { candidateMap, trie } = buildCandidateTrie(files);
+			const result = await replaceLinks({
+				body: "alias",
+				linkResolverContext: {
+					filePath: "namespace/xx/current-file",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[namespace/xx/link|alias]]");
 		});
 	});
 });
