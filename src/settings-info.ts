@@ -8,6 +8,8 @@ export type AutomaticLinkerSettings = {
 	ignoreDateFormats: boolean; // Ignore date formatted links (e.g. 2025-02-10)
 	formatGitHubURLs: boolean; // Format GitHub URLs on save
 	githubEnterpriseURLs: string[]; // List of GitHub Enterprise URLs
+	formatJiraURLs: boolean; // Format Jira URLs on save
+	jiraURLs: string[]; // List of Jira URLs (domains)
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -20,4 +22,6 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	ignoreDateFormats: true, // Default: ignore date formats (e.g. 2025-02-10)
 	formatGitHubURLs: true, // Default: format GitHub URLs
 	githubEnterpriseURLs: [], // Default: empty list
+	formatJiraURLs: true, // Default: format Jira URLs
+	jiraURLs: [], // Default: empty list
 };

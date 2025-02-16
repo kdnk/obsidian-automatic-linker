@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AutomaticLinkerSettings, DEFAULT_SETTINGS } from "../../settings-info";
-import { formatGitHubURL } from "../index";
+import { formatGitHubURL } from "../github";
 
 describe("formatGitHubURL", () => {
 	const baseSettings: AutomaticLinkerSettings = {
@@ -12,14 +12,14 @@ describe("formatGitHubURL", () => {
 		it("should format basic repository URL", () => {
 			const input = "https://github.com/kdnk/obsidian-automatic-linker";
 			const expected =
-				"[[kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)";
+				"[[github/kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 
 		it("should format repository URL with trailing slash", () => {
 			const input = "https://github.com/kdnk/obsidian-automatic-linker/";
 			const expected =
-				"[[kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)";
+				"[[github/kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 
@@ -39,7 +39,7 @@ describe("formatGitHubURL", () => {
 			const input =
 				"https://github.com/kdnk/obsidian-automatic-linker/pull/123?diff=split";
 			const expected =
-				"[[kdnk/obsidian-automatic-linker/pull/123]] [🔗](https://github.com/kdnk/obsidian-automatic-linker/pull/123)";
+				"[[github/kdnk/obsidian-automatic-linker/pull/123]] [🔗](https://github.com/kdnk/obsidian-automatic-linker/pull/123)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 
@@ -47,7 +47,7 @@ describe("formatGitHubURL", () => {
 			const input =
 				"https://github.com/kdnk/obsidian-automatic-linker/issues/456#issuecomment-1234567";
 			const expected =
-				"[[kdnk/obsidian-automatic-linker/issues/456]] [🔗](https://github.com/kdnk/obsidian-automatic-linker/issues/456)";
+				"[[github/kdnk/obsidian-automatic-linker/issues/456]] [🔗](https://github.com/kdnk/obsidian-automatic-linker/issues/456)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 	});
@@ -56,7 +56,7 @@ describe("formatGitHubURL", () => {
 		it("should format enterprise repository URLs", () => {
 			const input = "https://github.enterprise.com/kdnk/project/";
 			const expected =
-				"[[kdnk/project]] [🔗](https://github.enterprise.com/kdnk/project)";
+				"[[ghe/kdnk/project]] [🔗](https://github.enterprise.com/kdnk/project)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 
@@ -64,14 +64,14 @@ describe("formatGitHubURL", () => {
 			const input =
 				"https://github.enterprise.com/kdnk/project/pull/789?diff=split";
 			const expected =
-				"[[enterprise/kdnk/project/pull/789]] [🔗](https://github.enterprise.com/kdnk/project/pull/789)";
+				"[[ghe/kdnk/project/pull/789]] [🔗](https://github.enterprise.com/kdnk/project/pull/789)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 
 		it("should handle custom enterprise URLs", () => {
 			const input = "https://github.company.com/team/project/issues/123";
 			const expected =
-				"[[company/team/project/issues/123]] [🔗](https://github.company.com/team/project/issues/123)";
+				"[[ghe/team/project/issues/123]] [🔗](https://github.company.com/team/project/issues/123)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 
@@ -86,7 +86,7 @@ describe("formatGitHubURL", () => {
 			const input =
 				"https://github.com/kdnk/obsidian-automatic-linker?tab=repositories";
 			const expected =
-				"[[kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)";
+				"[[github/kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 
@@ -94,7 +94,7 @@ describe("formatGitHubURL", () => {
 			const input =
 				"https://github.com/kdnk/obsidian-automatic-linker#readme";
 			const expected =
-				"[[kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)";
+				"[[github/kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)";
 			expect(formatGitHubURL(input, baseSettings)).toBe(expected);
 		});
 	});

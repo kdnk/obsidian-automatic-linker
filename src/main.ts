@@ -10,10 +10,11 @@ import {
 } from "obsidian";
 import { PathAndAliases } from "./path-and-aliases.types";
 import { replaceLinks } from "./replace-links";
-import { formatGitHubURL } from "./replace-urls";
+import { formatGitHubURL } from "./replace-urls/github";
+import { formatJiraURL } from "./replace-urls/jira";
 import { AutomaticLinkerPluginSettingsTab } from "./settings";
-import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
 import { AutomaticLinkerSettings, DEFAULT_SETTINGS } from "./settings-info";
+import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
 
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
@@ -47,6 +48,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				const githubUrlPattern = /(https?:\/\/[^\s\]]+)/g;
 				fileContent = fileContent.replace(githubUrlPattern, (match) => {
 					return formatGitHubURL(match, this.settings);
+				});
+			}
+
+			// Format Jira URLs if enabled
+			if (this.settings.formatJiraURLs) {
+				// Find URLs using a regex pattern
+				const urlPattern = /(https?:\/\/[^\s\]]+)/g;
+				fileContent = fileContent.replace(urlPattern, (match) => {
+					return formatJiraURL(match, this.settings);
 				});
 			}
 

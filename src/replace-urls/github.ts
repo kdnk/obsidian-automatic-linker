@@ -1,4 +1,5 @@
 import { AutomaticLinkerSettings } from "../settings-info";
+import { formatJiraURL } from "./jira";
 
 type GitHubURLInfo = {
 	owner: string;
@@ -85,15 +86,9 @@ function formatToObsidianLink(
 ): string {
 	const url = new URL(cleanURL);
 	const isEnterpriseURL = url.hostname !== "github.com";
-	let domainPrefix = "";
+	let prefix = isEnterpriseURL ? "ghe" : "github";
 
-	if (isEnterpriseURL && (urlInfo.type || urlInfo.id)) {
-		// For github.enterprise.com -> enterprise
-		// For github.company.com -> company
-		domainPrefix = url.hostname.split(".")[1] + "/";
-	}
-
-	let wikiLink = `[[${domainPrefix}${urlInfo.owner}/${urlInfo.repository}`;
+	let wikiLink = `[[${prefix}/${urlInfo.owner}/${urlInfo.repository}`;
 	if (urlInfo.type && urlInfo.id) {
 		wikiLink += `/${urlInfo.type}/${urlInfo.id}`;
 	}
@@ -126,4 +121,25 @@ function isGitHubURL(url: URL, enterpriseURLs: string[]): boolean {
 function isPullRequestOrIssueURL(url: URL): boolean {
 	const path = url.pathname.toLowerCase();
 	return path.includes("/pull/") || path.includes("/issues/");
+}
+
+export function formatURL(
+	url: string,
+	settings: AutomaticLinkerSettings,
+): string {
+	if (settings.formatGitHubURLs) {
+		const formattedGitHubURL = formatGitHubURL(url, settings);
+		if (formattedGitHubURL !== url) {
+			return formattedGitHubURL;
+		}
+	}
+
+	if (settings.formatJiraURLs) {
+		const formattedJiraURL = formatJiraURL(url, settings);
+		if (formattedJiraURL !== url) {
+			return formattedJiraURL;
+		}
+	}
+
+	return url;
 }
