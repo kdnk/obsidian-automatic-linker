@@ -22,6 +22,29 @@ describe("replaceLinks", () => {
 			expect(result).toBe("[[hello]]");
 		});
 
+		it("replaces links with space", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "pages/tidy first" }],
+				restrictNamespace: false,
+				baseDir: "pages",
+			});
+			console.log(candidateMap);
+			const result = await replaceLinks({
+				body: "tidy first",
+				linkResolverContext: {
+					filePath: "pages/Books",
+					trie,
+					candidateMap,
+				},
+				settings: {
+					baseDir: "pages",
+					minCharCount: 0,
+					namespaceResolution: true,
+				},
+			});
+			expect(result).toBe("[[tidy first]]");
+		});
+
 		it("replaces links with bullet", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],

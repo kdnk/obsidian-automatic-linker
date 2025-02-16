@@ -1,9 +1,5 @@
-import { PathAndAliases } from "../../path-and-aliases.types";
-import { buildCandidateTrie } from "../../trie";
-import { getEffectiveNamespace } from "../replace-links";
+import { buildCandidateTrie, getEffectiveNamespace } from "../../trie";
 
-type Path = string;
-type Alias = string;
 export const buildCandidateTrieForTest = ({
 	files,
 	restrictNamespace,
@@ -25,24 +21,4 @@ export const buildCandidateTrieForTest = ({
 
 	const { candidateMap, trie } = buildCandidateTrie(sortedFiles, baseDir);
 	return { candidateMap, trie };
-};
-
-const getSortedFiles = ({
-	fileNames,
-	restrictNamespace = false,
-	baseDir,
-}: {
-	fileNames: string[];
-	restrictNamespace?: boolean;
-	baseDir?: string;
-}): PathAndAliases[] => {
-	const sortedFileNames = fileNames
-		.slice()
-		.sort((a, b) => b.length - a.length);
-	return sortedFileNames.map((path) => ({
-		path,
-		aliases: null,
-		restrictNamespace: restrictNamespace ?? false,
-		namespace: getEffectiveNamespace(path, baseDir),
-	}));
 };
