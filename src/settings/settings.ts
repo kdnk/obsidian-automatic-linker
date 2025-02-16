@@ -158,5 +158,43 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 				text.inputEl.rows = 4;
 				text.inputEl.cols = 50;
 			});
+
+		// Toggle for formatting JIRA URLs on save
+		new Setting(containerEl)
+			.setName("Format JIRA URLs on Save")
+			.setDesc(
+				"When enabled, JIRA URLs will be formatted when saving the file.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.formatJiraURLs)
+					.onChange(async (value) => {
+						this.plugin.settings.formatJiraURLs = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		// Add JIRA URLs setting
+		new Setting(containerEl)
+			.setName("JIRA URLs")
+			.setDesc(
+				"Enter JIRA URLs (one per line). Example: jira.enterprise.com",
+			)
+			.addTextArea((text) => {
+				text.setPlaceholder("jira.enterprise.com\njira.company.com")
+					.setValue(this.plugin.settings.jiraURLs.join("\n"))
+					.onChange(async (value) => {
+						// Split by newlines and filter out empty lines
+						const urls = value
+							.split("\n")
+							.map((url) => url.trim())
+							.filter(Boolean);
+						this.plugin.settings.jiraURLs = urls;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+				// Make the text area taller
+				text.inputEl.rows = 4;
+				text.inputEl.cols = 50;
+			});
 	}
 }
