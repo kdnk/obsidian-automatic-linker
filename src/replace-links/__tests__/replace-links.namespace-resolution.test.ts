@@ -225,27 +225,54 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 
 		it("should resolve aliases", async () => {
-			const { candidateMap, trie } = buildCandidateTrieForTest({
-				fileNames: [
-					"namespace/xx/yy/link",
-					"namespace/xx/link",
-					"namespace/link2",
-				],
-				aliasMap: {
-					"namespace/xx/yy/link": ["alias"],
-				},
-				restrictNamespace: false,
-				baseDir: undefined,
-			});
-			const result = await replaceLinks({
-				body: "alias",
-				linkResolverContext: {
-					filePath: "namespace/xx/current-file",
-					trie,
-					candidateMap,
-				},
-			});
-			expect(result).toBe("[[namespace/xx/link|alias]]");
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					fileNames: [
+						"namespace/xx/yy/link",
+						"namespace/xx/link",
+						"namespace/link2",
+					],
+					aliasMap: {
+						"namespace/xx/link": ["alias"],
+					},
+					restrictNamespace: false,
+					baseDir: undefined,
+				});
+				const result = await replaceLinks({
+					body: "alias",
+					linkResolverContext: {
+						filePath: "namespace/xx/current-file",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("[[namespace/xx/link|alias]]");
+			}
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					fileNames: [
+						"namespace/xx/yy/zz/link",
+						"namespace/xx/yy/link",
+						"namespace/xx/link",
+						"namespace/link",
+						"namespace/link2",
+					],
+					aliasMap: {
+						"namespace/xx/yy/link": ["alias"],
+					},
+					restrictNamespace: false,
+					baseDir: undefined,
+				});
+				const result = await replaceLinks({
+					body: "alias",
+					linkResolverContext: {
+						filePath: "namespace/xx/yy/current-file",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("[[namespace/xx/yy/link|alias]]");
+			}
 		});
 	});
 });

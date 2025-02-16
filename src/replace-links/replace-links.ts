@@ -193,7 +193,25 @@ export const replaceLinks = async ({
 					}
 
 					// Replace the candidate with the wikilink format.
-					result += `[[${candidateData.canonical}]]`;
+					let linkPath = candidateData.canonical;
+					const hasAlias = linkPath.includes("|");
+					let alias = "";
+
+					if (hasAlias) {
+						[linkPath, alias] = linkPath.split("|");
+					}
+
+					// Remove pages/ prefix when baseDir is set
+					if (settings.baseDir && linkPath.startsWith("pages/")) {
+						linkPath = linkPath.slice("pages/".length);
+					}
+
+					// Remove base/ prefix when in base directory
+					if (settings.baseDir && linkPath.startsWith(settings.baseDir + "/")) {
+						linkPath = linkPath.slice((settings.baseDir + "/").length);
+					}
+
+					result += hasAlias ? `[[${linkPath}|${alias}]]` : `[[${linkPath}]]`;
 					i += candidate.length;
 					continue outer;
 				}
@@ -245,7 +263,17 @@ export const replaceLinks = async ({
 
 						if (filteredCandidates.length === 1) {
 							const candidateData = filteredCandidates[0][1];
-							result += `[[${candidateData.canonical}]]`;
+							let linkPath = candidateData.canonical;
+							// Remove pages/ prefix when baseDir is set
+							if (settings.baseDir && linkPath.startsWith("pages/")) {
+								linkPath = linkPath.slice("pages/".length);
+							}
+
+							// Remove base/ prefix when in base directory
+							if (settings.baseDir && linkPath.startsWith(settings.baseDir + "/")) {
+								linkPath = linkPath.slice((settings.baseDir + "/").length);
+							}
+							result += `[[${linkPath}]]`;
 							i += word.length;
 							continue outer;
 						} else if (filteredCandidates.length > 1) {
@@ -351,7 +379,17 @@ export const replaceLinks = async ({
 								}
 							}
 							if (bestCandidate !== null) {
-								result += `[[${bestCandidate[1].canonical}]]`;
+								let linkPath = bestCandidate[1].canonical;
+								// Remove pages/ prefix when baseDir is set
+								if (settings.baseDir && linkPath.startsWith("pages/")) {
+									linkPath = linkPath.slice("pages/".length);
+								}
+
+								// Remove base/ prefix when in base directory
+								if (settings.baseDir && linkPath.startsWith(settings.baseDir + "/")) {
+									linkPath = linkPath.slice((settings.baseDir + "/").length);
+								}
+								result += `[[${linkPath}]]`;
 								i += word.length;
 								continue outer;
 							}
