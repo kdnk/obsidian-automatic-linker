@@ -67,7 +67,7 @@ export interface CandidateData {
 
 export const buildCandidateTrie = (
 	allFiles: PathAndAliases[],
-	baseDir = "pages",
+	baseDir?: string,
 ) => {
 	// Process candidate strings from file paths.
 	type Candidate = {
