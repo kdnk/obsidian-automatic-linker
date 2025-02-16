@@ -207,11 +207,18 @@ export const replaceLinks = async ({
 					}
 
 					// Remove base/ prefix when in base directory
-					if (settings.baseDir && linkPath.startsWith(settings.baseDir + "/")) {
-						linkPath = linkPath.slice((settings.baseDir + "/").length);
+					if (
+						settings.baseDir &&
+						linkPath.startsWith(settings.baseDir + "/")
+					) {
+						linkPath = linkPath.slice(
+							(settings.baseDir + "/").length,
+						);
 					}
 
-					result += hasAlias ? `[[${linkPath}|${alias}]]` : `[[${linkPath}]]`;
+					result += hasAlias
+						? `[[${linkPath}|${alias}]]`
+						: `[[${linkPath}]]`;
 					i += candidate.length;
 					continue outer;
 				}
@@ -265,13 +272,21 @@ export const replaceLinks = async ({
 							const candidateData = filteredCandidates[0][1];
 							let linkPath = candidateData.canonical;
 							// Remove pages/ prefix when baseDir is set
-							if (settings.baseDir && linkPath.startsWith("pages/")) {
+							if (
+								settings.baseDir &&
+								linkPath.startsWith("pages/")
+							) {
 								linkPath = linkPath.slice("pages/".length);
 							}
 
 							// Remove base/ prefix when in base directory
-							if (settings.baseDir && linkPath.startsWith(settings.baseDir + "/")) {
-								linkPath = linkPath.slice((settings.baseDir + "/").length);
+							if (
+								settings.baseDir &&
+								linkPath.startsWith(settings.baseDir + "/")
+							) {
+								linkPath = linkPath.slice(
+									(settings.baseDir + "/").length,
+								);
 							}
 							result += `[[${linkPath}]]`;
 							i += word.length;
@@ -381,13 +396,21 @@ export const replaceLinks = async ({
 							if (bestCandidate !== null) {
 								let linkPath = bestCandidate[1].canonical;
 								// Remove pages/ prefix when baseDir is set
-								if (settings.baseDir && linkPath.startsWith("pages/")) {
+								if (
+									settings.baseDir &&
+									linkPath.startsWith("pages/")
+								) {
 									linkPath = linkPath.slice("pages/".length);
 								}
 
 								// Remove base/ prefix when in base directory
-								if (settings.baseDir && linkPath.startsWith(settings.baseDir + "/")) {
-									linkPath = linkPath.slice((settings.baseDir + "/").length);
+								if (
+									settings.baseDir &&
+									linkPath.startsWith(settings.baseDir + "/")
+								) {
+									linkPath = linkPath.slice(
+										(settings.baseDir + "/").length,
+									);
 								}
 								result += `[[${linkPath}]]`;
 								i += word.length;

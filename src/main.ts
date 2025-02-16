@@ -1,3 +1,5 @@
+import AsyncLock from "async-lock";
+import throttle from "just-throttle";
 import {
 	App,
 	getFrontMatterInfo,
@@ -6,16 +8,12 @@ import {
 	Plugin,
 	PluginManifest,
 } from "obsidian";
-import AsyncLock from "async-lock";
-import { replaceLinks } from "./replace-links";
-import {
-	AutomaticLinkerPluginSettingsTab,
-	AutomaticLinkerSettings,
-	DEFAULT_SETTINGS,
-} from "./settings";
-import throttle from "just-throttle";
-import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
 import { PathAndAliases } from "./path-and-aliases.types";
+import { replaceLinks } from "./replace-links";
+import { formatGitHubURL } from "./replace-urls";
+import { AutomaticLinkerPluginSettingsTab } from "./settings";
+import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
+import { AutomaticLinkerSettings, DEFAULT_SETTINGS } from "./settings-info";
 
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
@@ -29,7 +27,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		super(app, pluginManifest);
 	}
 
-	// Cancelable function to modify links in the active file
 	async modifyLinks() {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
@@ -38,11 +35,20 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		try {
 			// Read the current file content
-			const fileContent = (
-				await this.app.vault.read(activeFile)
-			).normalize("NFC");
+			let fileContent = (await this.app.vault.read(activeFile)).normalize(
+				"NFC",
+			);
 
 			console.log(new Date().toISOString(), "modifyLinks started");
+
+			// Format GitHub URLs if enabled
+			if (this.settings.formatGitHubURLs) {
+				// Find GitHub URLs using a regex pattern
+				const githubUrlPattern = /(https?:\/\/[^\s\]]+)/g;
+				fileContent = fileContent.replace(githubUrlPattern, (match) => {
+					return formatGitHubURL(match, this.settings);
+				});
+			}
 
 			// Use the pre-built trie and candidateMap to replace links.
 			// Fallback to an empty trie if not built.

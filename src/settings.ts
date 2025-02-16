@@ -1,25 +1,5 @@
-import { PluginSettingTab, App, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting } from "obsidian";
 import AutomaticLinkerPlugin from "./main";
-
-export type AutomaticLinkerSettings = {
-	formatOnSave: boolean;
-	baseDir: string;
-	showNotice: boolean;
-	minCharCount: number; // Minimum character count setting
-	considerAliases: boolean; // Consider aliases when linking
-	namespaceResolution: boolean; // Automatically resolve namespaces for shorthand links
-	ignoreDateFormats: boolean; // Ignore date formatted links (e.g. 2025-02-10)
-};
-
-export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
-	formatOnSave: false,
-	baseDir: "pages",
-	showNotice: false,
-	minCharCount: 0, // Default value: 0 (always replace links)
-	considerAliases: false, // Default: do not consider aliases
-	namespaceResolution: false, // Default: disable automatic namespace resolution
-	ignoreDateFormats: true, // Default: ignore date formats (e.g. 2025-02-10)
-};
 
 export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 	plugin: AutomaticLinkerPlugin;
@@ -137,6 +117,46 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 						this.plugin.settings.ignoreDateFormats = value;
 						await this.plugin.saveData(this.plugin.settings);
 					});
+			});
+
+		// Toggle for formatting GitHub URLs on save
+		new Setting(containerEl)
+			.setName("Format GitHub URLs on Save")
+			.setDesc(
+				"When enabled, GitHub URLs will be formatted when saving the file.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.formatGitHubURLs)
+					.onChange(async (value) => {
+						this.plugin.settings.formatGitHubURLs = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		// Add GitHub Enterprise URLs setting
+		new Setting(containerEl)
+			.setName("GitHub Enterprise URLs")
+			.setDesc(
+				"Enter GitHub Enterprise URLs (one per line). Example: github.enterprise.com",
+			)
+			.addTextArea((text) => {
+				text.setPlaceholder("github.enterprise.com\ngithub.company.com")
+					.setValue(
+						this.plugin.settings.githubEnterpriseURLs.join("\n"),
+					)
+					.onChange(async (value) => {
+						// Split by newlines and filter out empty lines
+						const urls = value
+							.split("\n")
+							.map((url) => url.trim())
+							.filter(Boolean);
+						this.plugin.settings.githubEnterpriseURLs = urls;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+				// Make the text area taller
+				text.inputEl.rows = 4;
+				text.inputEl.cols = 50;
 			});
 	}
 }
