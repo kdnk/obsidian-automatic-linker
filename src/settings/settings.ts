@@ -1,5 +1,5 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
-import AutomaticLinkerPlugin from "./main";
+import AutomaticLinkerPlugin from "../main";
 
 export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 	plugin: AutomaticLinkerPlugin;

@@ -1,4 +1,4 @@
-import { AutomaticLinkerSettings } from "../settings-info";
+import { AutomaticLinkerSettings } from "../settings/settings-info";
 
 type JiraURLInfo = {
 	project: string;

@@ -1,4 +1,4 @@
-import { AutomaticLinkerSettings } from "../settings-info";
+import { AutomaticLinkerSettings } from "../settings/settings-info";
 import { formatJiraURL } from "./jira";
 
 type GitHubURLInfo = {

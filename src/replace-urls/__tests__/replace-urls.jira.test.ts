@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { AutomaticLinkerSettings, DEFAULT_SETTINGS } from "../../settings-info";
+import {
+	AutomaticLinkerSettings,
+	DEFAULT_SETTINGS,
+} from "../../settings/settings-info";
 import { formatJiraURL } from "../jira";
 
 describe("formatJiraURL", () => {

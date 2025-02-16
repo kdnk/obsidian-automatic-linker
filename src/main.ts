@@ -12,8 +12,11 @@ import { PathAndAliases } from "./path-and-aliases.types";
 import { replaceLinks } from "./replace-links";
 import { formatGitHubURL } from "./replace-urls/github";
 import { formatJiraURL } from "./replace-urls/jira";
-import { AutomaticLinkerPluginSettingsTab } from "./settings";
-import { AutomaticLinkerSettings, DEFAULT_SETTINGS } from "./settings-info";
+import { AutomaticLinkerPluginSettingsTab } from "./settings/settings";
+import {
+	AutomaticLinkerSettings,
+	DEFAULT_SETTINGS,
+} from "./settings/settings-info";
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
 
 export default class AutomaticLinkerPlugin extends Plugin {
