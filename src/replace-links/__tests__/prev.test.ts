@@ -461,6 +461,7 @@ describe("base character (pages)", () => {
 				trie,
 				candidateMap,
 			},
+			settings: { baseDir: "pages" },
 		});
 		expect(result).toBe("[[tags]]");
 	});
@@ -801,6 +802,7 @@ describe("aliases", () => {
 				trie,
 				candidateMap,
 			},
+			settings: { baseDir: "pages" },
 		});
 		expect(result3).toBe("[[HelloWorld]]");
 	});
