@@ -159,4 +159,95 @@ describe("replaceLinks - CJK handling", () => {
 			expect(result).toBe("タグ");
 		});
 	});
+
+	it("multiple same CJK words", async () => {
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			files: [{ path: "ひらがな" }],
+			restrictNamespace: false,
+			baseDir: undefined,
+		});
+		const result = await replaceLinks({
+			body: "- ひらがなとひらがな",
+			linkResolverContext: {
+				filePath: "journals/2022-01-01",
+				trie,
+				candidateMap,
+			},
+		});
+		expect(result).toBe("- [[ひらがな]]と[[ひらがな]]");
+	});
+
+	describe("CJK with namespaces", () => {
+		it("should convert CJK text with namespace prefix", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "RM/関係性の勇者", aliases: [] }],
+				restrictNamespace: false,
+				baseDir: "pages",
+			});
+			const result = await replaceLinks({
+				body: "- 関係性の勇者は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+				linkResolverContext: {
+					filePath: "pages/current",
+					trie,
+					candidateMap,
+				},
+				settings: {
+					minCharCount: 0,
+					namespaceResolution: true,
+					baseDir: "pages",
+				},
+			});
+			expect(result).toBe(
+				"- [[RM/関係性の勇者]]は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+			);
+		});
+
+		it("should convert CJK text with namespace and alias", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "RM/関係性の勇者", aliases: ["勇者"] }],
+				restrictNamespace: false,
+				baseDir: "pages",
+			});
+			const result = await replaceLinks({
+				body: "- 勇者は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+				linkResolverContext: {
+					filePath: "pages/current",
+					trie,
+					candidateMap,
+				},
+				settings: {
+					minCharCount: 0,
+					namespaceResolution: true,
+					baseDir: "pages",
+				},
+			});
+			expect(result).toBe(
+				"- [[RM/関係性の勇者|勇者]]は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+			);
+		});
+
+		it("should convert CJK text with namespace and spaces", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "RM/関係性の勇者", aliases: [] }],
+				restrictNamespace: false,
+				baseDir: "pages",
+			});
+			const result = await replaceLinks({
+				body: "- 関係性の勇者 は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+				linkResolverContext: {
+					filePath: "pages/current",
+					trie,
+					candidateMap,
+				},
+				settings: {
+					minCharCount: 0,
+					namespaceResolution: true,
+					baseDir: "pages",
+				},
+			});
+			expect(result).toBe(
+				"- [[RM/関係性の勇者]] は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+			);
+		});
+	});
 });

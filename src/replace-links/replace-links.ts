@@ -116,10 +116,23 @@ export const replaceLinks = async ({
 				if (!child) break;
 				node = child;
 				if (node.candidate) {
-					lastCandidate = {
-						candidate: node.candidate,
-						length: j - i + 1,
-					};
+					// For CJK text, we need to check if this is a complete CJK segment
+					const candidate = text.substring(i, j + 1);
+					const isCjkCandidate =
+						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
+							candidate,
+						);
+					if (isCjkCandidate) {
+						lastCandidate = {
+							candidate: node.candidate,
+							length: j - i + 1,
+						};
+					} else if (isWordBoundary(text[j + 1])) {
+						lastCandidate = {
+							candidate: node.candidate,
+							length: j - i + 1,
+						};
+					}
 				}
 				j++;
 			}

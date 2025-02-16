@@ -98,16 +98,35 @@ export const buildCandidateTrie = (
 
 	// Register normal candidates.
 	for (const { full, short, restrictNamespace, namespace } of candidates) {
-		// Register the full path candidate with canonical equal to the full path.
+		// Register the full path
 		candidateMap.set(full, {
 			canonical: full,
 			restrictNamespace,
 			namespace,
 		});
-		// If a shorthand exists, register it with canonical equal to the shorthand.
-		if (short && !candidateMap.has(short)) {
+
+		// For CJK paths, register both the full path and the last segment
+		const lastSlashIndex = full.lastIndexOf("/");
+		if (lastSlashIndex !== -1) {
+			const lastSegment = full.slice(lastSlashIndex + 1);
+			if (
+				/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
+					lastSegment,
+				)
+			) {
+				// Register the last segment
+				candidateMap.set(lastSegment, {
+					canonical: full,
+					restrictNamespace,
+					namespace,
+				});
+			}
+		}
+
+		// Register the short path if available
+		if (short) {
 			candidateMap.set(short, {
-				canonical: short,
+				canonical: full,
 				restrictNamespace,
 				namespace,
 			});
@@ -140,8 +159,11 @@ export const buildCandidateTrie = (
 		}
 	}
 
-	// Build a Trie from the keys of the candidateMap.
-	const trie = buildTrie(Array.from(candidateMap.keys()));
+	// Build a trie from all candidate strings
+	const words = Array.from(candidateMap.keys()).sort(
+		(a, b) => b.length - a.length,
+	);
+	const trie = buildTrie(words);
 
 	return { candidateMap, trie };
 };
