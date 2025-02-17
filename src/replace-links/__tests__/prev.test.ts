@@ -272,7 +272,7 @@ describe("containing CJK", () => {
 			},
 		});
 		expect(result).toBe(
-			"[[namespace/tag1]] [[namespace/tag2]] [[namespace/タグ3]]",
+			"[[namespace/tag1|tag1]] [[namespace/tag2|tag2]] [[namespace/タグ3|タグ3]]",
 		);
 	});
 });
