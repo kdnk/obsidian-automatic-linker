@@ -35,7 +35,7 @@ describe("replaceLinks - namespace resolution", () => {
 					candidateMap,
 				},
 			});
-			expect(result).toBe("[[namespace/tag1]]");
+			expect(result).toBe("[[namespace/tag1|tag1]]");
 		});
 
 		it("multiple namespaces", async () => {
@@ -56,7 +56,9 @@ describe("replaceLinks - namespace resolution", () => {
 					candidateMap,
 				},
 			});
-			expect(result).toBe("[[namespace/tag1]] [[namespace/tag2]]");
+			expect(result).toBe(
+				"[[namespace/tag1|tag1]] [[namespace/tag2|tag2]]",
+			);
 		});
 	});
 
@@ -83,7 +85,7 @@ describe("replaceLinks - namespace resolution", () => {
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe("[[set/a]]");
+			expect(result).toBe("[[set/a|a]]");
 		});
 
 		it("should not replace candidate with restrictNamespace when effective namespace does not match", async () => {

@@ -81,7 +81,7 @@ describe("replaceLinks - CJK handling", () => {
 					candidateMap,
 				},
 			});
-			expect(result).toBe("[[名前空間/tag1]]");
+			expect(result).toBe("[[名前空間/tag1|tag1]]");
 		});
 
 		it("multiple namespaces", async () => {
@@ -103,7 +103,7 @@ describe("replaceLinks - CJK handling", () => {
 				},
 			});
 			expect(result).toBe(
-				"[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]",
+				"[[名前空間/tag1|tag1]] [[名前空間/tag2|tag2]] [[名前空間/タグ3|タグ3]]",
 			);
 		});
 	});
@@ -131,7 +131,7 @@ describe("replaceLinks - CJK handling", () => {
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe("[[セット/タグ]]");
+			expect(result).toBe("[[セット/タグ|タグ]]");
 		});
 
 		it("should not replace CJK when namespace does not match with baseDir", async () => {
@@ -198,7 +198,7 @@ describe("replaceLinks - CJK handling", () => {
 				},
 			});
 			expect(result).toBe(
-				"- [[RM/関係性の勇者]]は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+				"- [[RM/関係性の勇者|関係性の勇者]]は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
 			);
 		});
 
@@ -222,7 +222,7 @@ describe("replaceLinks - CJK handling", () => {
 				},
 			});
 			expect(result).toBe(
-				"- [[RM/関係性の勇者|勇者]]は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+				"- [[RM/関係性の勇者|関係性の勇者]]は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
 			);
 		});
 
@@ -246,7 +246,7 @@ describe("replaceLinks - CJK handling", () => {
 				},
 			});
 			expect(result).toBe(
-				"- [[RM/関係性の勇者]] は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
+				"- [[RM/関係性の勇者|関係性の勇者]] は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
 			);
 		});
 	});

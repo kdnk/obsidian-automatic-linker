@@ -35,7 +35,7 @@ describe("replaceLinks - namespace resolution", () => {
 					candidateMap,
 				},
 			});
-			expect(result).toBe("[[namespace/tag1]]");
+			expect(result).toBe("[[namespace/tag1|tag1]]");
 		});
 
 		it("multiple namespaces", async () => {
@@ -56,7 +56,9 @@ describe("replaceLinks - namespace resolution", () => {
 					candidateMap,
 				},
 			});
-			expect(result).toBe("[[namespace/tag1]] [[namespace/tag2]]");
+			expect(result).toBe(
+				"[[namespace/tag1|tag1]] [[namespace/tag2|tag2]]",
+			);
 		});
 	});
 
@@ -82,7 +84,7 @@ describe("replaceLinks - namespace resolution", () => {
 					},
 					settings: { namespaceResolution: true },
 				});
-				expect(result).toBe("[[namespace/a/b/c/link]]");
+				expect(result).toBe("[[namespace/a/b/c/link|link]]");
 			}
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -103,7 +105,7 @@ describe("replaceLinks - namespace resolution", () => {
 					},
 					settings: { namespaceResolution: true },
 				});
-				expect(result).toBe("[[namespace/a/b/c/d/link]]");
+				expect(result).toBe("[[namespace/a/b/c/d/link|link]]");
 			}
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -126,7 +128,7 @@ describe("replaceLinks - namespace resolution", () => {
 					},
 					settings: { namespaceResolution: true },
 				});
-				expect(result).toBe("[[namespace/xxx/link]]");
+				expect(result).toBe("[[namespace/xxx/link|link]]");
 			}
 		});
 
@@ -152,7 +154,7 @@ describe("replaceLinks - namespace resolution", () => {
 				},
 				settings: { namespaceResolution: true },
 			});
-			expect(result).toBe("[[namespace/a/b/c/link]]");
+			expect(result).toBe("[[namespace/a/b/c/link|link]]");
 		});
 
 		it("find closest path if the current path is in base dir and the candidate is not", async () => {
@@ -185,7 +187,7 @@ describe("replaceLinks - namespace resolution", () => {
 				settings: { namespaceResolution: true, baseDir: "base" },
 			});
 			expect(result).toBe(
-				"[[looooooooooooooooooooooooooooooooooooooong/link]] [[namespace1/link2]]",
+				"[[looooooooooooooooooooooooooooooooooooooong/link|link]] [[namespace1/link2|link2]]",
 			);
 
 			const result2 = await replaceLinks({
@@ -220,7 +222,7 @@ describe("replaceLinks - namespace resolution", () => {
 					candidateMap,
 				},
 			});
-			expect(result).toBe("[[namespace/xx/link]]");
+			expect(result).toBe("[[namespace/xx/link|link]]");
 		});
 
 		it("should resolve aliases", async () => {

@@ -210,7 +210,7 @@ describe("complex fileNames", () => {
 				candidateMap,
 			},
 		});
-		expect(result).toBe("[[namespace/tag1]]");
+		expect(result).toBe("[[namespace/tag1|tag1]]");
 	});
 
 	it("multiple namespaces", async () => {
@@ -231,7 +231,7 @@ describe("complex fileNames", () => {
 				candidateMap,
 			},
 		});
-		expect(result).toBe("[[namespace/tag1]] [[namespace/tag2]]");
+		expect(result).toBe("[[namespace/tag1|tag1]] [[namespace/tag2|tag2]]");
 	});
 });
 
@@ -313,7 +313,7 @@ describe("starting CJK", () => {
 				candidateMap,
 			},
 		});
-		expect(result).toBe("[[名前空間/tag1]]");
+		expect(result).toBe("[[名前空間/tag1|tag1]]");
 	});
 
 	it("multiple namespaces", async () => {
@@ -335,7 +335,7 @@ describe("starting CJK", () => {
 			},
 		});
 		expect(result).toBe(
-			"[[名前空間/tag1]] [[名前空間/tag2]] [[名前空間/タグ3]]",
+			"[[名前空間/tag1|tag1]] [[名前空間/tag2|tag2]] [[名前空間/タグ3|タグ3]]",
 		);
 	});
 
@@ -480,8 +480,9 @@ it("multiple links in the same line", async () => {
 			trie,
 			candidateMap,
 		},
+		settings: { baseDir: "pages" },
 	});
-	expect(result).toBe("[[サウナ]] [[tags]] [[pages/tags]]");
+	expect(result).toBe("[[サウナ]] [[tags]] [[pages/tags|tags]]");
 });
 
 describe("nested links", () => {
@@ -544,7 +545,7 @@ describe("with space", () => {
 				candidateMap,
 			},
 		});
-		expect(result).toBe("[[obsidian/automatic linker]]");
+		expect(result).toBe("[[obsidian/automatic linker|automatic linker]]");
 	});
 });
 
@@ -846,7 +847,7 @@ describe("namespace resolution", () => {
 			},
 			settings: { namespaceResolution: true },
 		});
-		expect(result).toBe("[[namespaces/link]]");
+		expect(result).toBe("[[namespaces/link|link]]");
 	});
 
 	it("replaces candidate without namespace correctly", async () => {
@@ -908,7 +909,7 @@ describe("namespace resolution nearlest file path", () => {
 				},
 				settings: { namespaceResolution: true },
 			});
-			expect(result).toBe("[[namespace/a/b/c/link]]");
+			expect(result).toBe("[[namespace/a/b/c/link|link]]");
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -929,7 +930,7 @@ describe("namespace resolution nearlest file path", () => {
 				},
 				settings: { namespaceResolution: true },
 			});
-			expect(result).toBe("[[namespace/a/b/c/d/link]]");
+			expect(result).toBe("[[namespace/a/b/c/d/link|link]]");
 		}
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -952,7 +953,7 @@ describe("namespace resolution nearlest file path", () => {
 				},
 				settings: { namespaceResolution: true },
 			});
-			expect(result).toBe("[[namespace/xxx/link]]");
+			expect(result).toBe("[[namespace/xxx/link|link]]");
 		}
 	});
 
@@ -978,7 +979,7 @@ describe("namespace resolution nearlest file path", () => {
 			},
 			settings: { namespaceResolution: true },
 		});
-		expect(result).toBe("[[namespace/a/b/c/link]]");
+		expect(result).toBe("[[namespace/a/b/c/link|link]]");
 	});
 
 	it("find closest path if the current path is in base dir and the candidate is not", async () => {
@@ -1011,7 +1012,7 @@ describe("namespace resolution nearlest file path", () => {
 			settings: { namespaceResolution: true, baseDir: "base" },
 		});
 		expect(result).toBe(
-			"[[looooooooooooooooooooooooooooooooooooooong/link]] [[namespace1/link2]]",
+			"[[looooooooooooooooooooooooooooooooooooooong/link|link]] [[namespace1/link2|link2]]",
 		);
 
 		const result2 = await replaceLinks({
@@ -1084,7 +1085,7 @@ it("ignore month notes", async () => {
 			candidateMap,
 		},
 	});
-	expect(result).toBe("01 1 12 [[namespace/01]]");
+	expect(result).toBe("01 1 12 [[namespace/01|01]]");
 });
 
 describe("ignoreDateFormats setting", () => {
@@ -1370,7 +1371,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe("[[set/a]]");
+			expect(result).toBe("[[set/a|a]]");
 		});
 
 		it("should not replace candidate with restrictNamespace when effective namespace does not match", async () => {

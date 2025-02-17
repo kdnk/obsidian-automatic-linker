@@ -26,7 +26,7 @@ describe("replaceLinks - restrict namespace", () => {
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe("[[set/tag]]");
+			expect(result).toBe("[[set/tag|tag]]");
 		});
 
 		it("should not replace when namespace does not match with baseDir", async () => {
@@ -77,7 +77,7 @@ describe("replaceLinks - restrict namespace", () => {
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe("[[set1/tag1]] tag2");
+			expect(result).toBe("[[set1/tag1|tag1]] tag2");
 		});
 	});
 });
