@@ -471,7 +471,7 @@ it("multiple links in the same line", async () => {
 	const { candidateMap, trie } = buildCandidateTrieForTest({
 		files: [{ path: "pages/tags" }, { path: "サウナ" }, { path: "tags" }],
 		restrictNamespace: false,
-		baseDir: "pages",
+		baseDir: undefined,
 	});
 	const result = await replaceLinks({
 		body: "サウナ tags pages/tags",
@@ -480,7 +480,6 @@ it("multiple links in the same line", async () => {
 			trie,
 			candidateMap,
 		},
-		settings: { baseDir: "pages" },
 	});
 	expect(result).toBe("[[サウナ]] [[tags]] [[pages/tags|tags]]");
 });
