@@ -144,6 +144,45 @@ describe("replaceLinks - alias handling", () => {
 			});
 			expect(result).toBe("HW");
 		});
+
+		it("should handle non-aliased namespaced path", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "pages/set/HelloWorld" }],
+				restrictNamespace: false,
+				baseDir: "pages",
+			});
+			const result = await replaceLinks({
+				body: "HelloWorld",
+				linkResolverContext: {
+					filePath: "pages/set/current",
+					trie,
+					candidateMap,
+				},
+				settings: {
+					minCharCount: 0,
+					namespaceResolution: true,
+					baseDir: "pages",
+				},
+			});
+			expect(result).toBe("[[set/HelloWorld|HelloWorld]]");
+		});
+
+		it("should handle non-namespaced path without alias", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "HelloWorld" }],
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
+			const result = await replaceLinks({
+				body: "HelloWorld",
+				linkResolverContext: {
+					filePath: "current",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[HelloWorld]]");
+		});
 	});
 
 	describe("alias and baseDir", () => {
