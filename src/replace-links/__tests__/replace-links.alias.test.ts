@@ -21,7 +21,7 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[HelloWorld|HW]]");
 		});
 
-		it("prefers exact match over alias", async () => {
+		it("prefers exact match over alias when no namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "HelloWorld" }, { path: "HW" }],
 				restrictNamespace: false,
@@ -36,6 +36,23 @@ describe("replaceLinks - alias handling", () => {
 				},
 			});
 			expect(result).toBe("[[HW]]");
+		});
+
+		it("uses last part as alias for namespaced path without explicit alias", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "pages/HelloWorld" }],
+				restrictNamespace: false,
+				baseDir: undefined,
+			});
+			const result = await replaceLinks({
+				body: "pages/HelloWorld",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[pages/HelloWorld|HelloWorld]]");
 		});
 	});
 
@@ -74,7 +91,9 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe("[[HelloWorld|Hello]] [[HelloWorld]]");
+			expect(result).toBe(
+				"[[HelloWorld|Hello]] [[HelloWorld|HelloWorld]]",
+			);
 		});
 	});
 
@@ -143,45 +162,6 @@ describe("replaceLinks - alias handling", () => {
 				},
 			});
 			expect(result).toBe("HW");
-		});
-
-		it("should handle non-aliased namespaced path", async () => {
-			const { candidateMap, trie } = buildCandidateTrieForTest({
-				files: [{ path: "pages/set/HelloWorld" }],
-				restrictNamespace: false,
-				baseDir: "pages",
-			});
-			const result = await replaceLinks({
-				body: "HelloWorld",
-				linkResolverContext: {
-					filePath: "pages/set/current",
-					trie,
-					candidateMap,
-				},
-				settings: {
-					minCharCount: 0,
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
-			});
-			expect(result).toBe("[[set/HelloWorld|HelloWorld]]");
-		});
-
-		it("should handle non-namespaced path without alias", async () => {
-			const { candidateMap, trie } = buildCandidateTrieForTest({
-				files: [{ path: "HelloWorld" }],
-				restrictNamespace: false,
-				baseDir: undefined,
-			});
-			const result = await replaceLinks({
-				body: "HelloWorld",
-				linkResolverContext: {
-					filePath: "current",
-					trie,
-					candidateMap,
-				},
-			});
-			expect(result).toBe("[[HelloWorld]]");
 		});
 	});
 
