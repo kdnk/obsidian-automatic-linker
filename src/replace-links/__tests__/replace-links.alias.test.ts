@@ -91,9 +91,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: "pages",
 				},
 			});
-			expect(result).toBe(
-				"[[HelloWorld|Hello]] [[HelloWorld|HelloWorld]]",
-			);
+			expect(result).toBe("[[HelloWorld|Hello]] [[HelloWorld]]");
 		});
 	});
 
