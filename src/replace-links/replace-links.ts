@@ -158,9 +158,45 @@ export const replaceLinks = async ({
 							const remaining = text.slice(i + candidate.length);
 							const suffixMatch = remaining.match(/^(이다\.?)/);
 							if (suffixMatch) {
-								result +=
-									`[[${candidateData.canonical}]]` +
-									suffixMatch[0];
+								// Replace the candidate with the wikilink format.
+								let linkPath = candidateData.canonical;
+								const hasAlias = linkPath.includes("|");
+								let alias = "";
+
+								if (hasAlias) {
+									[linkPath, alias] = linkPath.split("|");
+								}
+								// Remove base/ prefix when in base directory
+								if (
+									settings.baseDir &&
+									linkPath.startsWith(settings.baseDir + "/")
+								) {
+									linkPath = linkPath.slice(
+										(settings.baseDir + "/").length,
+									);
+								}
+
+								// If it has an explicit alias, use it
+								if (hasAlias) {
+									result +=
+										`[[${linkPath}|${alias}]]` +
+										suffixMatch[0];
+								}
+								// If it has a namespace (contains "/"), use the last part as alias
+								else if (linkPath.includes("/")) {
+									const segments = linkPath.split("/");
+									const lastPart =
+										segments[segments.length - 1];
+									result +=
+										`[[${linkPath}|${lastPart}]]` +
+										suffixMatch[0];
+								}
+								// Otherwise, use the normal link format
+								else {
+									result +=
+										`[[${linkPath}]]` + suffixMatch[0];
+								}
+
 								i += candidate.length + suffixMatch[0].length;
 								continue outer;
 							}
@@ -213,9 +249,21 @@ export const replaceLinks = async ({
 						);
 					}
 
-					result += hasAlias
-						? `[[${linkPath}|${alias}]]`
-						: `[[${linkPath}]]`;
+					// If it has an explicit alias, use it
+					if (hasAlias) {
+						result += `[[${linkPath}|${alias}]]`;
+					}
+					// If it has a namespace (contains "/"), use the last part as alias
+					else if (linkPath.includes("/")) {
+						const segments = linkPath.split("/");
+						const lastPart = segments[segments.length - 1];
+						result += `[[${linkPath}|${lastPart}]]`;
+					}
+					// Otherwise, use the normal link format
+					else {
+						result += `[[${linkPath}]]`;
+					}
+
 					i += candidate.length;
 					continue outer;
 				}
@@ -268,6 +316,13 @@ export const replaceLinks = async ({
 						if (filteredCandidates.length === 1) {
 							const candidateData = filteredCandidates[0][1];
 							let linkPath = candidateData.canonical;
+							const hasAlias = linkPath.includes("|");
+							let alias = "";
+
+							if (hasAlias) {
+								[linkPath, alias] = linkPath.split("|");
+							}
+
 							// Remove pages/ prefix when baseDir is set
 							if (
 								settings.baseDir &&
@@ -285,7 +340,22 @@ export const replaceLinks = async ({
 									(settings.baseDir + "/").length,
 								);
 							}
-							result += `[[${linkPath}]]`;
+
+							// If it has an explicit alias, use it
+							if (hasAlias) {
+								result += `[[${linkPath}|${alias}]]`;
+							}
+							// If it has a namespace (contains "/"), use the last part as alias
+							else if (linkPath.includes("/")) {
+								const segments = linkPath.split("/");
+								const lastPart = segments[segments.length - 1];
+								result += `[[${linkPath}|${lastPart}]]`;
+							}
+							// Otherwise, use the normal link format
+							else {
+								result += `[[${linkPath}]]`;
+							}
+
 							i += word.length;
 							continue outer;
 						} else if (filteredCandidates.length > 1) {
@@ -392,6 +462,13 @@ export const replaceLinks = async ({
 							}
 							if (bestCandidate !== null) {
 								let linkPath = bestCandidate[1].canonical;
+								const hasAlias = linkPath.includes("|");
+								let alias = "";
+
+								if (hasAlias) {
+									[linkPath, alias] = linkPath.split("|");
+								}
+
 								// Remove pages/ prefix when baseDir is set
 								if (
 									settings.baseDir &&
@@ -409,7 +486,23 @@ export const replaceLinks = async ({
 										(settings.baseDir + "/").length,
 									);
 								}
-								result += `[[${linkPath}]]`;
+
+								// If it has an explicit alias, use it
+								if (hasAlias) {
+									result += `[[${linkPath}|${alias}]]`;
+								}
+								// If it has a namespace (contains "/"), use the last part as alias
+								else if (linkPath.includes("/")) {
+									const segments = linkPath.split("/");
+									const lastPart =
+										segments[segments.length - 1];
+									result += `[[${linkPath}|${lastPart}]]`;
+								}
+								// Otherwise, use the normal link format
+								else {
+									result += `[[${linkPath}]]`;
+								}
+
 								i += word.length;
 								continue outer;
 							}
