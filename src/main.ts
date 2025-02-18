@@ -146,7 +146,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		// Load file data and build the Trie when the layout is ready.
 		this.app.workspace.onLayoutReady(() => {
 			refreshFileDataAndTrie();
-			console.log("Automatic Linker: Loaded all markdown files.");
+			console.log("Automatic Linker: Built all markdown files.");
 
 			this.registerEvent(
 				this.app.vault.on("delete", () => refreshFileDataAndTrie()),
@@ -166,6 +166,19 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			editorCallback: async () => {
 				try {
 					await this.modifyLinks();
+				} catch (error) {
+					console.error(error);
+				}
+			},
+		});
+
+		this.addCommand({
+			id: "automatic-linker:rebuild-all-files",
+			name: "rebuild all files",
+			editorCallback: async () => {
+				try {
+					refreshFileDataAndTrie();
+					console.log("Automatic Linker: Built all markdown files.");
 				} catch (error) {
 					console.error(error);
 				}
