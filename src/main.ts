@@ -38,59 +38,71 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 
 		try {
-			// Read the current file content
-			let fileContent = (await this.app.vault.read(activeFile)).normalize(
-				"NFC",
-			);
-
-			if (this.settings.debug) {
-				console.log(new Date().toISOString(), "modifyLinks started");
-			}
-
-			// Format GitHub URLs if enabled
-			if (this.settings.formatGitHubURLs) {
-				// Find GitHub URLs using a regex pattern
-				const githubUrlPattern = /(https?:\/\/[^\s\]]+)/g;
-				fileContent = fileContent.replace(githubUrlPattern, (match) => {
-					return formatGitHubURL(match, this.settings);
-				});
-			}
-
-			// Format Jira URLs if enabled
-			if (this.settings.formatJiraURLs) {
-				// Find URLs using a regex pattern
-				const urlPattern = /(https?:\/\/[^\s\]]+)/g;
-				fileContent = fileContent.replace(urlPattern, (match) => {
-					return formatJiraURL(match, this.settings);
-				});
-			}
-
-			// Use the pre-built trie and candidateMap to replace links.
-			// Fallback to an empty trie if not built.
-			const { contentStart } = getFrontMatterInfo(fileContent);
-
-			const frontmatter = fileContent.slice(0, contentStart);
-			const updatedBody = await replaceLinks({
-				body: fileContent.slice(contentStart),
-				linkResolverContext: {
-					filePath: activeFile.path.replace(/\.md$/, ""),
-					trie: this.trie ?? buildCandidateTrie([], undefined).trie,
-					candidateMap: this.candidateMap ?? new Map(),
-				},
-				settings: {
-					minCharCount: this.settings.minCharCount,
-					namespaceResolution: this.settings.namespaceResolution,
-					baseDir: this.settings.baseDir,
-					ignoreDateFormats: this.settings.ignoreDateFormats,
-				},
+			await this.app.vault.process(activeFile, (fileContent) => {
+				if (this.settings.formatGitHubURLs) {
+					// Find GitHub URLs using a regex pattern
+					const githubUrlPattern = /(https?:\/\/[^\s\]]+)/g;
+					fileContent = fileContent.replace(
+						githubUrlPattern,
+						(match) => {
+							return formatGitHubURL(match, this.settings);
+						},
+					);
+				}
+				return fileContent;
 			});
 
-			if (this.settings.debug) {
-				console.log(new Date().toISOString(), "modifyLinks finished");
-			}
+			await this.app.vault.process(activeFile, (fileContent) => {
+				// Format Jira URLs if enabled
+				if (this.settings.formatJiraURLs) {
+					// Find URLs using a regex pattern
+					const urlPattern = /(https?:\/\/[^\s\]]+)/g;
+					fileContent = fileContent.replace(urlPattern, (match) => {
+						return formatJiraURL(match, this.settings);
+					});
+				}
+				return fileContent;
+			});
 
-			// Overwrite the file with the updated content.
-			await this.app.vault.modify(activeFile, frontmatter + updatedBody);
+			await this.app.vault.process(activeFile, (fileContent) => {
+				if (!this.trie || !this.candidateMap) {
+					return fileContent;
+				}
+
+				if (this.settings.debug) {
+					console.log(
+						new Date().toISOString(),
+						"modifyLinks started",
+					);
+				}
+
+				const { contentStart } = getFrontMatterInfo(fileContent);
+				const frontmatter = fileContent.slice(0, contentStart);
+
+				const updatedBody = replaceLinks({
+					body: fileContent.slice(contentStart),
+					linkResolverContext: {
+						filePath: activeFile.path.replace(/\.md$/, ""),
+						trie: this.trie,
+						candidateMap: this.candidateMap,
+					},
+					settings: {
+						minCharCount: this.settings.minCharCount,
+						namespaceResolution: this.settings.namespaceResolution,
+						baseDir: this.settings.baseDir,
+						ignoreDateFormats: this.settings.ignoreDateFormats,
+					},
+				});
+
+				if (this.settings.debug) {
+					console.log(
+						new Date().toISOString(),
+						"modifyLinks finished",
+					);
+				}
+
+				return frontmatter + updatedBody;
+			});
 		} catch (error) {
 			console.error(error);
 		}
@@ -185,7 +197,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				try {
 					refreshFileDataAndTrie();
 					if (this.settings.debug) {
-						console.log("Automatic Linker: Built all markdown files.");
+						console.log(
+							"Automatic Linker: Built all markdown files.",
+						);
 					}
 				} catch (error) {
 					console.error(error);

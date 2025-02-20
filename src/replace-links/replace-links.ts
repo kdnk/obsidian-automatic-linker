@@ -1,6 +1,6 @@
 import { CandidateData, getEffectiveNamespace, TrieNode } from "../trie";
 
-export const replaceLinks = async ({
+export const replaceLinks = ({
 	body,
 	linkResolverContext: { filePath, trie, candidateMap },
 	settings = {
