@@ -10,6 +10,7 @@ export type AutomaticLinkerSettings = {
 	githubEnterpriseURLs: string[]; // List of GitHub Enterprise URLs
 	formatJiraURLs: boolean; // Format Jira URLs on save
 	jiraURLs: string[]; // List of Jira URLs (domains)
+	debug: boolean; // Enable debug logging
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -24,4 +25,5 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	githubEnterpriseURLs: [], // Default: empty list
 	formatJiraURLs: true, // Default: format Jira URLs
 	jiraURLs: [], // Default: empty list
+	debug: false, // Default: disable debug logging
 };

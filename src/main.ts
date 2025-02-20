@@ -43,7 +43,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				"NFC",
 			);
 
-			console.log(new Date().toISOString(), "modifyLinks started");
+			if (this.settings.debug) {
+				console.log(new Date().toISOString(), "modifyLinks started");
+			}
 
 			// Format GitHub URLs if enabled
 			if (this.settings.formatGitHubURLs) {
@@ -83,7 +85,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				},
 			});
 
-			console.log(new Date().toISOString(), "modifyLinks finished");
+			if (this.settings.debug) {
+				console.log(new Date().toISOString(), "modifyLinks finished");
+			}
 
 			// Overwrite the file with the updated content.
 			await this.app.vault.modify(activeFile, frontmatter + updatedBody);
@@ -146,7 +150,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		// Load file data and build the Trie when the layout is ready.
 		this.app.workspace.onLayoutReady(() => {
 			refreshFileDataAndTrie();
-			console.log("Automatic Linker: Built all markdown files.");
+			if (this.settings.debug) {
+				console.log("Automatic Linker: Built all markdown files.");
+			}
 
 			this.registerEvent(
 				this.app.vault.on("delete", () => refreshFileDataAndTrie()),
@@ -178,7 +184,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			editorCallback: async () => {
 				try {
 					refreshFileDataAndTrie();
-					console.log("Automatic Linker: Built all markdown files.");
+					if (this.settings.debug) {
+						console.log("Automatic Linker: Built all markdown files.");
+					}
 				} catch (error) {
 					console.error(error);
 				}
