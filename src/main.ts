@@ -179,7 +179,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		// Command: Manually trigger link replacement for the current file.
 		this.addCommand({
-			id: "automatic-linker:link-current-file",
+			id: "link-current-file",
 			name: "Link current file",
 			editorCallback: async () => {
 				try {
@@ -191,7 +191,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "automatic-linker:rebuild-all-files",
+			id: "rebuild-all-files",
 			name: "rebuild all files",
 			editorCallback: async () => {
 				try {
@@ -249,8 +249,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	}
 
 	async onunload() {
-		this.removeCommand("automatic-linker:link-current-file");
-		this.removeCommand("automatic-linker:rollback-last-change");
 		// Restore original save command callback
 		const saveCommandDefinition =
 			// @ts-expect-error
