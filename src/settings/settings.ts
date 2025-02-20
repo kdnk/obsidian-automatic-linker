@@ -14,7 +14,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Toggle for "Format on Save" setting.
 		new Setting(containerEl)
-			.setName("Format on Save")
+			.setName("Format on save")
 			.setDesc(
 				"When enabled, the file will be automatically formatted (links replaced) when saving.",
 			)
@@ -29,9 +29,9 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Setting for base directories.
 		new Setting(containerEl)
-			.setName("Base Directory")
+			.setName("Base directory")
 			.setDesc(
-				"Enter directory that should be treated as base. For example, 'pages' will allow links to be formatted without the 'pages/' prefix.",
+				"Enter the directory to be treated as the base directory. For example, 'pages' will allow links to be formatted without the 'pages/' prefix.",
 			)
 			.addText((text) => {
 				text.setPlaceholder("e.g. pages\n")
@@ -44,7 +44,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Toggle for showing the load notice.
 		new Setting(containerEl)
-			.setName("Show Load Notice")
+			.setName("Show load notice")
 			.setDesc("Display a notice when markdown files are loaded.")
 			.addToggle((toggle) => {
 				toggle
@@ -58,7 +58,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		// Setting for minimum character count.
 		// If the text is below this number of characters, links will not be replaced.
 		new Setting(containerEl)
-			.setName("Minimum Character Count")
+			.setName("Minimum character count")
 			.setDesc(
 				"If the content is below this character count, the links will not be replaced.",
 			)
@@ -76,9 +76,9 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Toggle for considering aliases.
 		new Setting(containerEl)
-			.setName("Consider Aliases")
+			.setName("Consider aliases")
 			.setDesc(
-				"When enabled, aliases will be taken into account when processing links. !!! Restart required for changes to take effect.",
+				"When enabled, aliases will be taken into account when processing links. Note: A restart is required for changes to take effect.",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -91,9 +91,9 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Toggle for automatic namespace resolution.
 		new Setting(containerEl)
-			.setName("Automatic Namespace Resolution")
+			.setName("Automatic namespace resolution")
 			.setDesc(
-				"When enabled, the plugin will automatically resolve namespaces for shorthand links. If multiple candidates share the same shorthand, the candidate whose full path is closest to the current file (i.e. shares the most common path segments) will be selected.",
+				"When enabled, the plugin will automatically resolve namespaces for shorthand links. If multiple candidates share the same shorthand, the candidate with the most common path segments relative to the current file will be selected.",
 			)
 			.addToggle((toggle) => {
 				toggle
@@ -106,7 +106,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Toggle for ignoring date formats.
 		new Setting(containerEl)
-			.setName("Ignore Date Formats")
+			.setName("Ignore date formats")
 			.setDesc(
 				"When enabled, links that match date formats (e.g. 2025-02-10) will be ignored. This helps maintain compatibility with Obsidian Tasks.",
 			)
@@ -121,7 +121,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Toggle for formatting GitHub URLs on save
 		new Setting(containerEl)
-			.setName("Format GitHub URLs on Save")
+			.setName("Format GitHub URLs on save")
 			.setDesc(
 				"When enabled, GitHub URLs will be formatted when saving the file.",
 			)
@@ -138,7 +138,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("GitHub Enterprise URLs")
 			.setDesc(
-				"Enter GitHub Enterprise URLs (one per line). Example: github.enterprise.com",
+				"Add your GitHub Enterprise URLs, one per line (e.g., github.enterprise.com)",
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("github.enterprise.com\ngithub.company.com")
@@ -161,7 +161,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Toggle for formatting JIRA URLs on save
 		new Setting(containerEl)
-			.setName("Format JIRA URLs on Save")
+			.setName("Format JIRA URLs on save")
 			.setDesc(
 				"When enabled, JIRA URLs will be formatted when saving the file.",
 			)
@@ -178,7 +178,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("JIRA URLs")
 			.setDesc(
-				"Enter JIRA URLs (one per line). Example: jira.enterprise.com",
+				"Add your JIRA URLs, one per line (e.g., jira.enterprise.com)",
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("jira.enterprise.com\njira.company.com")
