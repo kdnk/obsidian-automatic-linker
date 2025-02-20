@@ -22,7 +22,7 @@ export const replaceLinks = ({
 		baseDir?: string;
 		ignoreDateFormats?: boolean;
 	};
-}): Promise<string> => {
+}): string => {
 	// Return the body unchanged if its length is below the minimum character count.
 	if (body.length <= (settings.minCharCount ?? 0)) {
 		return body;
