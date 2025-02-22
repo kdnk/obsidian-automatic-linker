@@ -7,10 +7,12 @@ describe("replaceLinks - CJK handling", () => {
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/タグ" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "namespace",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -28,10 +30,12 @@ describe("replaceLinks - CJK handling", () => {
 					{ path: "namespace/tag2" },
 					{ path: "namespace/タグ3" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "namespace/tag1 namespace/tag2 namespace/タグ3",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -49,10 +53,12 @@ describe("replaceLinks - CJK handling", () => {
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/タグ" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "名前空間",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -70,10 +76,12 @@ describe("replaceLinks - CJK handling", () => {
 					{ path: "名前空間/tag2" },
 					{ path: "名前空間/タグ3" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "名前空間/tag1",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -91,10 +99,12 @@ describe("replaceLinks - CJK handling", () => {
 					{ path: "名前空間/tag2" },
 					{ path: "名前空間/タグ3" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -115,10 +125,12 @@ describe("replaceLinks - CJK handling", () => {
 					{ path: "pages/セット/タグ", aliases: [] },
 					{ path: "pages/other/current" },
 				],
-				restrictNamespace: true,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: true,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "タグ",
 				linkResolverContext: {
 					filePath: "pages/セット/current",
@@ -140,10 +152,12 @@ describe("replaceLinks - CJK handling", () => {
 					{ path: "pages/セット/タグ", aliases: [] },
 					{ path: "pages/other/current" },
 				],
-				restrictNamespace: true,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: true,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "タグ",
 				linkResolverContext: {
 					filePath: "pages/other/current",
@@ -163,10 +177,12 @@ describe("replaceLinks - CJK handling", () => {
 	it("multiple same CJK words", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "ひらがな" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- ひらがなとひらがな",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -181,10 +197,12 @@ describe("replaceLinks - CJK handling", () => {
 		it("should convert CJK text with namespace prefix", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "RM/関係性の勇者", aliases: [] }],
-				restrictNamespace: false,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: false,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "- 関係性の勇者は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
 				linkResolverContext: {
 					filePath: "pages/current",
@@ -205,10 +223,12 @@ describe("replaceLinks - CJK handling", () => {
 		it("should convert CJK text with namespace and alias", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "RM/関係性の勇者", aliases: ["勇者"] }],
-				restrictNamespace: false,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: false,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "- 勇者は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
 				linkResolverContext: {
 					filePath: "pages/current",
@@ -229,10 +249,12 @@ describe("replaceLinks - CJK handling", () => {
 		it("should convert CJK text with namespace and spaces", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "RM/関係性の勇者", aliases: [] }],
-				restrictNamespace: false,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: false,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "- 関係性の勇者 は自分の鎧について深く学びそれを脱ぎ去る勇気を持っている",
 				linkResolverContext: {
 					filePath: "pages/current",

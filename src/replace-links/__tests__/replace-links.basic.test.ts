@@ -7,10 +7,12 @@ describe("replaceLinks", () => {
 		it("replaces links", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -25,11 +27,13 @@ describe("replaceLinks", () => {
 		it("replaces links with space", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/tidy first" }],
-				restrictNamespace: false,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: false,
+					baseDir: "pages",
+				},
 			});
 			console.log(candidateMap);
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "tidy first",
 				linkResolverContext: {
 					filePath: "pages/Books",
@@ -48,10 +52,12 @@ describe("replaceLinks", () => {
 		it("replaces links with bullet", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "- hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -66,10 +72,12 @@ describe("replaceLinks", () => {
 		it("replaces links with number", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "1. hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -84,10 +92,12 @@ describe("replaceLinks", () => {
 		it("does not replace links in code blocks", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "```\nhello\n```",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -102,10 +112,12 @@ describe("replaceLinks", () => {
 		it("does not replace links in inline code", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "`hello`",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -120,10 +132,12 @@ describe("replaceLinks", () => {
 		it("does not replace existing wikilinks", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "[[hello]]",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -138,10 +152,12 @@ describe("replaceLinks", () => {
 		it("does not replace existing markdown links", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "[hello](world)",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -156,10 +172,12 @@ describe("replaceLinks", () => {
 		it("respects minCharCount", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -176,10 +194,12 @@ describe("replaceLinks", () => {
 		it("replaces multiple links in the same line", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "hello world",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -194,10 +214,12 @@ describe("replaceLinks", () => {
 		it("replaces multiple links in different lines", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "hello\nworld",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",

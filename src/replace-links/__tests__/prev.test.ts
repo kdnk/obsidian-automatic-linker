@@ -8,8 +8,10 @@ describe("basic", () => {
 	it("replaces links", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "hello",
@@ -26,8 +28,10 @@ describe("basic", () => {
 	it("replaces links with bullet", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "- hello",
@@ -44,8 +48,10 @@ describe("basic", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "world hello",
@@ -60,8 +66,10 @@ describe("basic", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "hello world",
@@ -79,8 +87,10 @@ describe("basic", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "- world hello",
@@ -95,8 +105,10 @@ describe("basic", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "- hello world",
@@ -114,8 +126,10 @@ describe("basic", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "hello world",
@@ -130,8 +144,10 @@ describe("basic", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "\nhello\nworld\n",
@@ -146,8 +162,10 @@ describe("basic", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "\nhello\nworld aaaaa\n",
@@ -162,8 +180,10 @@ describe("basic", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "\n aaaaa hello\nworld bbbbb\n",
@@ -182,8 +202,10 @@ describe("complex fileNames", () => {
 	it("unmatched namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "namespace",
@@ -199,8 +221,10 @@ describe("complex fileNames", () => {
 	it("single namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "namespace/tag1",
@@ -220,8 +244,10 @@ describe("complex fileNames", () => {
 				{ path: "namespace/tag2" },
 				{ path: "namespace" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "namespace/tag1 namespace/tag2",
@@ -239,8 +265,10 @@ describe("containing CJK", () => {
 	it("unmatched namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/タグ" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "namespace",
@@ -260,8 +288,10 @@ describe("containing CJK", () => {
 				{ path: "namespace/tag2" },
 				{ path: "namespace/タグ3" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "namespace/tag1 namespace/tag2 namespace/タグ3",
@@ -281,8 +311,10 @@ describe("starting CJK", () => {
 	it("unmatched namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/タグ" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "名前空間",
@@ -302,8 +334,10 @@ describe("starting CJK", () => {
 				{ path: "名前空間/tag2" },
 				{ path: "名前空間/タグ3" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "名前空間/tag1",
@@ -323,8 +357,10 @@ describe("starting CJK", () => {
 				{ path: "名前空間/tag2" },
 				{ path: "名前空間/タグ3" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
@@ -342,8 +378,10 @@ describe("starting CJK", () => {
 	it("multiple CJK words", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "漢字" }, { path: "ひらがな" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "- 漢字　ひらがな",
@@ -359,8 +397,10 @@ describe("starting CJK", () => {
 	it("multiple same CJK words", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "ひらがな" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "- ひらがなとひらがな",
@@ -379,8 +419,10 @@ describe("CJK - Korean", () => {
 		// 韓国語の候補ファイル
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "한글" }, { path: "테스트" }, { path: "예시" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "한글 테스트 예시",
@@ -396,8 +438,10 @@ describe("CJK - Korean", () => {
 	it("converts Korean words within sentence", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "문서" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "이 문서는 문서이다.",
@@ -415,8 +459,10 @@ describe("CJK - Chinese", () => {
 	it("converts Chinese words to links", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "汉字" }, { path: "测试" }, { path: "示例" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "汉字 测试 示例",
@@ -432,8 +478,10 @@ describe("CJK - Chinese", () => {
 	it("converts Chinese words within sentence", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "文档" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "这个文档很好。",
@@ -451,8 +499,10 @@ describe("base character (pages)", () => {
 	it("unmatched namespace", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/tags" }],
-			restrictNamespace: false,
-			baseDir: "pages",
+			settings: {
+				restrictNamespace: false,
+				baseDir: "pages",
+			},
 		});
 		const result = await replaceLinks({
 			body: "tags",
@@ -470,8 +520,10 @@ describe("base character (pages)", () => {
 it("multiple links in the same line", async () => {
 	const { candidateMap, trie } = buildCandidateTrieForTest({
 		files: [{ path: "pages/tags" }, { path: "サウナ" }, { path: "tags" }],
-		restrictNamespace: false,
-		baseDir: undefined,
+		settings: {
+			restrictNamespace: false,
+			baseDir: undefined,
+		},
 	});
 	const result = await replaceLinks({
 		body: "サウナ tags pages/tags",
@@ -491,8 +543,10 @@ describe("nested links", () => {
 				{ path: "アジャイルリーダーコンピテンシーマップ" },
 				{ path: "リーダー" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "アジャイルリーダーコンピテンシーマップ",
@@ -511,8 +565,10 @@ describe("nested links", () => {
 				{ path: "アジャイルリーダーコンピテンシーマップ" },
 				{ path: "リーダー" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "[[アジャイルリーダーコンピテンシーマップ]]",
@@ -533,8 +589,10 @@ describe("with space", () => {
 				{ path: "obsidian/automatic linker" },
 				{ path: "obsidian" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "obsidian/automatic linker",
@@ -557,8 +615,10 @@ describe("ignore url", () => {
 					{ path: "http" },
 					{ path: "https" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "- https://example.com",
@@ -573,8 +633,10 @@ describe("ignore url", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "st" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "- https://x.com/xxxx/status/12345?t=25S02Tda",
@@ -596,8 +658,10 @@ describe("ignore url", () => {
 				{ path: "https" },
 				{ path: "http" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "- https://example.com https://example1.com",
@@ -619,8 +683,10 @@ describe("ignore url", () => {
 				{ path: "https" },
 				{ path: "http" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "- https://example.com https://example1.com link",
@@ -645,8 +711,10 @@ describe("ignore markdown url", () => {
 				{ path: "https" },
 				{ path: "http" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "- [title](https://example.com)",
@@ -669,8 +737,10 @@ describe("ignore markdown url", () => {
 				{ path: "https" },
 				{ path: "http" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "- [title1](https://example1.com) [title2](https://example2.com)",
@@ -696,8 +766,10 @@ describe("ignore markdown url", () => {
 				{ path: "http" },
 				{ path: "link" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "- [title1](https://example1.com) [title2](https://example2.com) link",
@@ -717,8 +789,10 @@ describe("ignore code", () => {
 	it("inline code", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "example" }, { path: "code" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "`code` example",
@@ -734,8 +808,10 @@ describe("ignore code", () => {
 	it("code block", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "example" }, { path: "typescript" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "```typescript\nexample\n```",
@@ -751,8 +827,10 @@ describe("ignore code", () => {
 	it("skips replacement when content is too short", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "hello",
@@ -771,8 +849,10 @@ describe("aliases", () => {
 	it("replaces alias with canonical form using file path and alias", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/HelloWorld", aliases: ["Hello", "HW"] }],
-			restrictNamespace: false,
-			baseDir: "pages",
+			settings: {
+				restrictNamespace: false,
+				baseDir: "pages",
+			},
 		});
 		const result1 = await replaceLinks({
 			body: "Hello",
@@ -834,8 +914,10 @@ describe("namespace resolution", () => {
 	it("replaces candidate with namespace when full candidate is provided", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespaces/link" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "namespaces/link",
@@ -852,8 +934,10 @@ describe("namespace resolution", () => {
 	it("replaces candidate without namespace correctly", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "link" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "link",
@@ -870,8 +954,10 @@ describe("namespace resolution", () => {
 	it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025/02/08" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "2025-02-08",
@@ -895,8 +981,10 @@ describe("namespace resolution nearlest file path", () => {
 					{ path: "namespace/a/b/c/d/e/f/link" },
 					{ path: "namespace/a/b/c/link" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 
 			const result = await replaceLinks({
@@ -917,8 +1005,10 @@ describe("namespace resolution nearlest file path", () => {
 					{ path: "namespace/a/b/c/d/link" },
 					{ path: "namespace/a/b/c/d/e/f/link" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "link",
@@ -940,8 +1030,10 @@ describe("namespace resolution nearlest file path", () => {
 					{ path: "another-namespace/a/b/c/d/link" },
 					{ path: "another-namespace/a/b/c/d/e/f/link" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
 			const result = await replaceLinks({
 				body: "link",
@@ -966,8 +1058,10 @@ describe("namespace resolution nearlest file path", () => {
 				{ path: "namespace/a/b/c/d/link" },
 				{ path: "namespace/a/b/c/d/e/f/link" },
 			],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "link",
@@ -998,8 +1092,10 @@ describe("namespace resolution nearlest file path", () => {
 				{ path: "base/a/b/c/d/link" },
 				{ path: "base/a/b/c/d/e/f/link" },
 			],
-			restrictNamespace: false,
-			baseDir: "base",
+			settings: {
+				restrictNamespace: false,
+				baseDir: "base",
+			},
 		});
 		const result = await replaceLinks({
 			body: "link link2",
@@ -1073,8 +1169,10 @@ it("ignore month notes", async () => {
 			{ path: "namespace/8" },
 			{ path: "namespace/9" },
 		],
-		restrictNamespace: false,
-		baseDir: undefined,
+		settings: {
+			restrictNamespace: false,
+			baseDir: undefined,
+		},
 	});
 	const result = await replaceLinks({
 		body: "01 1 12 namespace/01",
@@ -1091,8 +1189,10 @@ describe("ignoreDateFormats setting", () => {
 	it("should not replace date format when ignoreDateFormats is true", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025-02-10" }, { path: "journals/2025-02-10" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "2025-02-10",
@@ -1113,8 +1213,10 @@ describe("ignoreDateFormats setting", () => {
 	it("should replace date format when ignoreDateFormats is false", async () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025-02-10" }],
-			restrictNamespace: false,
-			baseDir: undefined,
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
 		});
 		const result = await replaceLinks({
 			body: "2025-02-10",

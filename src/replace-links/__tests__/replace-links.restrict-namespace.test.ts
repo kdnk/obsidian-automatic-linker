@@ -10,10 +10,12 @@ describe("replaceLinks - restrict namespace", () => {
 					{ path: "pages/set/tag", aliases: [] },
 					{ path: "pages/other/current" },
 				],
-				restrictNamespace: true,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: true,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "tag",
 				linkResolverContext: {
 					filePath: "pages/set/current",
@@ -35,10 +37,12 @@ describe("replaceLinks - restrict namespace", () => {
 					{ path: "pages/set/tag" },
 					{ path: "pages/other/current" },
 				],
+				settings: {
 				restrictNamespace: true,
 				baseDir: "pages",
+				}
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "tag",
 				linkResolverContext: {
 					filePath: "pages/other/current",
@@ -61,10 +65,12 @@ describe("replaceLinks - restrict namespace", () => {
 					{ path: "pages/set2/tag2" },
 					{ path: "pages/other/current" },
 				],
-				restrictNamespace: true,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: true,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "tag1 tag2",
 				linkResolverContext: {
 					filePath: "pages/set1/current",

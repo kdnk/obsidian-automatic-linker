@@ -7,10 +7,12 @@ describe("replaceLinks - namespace resolution", () => {
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "namespace",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -24,10 +26,12 @@ describe("replaceLinks - namespace resolution", () => {
 		it("single namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "namespace/tag1",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -45,10 +49,12 @@ describe("replaceLinks - namespace resolution", () => {
 					{ path: "namespace/tag2" },
 					{ path: "namespace" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "namespace/tag1 namespace/tag2",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -71,11 +77,13 @@ describe("replaceLinks - namespace resolution", () => {
 						{ path: "namespace/a/b/c/d/e/f/link" },
 						{ path: "namespace/a/b/c/link" },
 					],
-					restrictNamespace: false,
-					baseDir: undefined,
+					settings: {
+						restrictNamespace: false,
+						baseDir: undefined,
+					},
 				});
 
-				const result = await replaceLinks({
+				const result = replaceLinks({
 					body: "link",
 					linkResolverContext: {
 						filePath: "namespace/a/b/c/current-file",
@@ -93,10 +101,12 @@ describe("replaceLinks - namespace resolution", () => {
 						{ path: "namespace/a/b/c/d/link" },
 						{ path: "namespace/a/b/c/d/e/f/link" },
 					],
-					restrictNamespace: false,
-					baseDir: undefined,
+					settings: {
+						restrictNamespace: false,
+						baseDir: undefined,
+					},
 				});
-				const result = await replaceLinks({
+				const result = replaceLinks({
 					body: "link",
 					linkResolverContext: {
 						filePath: "namespace/a/b/c/d/current-file",
@@ -116,10 +126,12 @@ describe("replaceLinks - namespace resolution", () => {
 						{ path: "another-namespace/a/b/c/d/link" },
 						{ path: "another-namespace/a/b/c/d/e/f/link" },
 					],
-					restrictNamespace: false,
-					baseDir: undefined,
+					settings: {
+						restrictNamespace: false,
+						baseDir: undefined,
+					},
 				});
-				const result = await replaceLinks({
+				const result = replaceLinks({
 					body: "link",
 					linkResolverContext: {
 						filePath: "namespace/current-file",
@@ -142,10 +154,12 @@ describe("replaceLinks - namespace resolution", () => {
 					{ path: "namespace/a/b/c/d/link" },
 					{ path: "namespace/a/b/c/d/e/f/link" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "link",
 				linkResolverContext: {
 					filePath: "namespace/a/b/current-file",
@@ -174,10 +188,12 @@ describe("replaceLinks - namespace resolution", () => {
 					{ path: "base/a/b/c/d/link" },
 					{ path: "base/a/b/c/d/e/f/link" },
 				],
-				restrictNamespace: false,
-				baseDir: "base",
+				settings: {
+					restrictNamespace: false,
+					baseDir: "base",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "link link2",
 				linkResolverContext: {
 					filePath: "base/current-file",
@@ -190,7 +206,7 @@ describe("replaceLinks - namespace resolution", () => {
 				"[[looooooooooooooooooooooooooooooooooooooong/link|link]] [[namespace1/link2|link2]]",
 			);
 
-			const result2 = await replaceLinks({
+			const result2 = replaceLinks({
 				body: "link link2",
 				linkResolverContext: {
 					filePath: "base/current-file",
@@ -211,10 +227,12 @@ describe("replaceLinks - namespace resolution", () => {
 					{ path: "namespace/xx/link" },
 					{ path: "namespace/link2" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "link",
 				linkResolverContext: {
 					filePath: "namespace/xx/current-file",
@@ -233,10 +251,12 @@ describe("replaceLinks - namespace resolution", () => {
 						{ path: "namespace/xx/link", aliases: ["alias"] },
 						{ path: "namespace/link2" },
 					],
-					restrictNamespace: false,
-					baseDir: undefined,
+					settings: {
+						restrictNamespace: false,
+						baseDir: undefined,
+					},
 				});
-				const result = await replaceLinks({
+				const result = replaceLinks({
 					body: "alias",
 					linkResolverContext: {
 						filePath: "namespace/xx/current-file",
@@ -255,10 +275,12 @@ describe("replaceLinks - namespace resolution", () => {
 						{ path: "namespace/link" },
 						{ path: "namespace/link2" },
 					],
-					restrictNamespace: false,
-					baseDir: undefined,
+					settings: {
+						restrictNamespace: false,
+						baseDir: undefined,
+					},
 				});
-				const result = await replaceLinks({
+				const result = replaceLinks({
 					body: "alias",
 					linkResolverContext: {
 						filePath: "namespace/xx/yy/current-file",
