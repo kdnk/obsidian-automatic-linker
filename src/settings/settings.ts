@@ -119,6 +119,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Toggle for ignoring case in link matching
+		new Setting(containerEl)
+			.setName("Ignore case")
+			.setDesc(
+				"When enabled, link matching will be case-insensitive. The original case of the text will be preserved in the link.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.ignoreCase)
+					.onChange(async (value) => {
+						this.plugin.settings.ignoreCase = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		// Toggle for formatting GitHub URLs on save
 		new Setting(containerEl)
 			.setName("Format GitHub URLs on save")

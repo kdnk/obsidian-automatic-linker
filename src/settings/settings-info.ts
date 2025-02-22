@@ -11,6 +11,7 @@ export type AutomaticLinkerSettings = {
 	formatJiraURLs: boolean; // Format Jira URLs on save
 	jiraURLs: string[]; // List of Jira URLs (domains)
 	debug: boolean; // Enable debug logging
+	ignoreCase: boolean; // Ignore case when matching links
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -26,4 +27,5 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	formatJiraURLs: true, // Default: format Jira URLs
 	jiraURLs: [], // Default: empty list
 	debug: false, // Default: disable debug logging
+	ignoreCase: false, // Default: case-sensitive matching
 };
