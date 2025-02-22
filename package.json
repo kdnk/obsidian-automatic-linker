@@ -8,7 +8,8 @@
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"test": "VITE_CJS_IGNORE_WARNING=true vitest run",
-		"test:watch": "VITE_CJS_IGNORE_WARNING=true vitest"
+		"test:watch": "VITE_CJS_IGNORE_WARNING=true vitest",
+		"tsc:watch": "tsc -noEmit -skipLibCheck --watch"
 	},
 	"keywords": [],
 	"author": "",

@@ -7,10 +7,12 @@ describe("replaceLinks - namespace resolution", () => {
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "namespace",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -24,10 +26,12 @@ describe("replaceLinks - namespace resolution", () => {
 		it("single namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "namespace/tag1",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -45,10 +49,12 @@ describe("replaceLinks - namespace resolution", () => {
 					{ path: "namespace/tag2" },
 					{ path: "namespace" },
 				],
-				restrictNamespace: false,
-				baseDir: undefined,
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "namespace/tag1 namespace/tag2",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -69,10 +75,12 @@ describe("replaceLinks - namespace resolution", () => {
 					{ path: "pages/set/a" },
 					{ path: "pages/other/current" },
 				],
-				restrictNamespace: true,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: true,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "a",
 				linkResolverContext: {
 					filePath: "pages/set/current",
@@ -94,10 +102,12 @@ describe("replaceLinks - namespace resolution", () => {
 					{ path: "pages/set/a" },
 					{ path: "pages/other/current" },
 				],
-				restrictNamespace: true,
-				baseDir: "pages",
+				settings: {
+					restrictNamespace: true,
+					baseDir: "pages",
+				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "a",
 				linkResolverContext: {
 					filePath: "pages/other/current",

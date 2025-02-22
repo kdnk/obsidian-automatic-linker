@@ -2,12 +2,13 @@ import { buildCandidateTrie, getEffectiveNamespace } from "../../trie";
 
 export const buildCandidateTrieForTest = ({
 	files,
-	restrictNamespace,
-	baseDir,
+	settings: { restrictNamespace, baseDir },
 }: {
 	files: { path: string; aliases?: string[] }[];
-	restrictNamespace: boolean;
-	baseDir: string | undefined;
+	settings: {
+		restrictNamespace: boolean;
+		baseDir: string | undefined;
+	};
 }) => {
 	const sortedFiles = files
 		.slice()
