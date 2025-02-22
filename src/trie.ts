@@ -103,28 +103,37 @@ export const buildCandidateTrie = (
 
 	// Register normal candidates.
 	for (const { full, short, restrictNamespace, namespace } of candidates) {
-		// Register the full path
+		// Register the full path and its case-insensitive variant if needed
 		candidateMap.set(full, {
 			canonical: full,
 			restrictNamespace,
 			namespace,
 		});
 
-		// For CJK paths, register both the full path and the last segment
+		// For paths with a slash, register the last segment
 		const lastSlashIndex = full.lastIndexOf("/");
 		if (lastSlashIndex !== -1) {
 			const lastSegment = full.slice(lastSlashIndex + 1);
+			// For CJK paths or when ignoreCase is enabled
 			if (
+				ignoreCase ||
 				/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
 					lastSegment,
 				)
 			) {
-				// Register the last segment
+				// Register both the original case and lowercase versions
 				candidateMap.set(lastSegment, {
 					canonical: full,
 					restrictNamespace,
 					namespace,
 				});
+				if (ignoreCase) {
+					candidateMap.set(lastSegment.toLowerCase(), {
+						canonical: full,
+						restrictNamespace,
+						namespace,
+					});
+				}
 			}
 		}
 
@@ -168,7 +177,15 @@ export const buildCandidateTrie = (
 	const words = Array.from(candidateMap.keys()).sort(
 		(a, b) => b.length - a.length,
 	);
-	const trie = buildTrie(words, ignoreCase);
+	// When ignoreCase is enabled, we need to add both the original and lowercase versions
+	const trieWords = ignoreCase
+		? words.flatMap(word => {
+			const segments = word.split('/');
+			const lastSegment = segments[segments.length - 1];
+			return [word, lastSegment.toLowerCase()];
+		})
+		: words;
+	const trie = buildTrie(trieWords, ignoreCase);
 
 	return { candidateMap, trie };
 };

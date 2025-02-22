@@ -61,10 +61,12 @@ export const replaceLinks = ({
 		const slashIndex = key.lastIndexOf("/");
 		if (slashIndex === -1) continue;
 		const shorthand = key.slice(slashIndex + 1);
-		let arr = fallbackIndex.get(shorthand);
+		// When ignoreCase is enabled, use lowercase for the fallback index key
+		const indexKey = settings.ignoreCase ? shorthand.toLowerCase() : shorthand;
+		let arr = fallbackIndex.get(indexKey);
 		if (!arr) {
 			arr = [];
-			fallbackIndex.set(shorthand, arr);
+			fallbackIndex.set(indexKey, arr);
 		}
 		arr.push([key, data]);
 	}
@@ -323,7 +325,9 @@ export const replaceLinks = ({
 					}
 
 					// Quickly retrieve matching candidate entries using fallbackIndex.
-					const candidateList = fallbackIndex.get(word);
+					// When ignoreCase is enabled, use lowercase for searching in the fallbackIndex
+					const searchWord = settings.ignoreCase ? word.toLowerCase() : word;
+					const candidateList = fallbackIndex.get(searchWord);
 					if (candidateList) {
 						// Filter candidates that comply with the current namespace restrictions.
 						const filteredCandidates = candidateList.filter(
