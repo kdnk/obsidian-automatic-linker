@@ -21,6 +21,7 @@ export const replaceLinks = ({
 		namespaceResolution?: boolean;
 		baseDir?: string;
 		ignoreDateFormats?: boolean;
+		ignoreCase?: boolean;
 	};
 }): string => {
 	// Return the body unchanged if its length is below the minimum character count.
