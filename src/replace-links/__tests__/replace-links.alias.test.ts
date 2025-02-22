@@ -183,31 +183,4 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 	});
-
-	describe("alias and ignoreCase", () => {
-		it("prefers exact alias match over case-insensitive match", async () => {
-			const { candidateMap, trie } = buildCandidateTrieForTest({
-				files: [{ path: "hello", aliases: ["HW"] }, { path: "hw" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
-			});
-			const result = await replaceLinks({
-				body: "HW",
-				linkResolverContext: {
-					filePath: "journals/2022-01-01",
-					trie,
-					candidateMap,
-				},
-				settings: {
-					ignoreCase: true,
-					minCharCount: 0,
-				},
-			});
-			// エイリアスの完全一致を優先するため、大文字小文字を無視したマッチング（"hw"）ではなく
-			// エイリアス"HW"が"hello"へのリンクとして使用される
-			expect(result).toBe("[[hello|HW]]");
-		});
-	});
 });

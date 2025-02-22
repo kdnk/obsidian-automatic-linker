@@ -96,7 +96,7 @@ export const replaceLinks = ({
 				null;
 			let j = i;
 			while (j < text.length) {
-				const ch = text[j];
+				const ch = settings.ignoreCase ? text[j].toLowerCase() : text[j];
 				const child = node.children.get(ch);
 				if (!child) break;
 				node = child;
@@ -138,8 +138,24 @@ export const replaceLinks = ({
 					i += lastCandidate.length;
 					continue;
 				}
-				if (candidateMap.has(candidate)) {
-					const candidateData = candidateMap.get(candidate);
+				// Case-insensitive matching when ignoreCase is enabled
+				let matchedCandidate = candidate;
+				let candidateData: CandidateData | undefined;
+
+				if (settings.ignoreCase) {
+					// Try to find a case-insensitive match
+					for (const [key, data] of candidateMap.entries()) {
+						if (key.toLowerCase() === candidate.toLowerCase()) {
+							matchedCandidate = key;
+							candidateData = data;
+							break;
+						}
+					}
+				} else {
+					candidateData = candidateMap.get(candidate);
+				}
+
+				if (candidateData) {
 					// Although candidateMap.has(candidate) returned true, TypeScript still requires a check for undefined.
 					if (!candidateData) {
 						// If candidateData is not found, skip to the next iteration.
@@ -256,13 +272,17 @@ export const replaceLinks = ({
 					}
 					// If it has a namespace (contains "/"), use the last part as alias
 					else if (linkPath.includes("/")) {
-						const segments = linkPath.split("/");
-						const lastPart = segments[segments.length - 1];
-						result += `[[${linkPath}|${lastPart}]]`;
+						// When ignoreCase is enabled, use the original text to preserve case, but only the last part
+						const originalText = settings.ignoreCase ? text.substring(i, i + candidate.length) : candidate;
+						const originalSegments = originalText.split("/");
+						const displayText = originalSegments[originalSegments.length - 1];
+						result += `[[${linkPath}|${displayText}]]`;
 					}
-					// Otherwise, use the normal link format
+					// Otherwise, use the original text format
 					else {
-						result += `[[${linkPath}]]`;
+						// When ignoreCase is enabled, use the original text to preserve case
+						const displayText = settings.ignoreCase ? text.substring(i, i + candidate.length) : matchedCandidate;
+						result += `[[${displayText}]]`;
 					}
 
 					i += candidate.length;
@@ -275,7 +295,7 @@ export const replaceLinks = ({
 				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
 				const fallbackMatch = text.slice(i).match(fallbackRegex);
 				if (fallbackMatch) {
-					const word = fallbackMatch[1];
+					const word = settings.ignoreCase ? fallbackMatch[1].toLowerCase() : fallbackMatch[1];
 
 					// If the word is in YYYY-MM-DD format and ignoreDateFormats is enabled, do not convert.
 					if (
@@ -346,15 +366,17 @@ export const replaceLinks = ({
 							if (hasAlias) {
 								result += `[[${linkPath}|${alias}]]`;
 							}
-							// If it has a namespace (contains "/"), use the last part as alias
+							// If it has a namespace (contains "/"), use the original text as alias
 							else if (linkPath.includes("/")) {
-								const segments = linkPath.split("/");
-								const lastPart = segments[segments.length - 1];
-								result += `[[${linkPath}|${lastPart}]]`;
+								// When ignoreCase is enabled, use the original text to preserve case, but only the last part
+								const originalText = settings.ignoreCase ? text.substring(i, i + word.length) : word;
+								const originalSegments = originalText.split("/");
+								const displayText = originalSegments[originalSegments.length - 1];
+								result += `[[${linkPath}|${displayText}]]`;
 							}
-							// Otherwise, use the normal link format
+							// Otherwise, use the original text format
 							else {
-								result += `[[${linkPath}]]`;
+								result += `[[${word}]]`;
 							}
 
 							i += word.length;

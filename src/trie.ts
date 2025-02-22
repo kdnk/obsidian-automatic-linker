@@ -42,12 +42,13 @@ export const getEffectiveNamespace = (
 	return segments[0] || "";
 };
 
-export const buildTrie = (words: string[]): TrieNode => {
+export const buildTrie = (words: string[], ignoreCase = false): TrieNode => {
 	const root: TrieNode = { children: new Map() };
 
 	for (const word of words) {
 		let node = root;
-		for (const char of word) {
+		const chars = ignoreCase ? word.toLowerCase() : word;
+		for (const char of chars) {
 			let child = node.children.get(char);
 			if (!child) {
 				child = { children: new Map() };
@@ -55,7 +56,7 @@ export const buildTrie = (words: string[]): TrieNode => {
 			}
 			node = child;
 		}
-		node.candidate = word;
+		node.candidate = word; // 元の大文字小文字を保持
 	}
 
 	return root;
@@ -71,6 +72,7 @@ export interface CandidateData {
 export const buildCandidateTrie = (
 	allFiles: PathAndAliases[],
 	baseDir: string | undefined,
+	ignoreCase = false,
 ) => {
 	// Process candidate strings from file paths.
 	type Candidate = {
@@ -166,7 +168,7 @@ export const buildCandidateTrie = (
 	const words = Array.from(candidateMap.keys()).sort(
 		(a, b) => b.length - a.length,
 	);
-	const trie = buildTrie(words);
+	const trie = buildTrie(words, ignoreCase);
 
 	return { candidateMap, trie };
 };

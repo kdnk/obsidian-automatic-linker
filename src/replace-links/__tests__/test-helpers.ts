@@ -21,6 +21,10 @@ export const buildCandidateTrieForTest = ({
 			namespace: getEffectiveNamespace(path, baseDir),
 		}));
 
-	const { candidateMap, trie } = buildCandidateTrie(sortedFiles, baseDir, ignoreCase ?? false);
+	const { candidateMap, trie } = buildCandidateTrie(
+		sortedFiles,
+		baseDir,
+		ignoreCase ?? false,
+	);
 	return { candidateMap, trie };
 };
