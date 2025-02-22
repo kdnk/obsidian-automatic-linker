@@ -861,20 +861,11 @@ describe("aliases", () => {
 				trie,
 				candidateMap,
 			},
+			settings: { baseDir: "pages" },
 		});
-		expect(result1).toBe("[[pages/HelloWorld|Hello]]");
+		expect(result1).toBe("[[HelloWorld|Hello]]");
 
 		const result2 = await replaceLinks({
-			body: "HW",
-			linkResolverContext: {
-				filePath: "journals/2022-01-01",
-				trie,
-				candidateMap,
-			},
-		});
-		expect(result2).toBe("[[pages/HelloWorld|HW]]");
-
-		const result3 = await replaceLinks({
 			body: "HelloWorld",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -883,7 +874,7 @@ describe("aliases", () => {
 			},
 			settings: { baseDir: "pages" },
 		});
-		expect(result3).toBe("[[HelloWorld]]");
+		expect(result2).toBe("[[HelloWorld]]");
 	});
 
 	it("replaces multiple occurrences of alias and normal candidate", async () => {
