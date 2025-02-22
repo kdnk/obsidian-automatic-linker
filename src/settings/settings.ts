@@ -211,5 +211,20 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 				text.inputEl.rows = 4;
 				text.inputEl.cols = 50;
 			});
+
+		// Toggle for debug logging
+		new Setting(containerEl)
+			.setName("Debug mode")
+			.setDesc(
+				"When enabled, debug information will be logged to the console.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.debug)
+					.onChange(async (value) => {
+						this.plugin.settings.debug = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
 	}
 }
