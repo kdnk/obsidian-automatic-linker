@@ -56,7 +56,7 @@ export const buildTrie = (words: string[], ignoreCase = false): TrieNode => {
 			}
 			node = child;
 		}
-		node.candidate = word; // 元の大文字小文字を保持
+		node.candidate = word; // preserve the original case
 	}
 
 	return root;
