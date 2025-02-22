@@ -2,12 +2,13 @@ import { buildCandidateTrie, getEffectiveNamespace } from "../../trie";
 
 export const buildCandidateTrieForTest = ({
 	files,
-	settings: { restrictNamespace, baseDir },
+	settings: { restrictNamespace, baseDir, ignoreCase },
 }: {
 	files: { path: string; aliases?: string[] }[];
 	settings: {
 		restrictNamespace: boolean;
 		baseDir: string | undefined;
+		ignoreCase?: boolean;
 	};
 }) => {
 	const sortedFiles = files
@@ -20,6 +21,10 @@ export const buildCandidateTrieForTest = ({
 			namespace: getEffectiveNamespace(path, baseDir),
 		}));
 
-	const { candidateMap, trie } = buildCandidateTrie(sortedFiles, baseDir);
+	const { candidateMap, trie } = buildCandidateTrie(
+		sortedFiles,
+		baseDir,
+		ignoreCase ?? false,
+	);
 	return { candidateMap, trie };
 };

@@ -9,7 +9,7 @@ import {
 	PluginManifest,
 } from "obsidian";
 import { PathAndAliases } from "./path-and-aliases.types";
-import { replaceLinks } from "./replace-links";
+import { replaceLinks } from "./replace-links/replace-links";
 import { formatGitHubURL } from "./replace-urls/github";
 import { formatJiraURL } from "./replace-urls/jira";
 import { AutomaticLinkerPluginSettingsTab } from "./settings/settings";
