@@ -4,6 +4,44 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - CJK handling", () => {
 	describe("containing CJK", () => {
+		it("complex word boundary", async () => {
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					files: [{ path: "第 3 の存在" }],
+					settings: {
+						restrictNamespace: false,
+						baseDir: undefined,
+					},
+				});
+				const result = replaceLinks({
+					body: "- 第 3 の存在から伝える",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("- [[第 3 の存在]]から伝える");
+			}
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					files: [{ path: "第 3 の存在" }],
+					settings: {
+						restrictNamespace: false,
+						baseDir: undefined,
+					},
+				});
+				const result = replaceLinks({
+					body: "- 第 3 の存在から伝える",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("- [[第 3 の存在]]から伝える");
+			}
+		});
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/タグ" }],
