@@ -106,7 +106,7 @@ export const replaceLinks = ({
 					// For CJK text, we need to check if this is a complete CJK segment
 					const candidate = text.substring(i, j + 1);
 					const isCjkCandidate =
-						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
+						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u.test(
 							candidate,
 						);
 					if (isCjkCandidate) {
@@ -166,7 +166,7 @@ export const replaceLinks = ({
 
 					// Determine if the candidate is composed solely of CJK characters.
 					const isCjkCandidate =
-						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]+$/u.test(
+						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u.test(
 							candidate,
 						);
 					const isKorean = /^[\p{Script=Hangul}]+$/u.test(candidate);
