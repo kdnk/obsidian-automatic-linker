@@ -1,0 +1,11 @@
+on:
+  issues:
+    types: [opened, reopened]
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    name: Close issue opened by non-stargazer
+    steps:
+      - name: close
+        uses: uhyo/please-star-first@v2
