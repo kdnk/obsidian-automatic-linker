@@ -582,30 +582,6 @@ describe("nested links", () => {
 	});
 });
 
-describe("with space", () => {
-	it("", async () => {
-		const { candidateMap, trie } = buildCandidateTrieForTest({
-			files: [
-				{ path: "obsidian/automatic linker" },
-				{ path: "obsidian" },
-			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
-		});
-		const result = await replaceLinks({
-			body: "obsidian/automatic linker",
-			linkResolverContext: {
-				filePath: "journals/2022-01-01",
-				trie,
-				candidateMap,
-			},
-		});
-		expect(result).toBe("[[obsidian/automatic linker|automatic linker]]");
-	});
-});
-
 describe("ignore url", () => {
 	it("one url", async () => {
 		{

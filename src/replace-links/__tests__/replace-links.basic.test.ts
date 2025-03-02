@@ -190,6 +190,50 @@ describe("replaceLinks", () => {
 		});
 	});
 
+	describe("with space", () => {
+		it("space without namespace", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "automatic linker" }, { path: "automatic" }],
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
+			});
+			const result = await replaceLinks({
+				body: "automatic linker",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("[[automatic linker]]");
+		});
+		it("space with namespace", async () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [
+					{ path: "obsidian/automatic linker" },
+					{ path: "obsidian" },
+				],
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
+			});
+			const result = await replaceLinks({
+				body: "obsidian/automatic linker",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe(
+				"[[obsidian/automatic linker|automatic linker]]",
+			);
+		});
+	});
+
 	describe("multiple links", () => {
 		it("replaces multiple links in the same line", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
