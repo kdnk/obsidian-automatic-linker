@@ -12,6 +12,7 @@ import { PathAndAliases } from "./path-and-aliases.types";
 import { replaceLinks } from "./replace-links/replace-links";
 import { formatGitHubURL } from "./replace-urls/github";
 import { formatJiraURL } from "./replace-urls/jira";
+import { replaceURLs } from "./replace-urls/replace-urls";
 import { AutomaticLinkerPluginSettingsTab } from "./settings/settings";
 import {
 	AutomaticLinkerSettings,
@@ -38,31 +39,25 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 
 		try {
-			await this.app.vault.process(activeFile, (fileContent) => {
-				if (this.settings.formatGitHubURLs) {
-					// Find GitHub URLs using a regex pattern
-					const githubUrlPattern = /(https?:\/\/[^\s\]]+)/g;
-					fileContent = fileContent.replace(
-						githubUrlPattern,
-						(match) => {
-							return formatGitHubURL(match, this.settings);
-						},
+			if (this.settings.formatGitHubURLs) {
+				await this.app.vault.process(activeFile, (fileContent) => {
+					return replaceURLs(
+						fileContent,
+						this.settings,
+						formatGitHubURL,
 					);
-				}
-				return fileContent;
-			});
+				});
+			}
 
-			await this.app.vault.process(activeFile, (fileContent) => {
-				// Format Jira URLs if enabled
-				if (this.settings.formatJiraURLs) {
-					// Find URLs using a regex pattern
-					const urlPattern = /(https?:\/\/[^\s\]]+)/g;
-					fileContent = fileContent.replace(urlPattern, (match) => {
-						return formatJiraURL(match, this.settings);
-					});
-				}
-				return fileContent;
-			});
+			if (this.settings.formatJiraURLs) {
+				await this.app.vault.process(activeFile, (fileContent) => {
+					return replaceURLs(
+						fileContent,
+						this.settings,
+						formatJiraURL,
+					);
+				});
+			}
 
 			await this.app.vault.process(activeFile, (fileContent) => {
 				if (!this.trie || !this.candidateMap) {
