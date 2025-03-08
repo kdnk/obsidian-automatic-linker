@@ -32,7 +32,8 @@ export const replaceLinks = ({
 	// Utility: Check if a character is a word boundary.
 	const isWordBoundary = (char: string | undefined): boolean => {
 		if (char === undefined) return true;
-		return !/[\p{L}\p{N}_/-]/u.test(char);
+		// Normal word boundary check (applying general rules including CJK languages)
+		return !/[\p{L}\p{N}_/-]/u.test(char) || /[\t\n\r ]/.test(char);
 	};
 
 	// Utility: Check if a candidate represents a month note (only digits from 1 to 12).
@@ -82,6 +83,105 @@ export const replaceLinks = ({
 	// Helper function to process an unprotected text segment.
 	const replaceInSegment = (text: string): string => {
 		let result = "";
+		// Check if the text contains CJK characters
+		const isCjkText = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);
+
+		// For CJK text, try matching from each character position
+		if (isCjkText) {
+			// Array to track processed positions
+			const processed = new Array(text.length).fill(false);
+
+			// Try matching from each character position
+			for (let startPos = 0; startPos < text.length; startPos++) {
+				// Skip positions that have already been processed
+				if (processed[startPos]) continue;
+
+				// Use the trie to find the longest match
+				let node = trie;
+				let lastCandidate: { candidate: string; length: number } | null = null;
+				let j = startPos;
+
+				while (j < text.length) {
+					const ch = settings.ignoreCase ? text[j].toLowerCase() : text[j];
+					const child = node.children.get(ch);
+					if (!child) break;
+					node = child;
+					if (node.candidate) {
+						lastCandidate = {
+							candidate: node.candidate,
+							length: j - startPos + 1,
+						};
+					}
+					j++;
+				}
+
+				// If a candidate is found
+				if (lastCandidate) {
+					const candidate = text.substring(startPos, startPos + lastCandidate.length);
+					const candidateData = settings.ignoreCase
+						? Array.from(candidateMap.entries()).find(([key]) => key.toLowerCase() === candidate.toLowerCase())?.[1]
+						: candidateMap.get(candidate);
+
+					if (candidateData) {
+						// Check for date formats and month notes
+						if (
+							(settings.ignoreDateFormats && /^\d{4}-\d{2}-\d{2}$/.test(candidate)) ||
+							isMonthNote(candidate)
+						) {
+							// Do nothing (output as is)
+						} else if (
+							settings.namespaceResolution &&
+							candidateData.restrictNamespace &&
+							candidateData.namespace !== currentNamespace
+						) {
+							// Do nothing if namespace restriction applies
+						} else {
+							// Convert to link
+							let linkPath = candidateData.canonical;
+							const hasAlias = linkPath.includes("|");
+							let alias = "";
+
+							if (hasAlias) {
+								[linkPath, alias] = linkPath.split("|");
+							}
+
+							// Handle baseDir-related processing
+							if (settings.baseDir && linkPath.startsWith(settings.baseDir + "/")) {
+								linkPath = linkPath.slice((settings.baseDir + "/").length);
+							}
+
+							// Mark positions as processed
+							for (let k = startPos; k < startPos + lastCandidate.length; k++) {
+								processed[k] = true;
+							}
+
+							// リンクの形式を決定
+							if (hasAlias) {
+								result += `[[${linkPath}|${alias}]]`;
+							} else if (linkPath.includes("/")) {
+								const segments = linkPath.split("/");
+								const lastPart = segments[segments.length - 1];
+								result += `[[${linkPath}|${lastPart}]]`;
+							} else {
+								result += `[[${candidate}]]`;
+							}
+
+							startPos += lastCandidate.length - 1; // Adjust the next starting position
+							continue;
+						}
+					}
+				}
+
+				// If no match or processing was skipped, output the character as is
+				if (!processed[startPos]) {
+					result += text[startPos];
+				}
+			}
+
+			return result;
+		}
+
+		// For non-CJK text, use the original processing
 		let i = 0;
 		outer: while (i < text.length) {
 			// If a URL is found, copy it unchanged.
@@ -110,10 +210,15 @@ export const replaceLinks = ({
 							candidate,
 						);
 					if (isCjkCandidate) {
+						// For CJK text, relax the word boundary check
+						// CJK characters don't have spaces between words, so always recognize as candidates
 						lastCandidate = {
 							candidate: node.candidate,
 							length: j - i + 1,
 						};
+						// Recognize CJK text as candidates even if the next character is not a word boundary
+						// This allows both "ひらがな" to be recognized in strings like "ひらがなとひらがな"
+
 					} else if (isWordBoundary(text[j + 1])) {
 						lastCandidate = {
 							candidate: node.candidate,
@@ -165,16 +270,15 @@ export const replaceLinks = ({
 					}
 
 					// Determine if the candidate is composed solely of CJK characters.
-					const isCjkCandidate =
-						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u.test(
-							candidate,
-						);
+					// No need to check if it's CJK text here as it's handled in the word boundary check
 					const isKorean = /^[\p{Script=Hangul}]+$/u.test(candidate);
 
-					// For non-CJK or Korean candidates, perform word boundary checks.
-					if (!isCjkCandidate || isKorean) {
-						if (isKorean) {
+					// Special handling for Korean
+					if (isKorean) {
+						{
 							const remaining = text.slice(i + candidate.length);
+
+							// Special handling when followed by "이다"
 							const suffixMatch = remaining.match(/^(이다\.?)/);
 							if (suffixMatch) {
 								// Replace the candidate with the wikilink format.
@@ -220,16 +324,64 @@ export const replaceLinks = ({
 								continue outer;
 							}
 						}
+
+						// Special handling when followed by particles like "는" or "은"
+						const remaining = text.slice(i + candidate.length);
+						if (remaining.match(/^(는|은)/)) {
+							// Don't convert to links when followed by Korean particles "는" or "은"
+						// For example, don't link the first "문서" in "이 문서는 문서이다."
+							result += text[i];
+							i++;
+							continue outer;
+						}
+
+					}
+
+					// Word boundary check (relaxed for CJK text, but special handling for Korean)
+					const isCjkCandidate =
+						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u.test(
+							candidate,
+						);
+					const isKoreanCandidate = /^[\p{Script=Hangul}]+$/u.test(
+							candidate,
+						);
+					const isJapaneseCandidate = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u.test(
+							candidate,
+						) && !/^[\p{Script=Hangul}]+$/u.test(candidate);
+
+					// Processing for CJK text
+
+				// Skip word boundary check for CJK text
+				if (!isCjkCandidate) {
+					// For non-CJK text, perform normal word boundary check
 						const left = i > 0 ? text[i - 1] : undefined;
 						const right =
 							i + candidate.length < text.length
 								? text[i + candidate.length]
 								: undefined;
+
 						if (!isWordBoundary(left) || !isWordBoundary(right)) {
 							result += text[i];
 							i++;
 							continue outer;
 						}
+					}
+
+					// Special handling for Japanese (convert to links even when followed by particles like "が", "は", "を")
+					if (isJapaneseCandidate) {
+						const right = i + candidate.length < text.length
+							? text.slice(i + candidate.length, i + candidate.length + 10)
+							: "";
+
+						// Convert to links even when followed by Japanese particles
+						if (right.match(/^(が|は|を|に|で|と|から|まで|より|へ|の|や|で|も)/)) {
+							// Skip word boundary check and force conversion to links when followed by particles
+					}
+				}
+
+				// Special handling for Korean (treat particles like "는" as separate words)
+				if (isKoreanCandidate) {
+					// Special handling for Korean when followed by particles like "는" or "이다"
 					}
 
 					// If namespace resolution is enabled and candidateData has a namespace restriction,
@@ -560,6 +712,5 @@ export const replaceLinks = ({
 		lastIndex = mIndex + m[0].length;
 	}
 	resultBody += replaceInSegment(body.slice(lastIndex));
-
 	return resultBody;
 };

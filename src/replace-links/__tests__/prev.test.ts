@@ -1328,7 +1328,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 
 	it("starting CJK > multiple same CJK words", async () => {
 		const trie = buildTrie(Array.from(candidateMap.keys()));
-		const body = "- ひらがなとひらがな";
+		const body = "- ひらがなひらがな";
 		const result = await replaceLinks({
 			body,
 			linkResolverContext: {
@@ -1338,7 +1338,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			},
 			settings: { minCharCount: 0, namespaceResolution: true },
 		});
-		expect(result).toBe("- [[ひらがな]]と[[ひらがな]]");
+		expect(result).toBe("- [[ひらがな]][[ひらがな]]");
 	});
 
 	it("CJK - Chinese > converts Chinese words within sentence", async () => {

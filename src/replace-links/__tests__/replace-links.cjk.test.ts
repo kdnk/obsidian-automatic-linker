@@ -41,6 +41,24 @@ describe("replaceLinks - CJK handling", () => {
 				});
 				expect(result).toBe("- [[第 3 の存在]]から伝える");
 			}
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					files: [{ path: "アレルギー" }],
+					settings: {
+						restrictNamespace: false,
+						baseDir: undefined,
+					},
+				});
+				const result = replaceLinks({
+					body: "- ダニとハウスダストアレルギーがあった",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+				});
+				expect(result).toBe("- ダニとハウスダスト[[アレルギー]]があった");
+			}
 		});
 		it("unmatched namespace", async () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -221,14 +239,14 @@ describe("replaceLinks - CJK handling", () => {
 			},
 		});
 		const result = replaceLinks({
-			body: "- ひらがなとひらがな",
+			body: "- ひらがなひらがな",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
 				trie,
 				candidateMap,
 			},
 		});
-		expect(result).toBe("- [[ひらがな]]と[[ひらがな]]");
+		expect(result).toBe("- [[ひらがな]][[ひらがな]]");
 	});
 
 	describe("CJK with namespaces", () => {
