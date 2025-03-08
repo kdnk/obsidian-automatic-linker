@@ -63,7 +63,9 @@ export const replaceLinks = ({
 		if (slashIndex === -1) continue;
 		const shorthand = key.slice(slashIndex + 1);
 		// When ignoreCase is enabled, use lowercase for the fallback index key
-		const indexKey = settings.ignoreCase ? shorthand.toLowerCase() : shorthand;
+		const indexKey = settings.ignoreCase
+			? shorthand.toLowerCase()
+			: shorthand;
 		let arr = fallbackIndex.get(indexKey);
 		if (!arr) {
 			arr = [];
@@ -84,7 +86,10 @@ export const replaceLinks = ({
 	const replaceInSegment = (text: string): string => {
 		let result = "";
 		// Check if the text contains CJK characters
-		const isCjkText = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text);
+		const isCjkText =
+			/[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u.test(
+				text,
+			);
 
 		// For CJK text, try matching from each character position
 		if (isCjkText) {
@@ -98,11 +103,16 @@ export const replaceLinks = ({
 
 				// Use the trie to find the longest match
 				let node = trie;
-				let lastCandidate: { candidate: string; length: number } | null = null;
+				let lastCandidate: {
+					candidate: string;
+					length: number;
+				} | null = null;
 				let j = startPos;
 
 				while (j < text.length) {
-					const ch = settings.ignoreCase ? text[j].toLowerCase() : text[j];
+					const ch = settings.ignoreCase
+						? text[j].toLowerCase()
+						: text[j];
 					const child = node.children.get(ch);
 					if (!child) break;
 					node = child;
@@ -117,15 +127,23 @@ export const replaceLinks = ({
 
 				// If a candidate is found
 				if (lastCandidate) {
-					const candidate = text.substring(startPos, startPos + lastCandidate.length);
+					const candidate = text.substring(
+						startPos,
+						startPos + lastCandidate.length,
+					);
 					const candidateData = settings.ignoreCase
-						? Array.from(candidateMap.entries()).find(([key]) => key.toLowerCase() === candidate.toLowerCase())?.[1]
+						? Array.from(candidateMap.entries()).find(
+								([key]) =>
+									key.toLowerCase() ===
+									candidate.toLowerCase(),
+							)?.[1]
 						: candidateMap.get(candidate);
 
 					if (candidateData) {
 						// Check for date formats and month notes
 						if (
-							(settings.ignoreDateFormats && /^\d{4}-\d{2}-\d{2}$/.test(candidate)) ||
+							(settings.ignoreDateFormats &&
+								/^\d{4}-\d{2}-\d{2}$/.test(candidate)) ||
 							isMonthNote(candidate)
 						) {
 							// Do nothing (output as is)
@@ -146,12 +164,21 @@ export const replaceLinks = ({
 							}
 
 							// Handle baseDir-related processing
-							if (settings.baseDir && linkPath.startsWith(settings.baseDir + "/")) {
-								linkPath = linkPath.slice((settings.baseDir + "/").length);
+							if (
+								settings.baseDir &&
+								linkPath.startsWith(settings.baseDir + "/")
+							) {
+								linkPath = linkPath.slice(
+									(settings.baseDir + "/").length,
+								);
 							}
 
 							// Mark positions as processed
-							for (let k = startPos; k < startPos + lastCandidate.length; k++) {
+							for (
+								let k = startPos;
+								k < startPos + lastCandidate.length;
+								k++
+							) {
 								processed[k] = true;
 							}
 
@@ -198,7 +225,9 @@ export const replaceLinks = ({
 				null;
 			let j = i;
 			while (j < text.length) {
-				const ch = settings.ignoreCase ? text[j].toLowerCase() : text[j];
+				const ch = settings.ignoreCase
+					? text[j].toLowerCase()
+					: text[j];
 				const child = node.children.get(ch);
 				if (!child) break;
 				node = child;
@@ -218,7 +247,6 @@ export const replaceLinks = ({
 						};
 						// Recognize CJK text as candidates even if the next character is not a word boundary
 						// This allows both "ひらがな" to be recognized in strings like "ひらがなとひらがな"
-
 					} else if (isWordBoundary(text[j + 1])) {
 						lastCandidate = {
 							candidate: node.candidate,
@@ -329,12 +357,11 @@ export const replaceLinks = ({
 						const remaining = text.slice(i + candidate.length);
 						if (remaining.match(/^(는|은)/)) {
 							// Don't convert to links when followed by Korean particles "는" or "은"
-						// For example, don't link the first "문서" in "이 문서는 문서이다."
+							// For example, don't link the first "문서" in "이 문서는 문서이다."
 							result += text[i];
 							i++;
 							continue outer;
 						}
-
 					}
 
 					// Word boundary check (relaxed for CJK text, but special handling for Korean)
@@ -342,18 +369,24 @@ export const replaceLinks = ({
 						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u.test(
 							candidate,
 						);
+
 					const isKoreanCandidate = /^[\p{Script=Hangul}]+$/u.test(
-							candidate,
-						);
-					const isJapaneseCandidate = /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u.test(
+						candidate,
+					);
+					const isJapaneseCandidate =
+						/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u.test(
 							candidate,
 						) && !/^[\p{Script=Hangul}]+$/u.test(candidate);
 
+					console.log("isCjkCandidate: ", isCjkCandidate);
+					console.log("isKoreanCandidate: ", isKoreanCandidate);
+					console.log("isJapaneseCandidate: ", isJapaneseCandidate);
+
 					// Processing for CJK text
 
-				// Skip word boundary check for CJK text
-				if (!isCjkCandidate) {
-					// For non-CJK text, perform normal word boundary check
+					// Skip word boundary check for CJK text
+					if (!isCjkCandidate) {
+						// For non-CJK text, perform normal word boundary check
 						const left = i > 0 ? text[i - 1] : undefined;
 						const right =
 							i + candidate.length < text.length
@@ -369,19 +402,27 @@ export const replaceLinks = ({
 
 					// Special handling for Japanese (convert to links even when followed by particles like "が", "は", "を")
 					if (isJapaneseCandidate) {
-						const right = i + candidate.length < text.length
-							? text.slice(i + candidate.length, i + candidate.length + 10)
-							: "";
+						const right =
+							i + candidate.length < text.length
+								? text.slice(
+										i + candidate.length,
+										i + candidate.length + 10,
+									)
+								: "";
 
 						// Convert to links even when followed by Japanese particles
-						if (right.match(/^(が|は|を|に|で|と|から|まで|より|へ|の|や|で|も)/)) {
+						if (
+							right.match(
+								/^(が|は|を|に|で|と|から|まで|より|へ|の|や|で|も)/,
+							)
+						) {
 							// Skip word boundary check and force conversion to links when followed by particles
+						}
 					}
-				}
 
-				// Special handling for Korean (treat particles like "는" as separate words)
-				if (isKoreanCandidate) {
-					// Special handling for Korean when followed by particles like "는" or "이다"
+					// Special handling for Korean (treat particles like "는" as separate words)
+					if (isKoreanCandidate) {
+						// Special handling for Korean when followed by particles like "는" or "이다"
 					}
 
 					// If namespace resolution is enabled and candidateData has a namespace restriction,
@@ -427,15 +468,20 @@ export const replaceLinks = ({
 					// If it has a namespace (contains "/"), use the last part as alias
 					else if (linkPath.includes("/")) {
 						// When ignoreCase is enabled, use the original text to preserve case, but only the last part
-						const originalText = settings.ignoreCase ? text.substring(i, i + candidate.length) : candidate;
+						const originalText = settings.ignoreCase
+							? text.substring(i, i + candidate.length)
+							: candidate;
 						const originalSegments = originalText.split("/");
-						const displayText = originalSegments[originalSegments.length - 1];
+						const displayText =
+							originalSegments[originalSegments.length - 1];
 						result += `[[${linkPath}|${displayText}]]`;
 					}
 					// Otherwise, use the original text format
 					else {
 						// When ignoreCase is enabled, use the original text to preserve case
-						const displayText = settings.ignoreCase ? text.substring(i, i + candidate.length) : matchedCandidate;
+						const displayText = settings.ignoreCase
+							? text.substring(i, i + candidate.length)
+							: matchedCandidate;
 						result += `[[${displayText}]]`;
 					}
 
@@ -449,7 +495,9 @@ export const replaceLinks = ({
 				const fallbackRegex = /^([\p{L}\p{N}_-]+)/u;
 				const fallbackMatch = text.slice(i).match(fallbackRegex);
 				if (fallbackMatch) {
-					const word = settings.ignoreCase ? fallbackMatch[1].toLowerCase() : fallbackMatch[1];
+					const word = settings.ignoreCase
+						? fallbackMatch[1].toLowerCase()
+						: fallbackMatch[1];
 
 					// If the word is in YYYY-MM-DD format and ignoreDateFormats is enabled, do not convert.
 					if (
@@ -478,7 +526,9 @@ export const replaceLinks = ({
 
 					// Quickly retrieve matching candidate entries using fallbackIndex.
 					// When ignoreCase is enabled, use lowercase for searching in the fallbackIndex
-					const searchWord = settings.ignoreCase ? word.toLowerCase() : word;
+					const searchWord = settings.ignoreCase
+						? word.toLowerCase()
+						: word;
 					const candidateList = fallbackIndex.get(searchWord);
 					if (candidateList) {
 						// Filter candidates that comply with the current namespace restrictions.
@@ -525,9 +575,15 @@ export const replaceLinks = ({
 							// If it has a namespace (contains "/"), use the original text as alias
 							else if (linkPath.includes("/")) {
 								// When ignoreCase is enabled, use the original text to preserve case, but only the last part
-								const originalText = settings.ignoreCase ? text.substring(i, i + word.length) : word;
-								const originalSegments = originalText.split("/");
-								const displayText = originalSegments[originalSegments.length - 1];
+								const originalText = settings.ignoreCase
+									? text.substring(i, i + word.length)
+									: word;
+								const originalSegments =
+									originalText.split("/");
+								const displayText =
+									originalSegments[
+										originalSegments.length - 1
+									];
 								result += `[[${linkPath}|${displayText}]]`;
 							}
 							// Otherwise, use the original text format
