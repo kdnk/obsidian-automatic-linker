@@ -378,12 +378,6 @@ export const replaceLinks = ({
 							candidate,
 						) && !/^[\p{Script=Hangul}]+$/u.test(candidate);
 
-					console.log("isCjkCandidate: ", isCjkCandidate);
-					console.log("isKoreanCandidate: ", isKoreanCandidate);
-					console.log("isJapaneseCandidate: ", isJapaneseCandidate);
-
-					// Processing for CJK text
-
 					// Skip word boundary check for CJK text
 					if (!isCjkCandidate) {
 						// For non-CJK text, perform normal word boundary check
