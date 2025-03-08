@@ -57,7 +57,63 @@ describe("replaceLinks - CJK handling", () => {
 						candidateMap,
 					},
 				});
-				expect(result).toBe("- ダニとハウスダスト[[アレルギー]]があった");
+				expect(result).toBe(
+					"- ダニとハウスダスト[[アレルギー]]があった",
+				);
+			}
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					files: [{ path: "アレルギー" }],
+					settings: {
+						restrictNamespace: false,
+						baseDir: "pages",
+						ignoreCase: true,
+					},
+				});
+				const result = replaceLinks({
+					body: "アレルギーとアレルギー",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						minCharCount: 0,
+						namespaceResolution: true,
+						baseDir: "pages",
+						ignoreDateFormats: true,
+						ignoreCase: true,
+					},
+				});
+				expect(result).toBe("[[アレルギー]]と[[アレルギー]]");
+			}
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					files: [{ path: "アレルギー" }],
+					settings: {
+						restrictNamespace: false,
+						baseDir: "pages",
+						ignoreCase: true,
+					},
+				});
+				const result = replaceLinks({
+					body: "- ダニとハウスダストアレルギーがあった",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						minCharCount: 0,
+						namespaceResolution: true,
+						baseDir: "pages",
+						ignoreDateFormats: true,
+						ignoreCase: true,
+					},
+				});
+				expect(result).toBe(
+					"- ダニとハウスダスト[[アレルギー]]があった",
+				);
 			}
 		});
 		it("unmatched namespace", async () => {
