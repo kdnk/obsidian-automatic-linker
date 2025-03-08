@@ -65,6 +65,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				}
 
 				if (this.settings.debug) {
+					console.log("this.trie: ", this.trie);
+					console.log("this.candidateMap: ", this.candidateMap);
 					console.log(
 						new Date().toISOString(),
 						"modifyLinks started",
