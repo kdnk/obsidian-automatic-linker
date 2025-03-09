@@ -4,7 +4,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - namespace resolution", () => {
 	describe("complex fileNames", () => {
-		it("unmatched namespace", async () => {
+		it("unmatched namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 				settings: {
@@ -23,7 +23,7 @@ describe("replaceLinks - namespace resolution", () => {
 			expect(result).toBe("namespace");
 		});
 
-		it("single namespace", async () => {
+		it("single namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 				settings: {
@@ -42,7 +42,7 @@ describe("replaceLinks - namespace resolution", () => {
 			expect(result).toBe("[[namespace/tag1|tag1]]");
 		});
 
-		it("multiple namespaces", async () => {
+		it("multiple namespaces", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace/tag1" },
@@ -69,7 +69,7 @@ describe("replaceLinks - namespace resolution", () => {
 	});
 
 	describe("automatic-linker-restrict-namespace and base dir", () => {
-		it("should replace candidate with restrictNamespace when effective namespace matches", async () => {
+		it("should replace candidate with restrictNamespace when effective namespace matches", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set/a" },
@@ -96,7 +96,7 @@ describe("replaceLinks - namespace resolution", () => {
 			expect(result).toBe("[[set/a|a]]");
 		});
 
-		it("should not replace candidate with restrictNamespace when effective namespace does not match", async () => {
+		it("should not replace candidate with restrictNamespace when effective namespace does not match", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set/a" },

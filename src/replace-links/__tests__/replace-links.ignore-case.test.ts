@@ -3,7 +3,7 @@ import { replaceLinks } from "../replace-links";
 import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("ignore case", () => {
-	it("respects case when ignoreCase is enabled", async () => {
+	it("respects case when ignoreCase is enabled", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
 			settings: {
@@ -33,7 +33,7 @@ describe("ignore case", () => {
 		}
 	});
 
-	it("handles spaces with ignoreCase enabled", async () => {
+	it("handles spaces with ignoreCase enabled", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "tidy first" }],
 			settings: {
@@ -63,7 +63,7 @@ describe("ignore case", () => {
 		}
 	});
 
-	it("handles namespaces with ignoreCase enabled", async () => {
+	it("handles namespaces with ignoreCase enabled", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "books/clean code" }],
 			settings: {

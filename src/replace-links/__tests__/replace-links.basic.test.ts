@@ -4,7 +4,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks", () => {
 	describe("basic", () => {
-		it("replaces links", async () => {
+		it("replaces links", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
 				settings: {
@@ -24,7 +24,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("[[hello]]");
 		});
 
-		it("replaces links with space", async () => {
+		it("replaces links with space", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/tidy first" }],
 				settings: {
@@ -49,7 +49,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("[[tidy first]]");
 		});
 
-		it("replaces links with bullet", async () => {
+		it("replaces links with bullet", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
 				settings: {
@@ -69,7 +69,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("- [[hello]]");
 		});
 
-		it("replaces links with number", async () => {
+		it("replaces links with number", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
 				settings: {
@@ -89,7 +89,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("1. [[hello]]");
 		});
 
-		it("does not replace links in code blocks", async () => {
+		it("does not replace links in code blocks", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
 				settings: {
@@ -109,7 +109,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("```\nhello\n```");
 		});
 
-		it("does not replace links in inline code", async () => {
+		it("does not replace links in inline code", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
 				settings: {
@@ -129,7 +129,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("`hello`");
 		});
 
-		it("does not replace existing wikilinks", async () => {
+		it("does not replace existing wikilinks", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
 				settings: {
@@ -149,7 +149,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("[[hello]]");
 		});
 
-		it("does not replace existing markdown links", async () => {
+		it("does not replace existing markdown links", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
 				settings: {
@@ -169,7 +169,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("[hello](world)");
 		});
 
-		it("respects minCharCount", async () => {
+		it("respects minCharCount", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
 				settings: {
@@ -191,7 +191,7 @@ describe("replaceLinks", () => {
 	});
 
 	describe("with space", () => {
-		it("space without namespace", async () => {
+		it("space without namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "automatic linker" }, { path: "automatic" }],
 				settings: {
@@ -199,7 +199,7 @@ describe("replaceLinks", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "automatic linker",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -209,7 +209,7 @@ describe("replaceLinks", () => {
 			});
 			expect(result).toBe("[[automatic linker]]");
 		});
-		it("space with namespace", async () => {
+		it("space with namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "obsidian/automatic linker" },
@@ -220,7 +220,7 @@ describe("replaceLinks", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "obsidian/automatic linker",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -235,7 +235,7 @@ describe("replaceLinks", () => {
 	});
 
 	describe("multiple links", () => {
-		it("replaces multiple links in the same line", async () => {
+		it("replaces multiple links in the same line", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
 				settings: {
@@ -255,7 +255,7 @@ describe("replaceLinks", () => {
 			expect(result).toBe("[[hello]] [[world]]");
 		});
 
-		it("replaces multiple links in different lines", async () => {
+		it("replaces multiple links in different lines", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
 				settings: {

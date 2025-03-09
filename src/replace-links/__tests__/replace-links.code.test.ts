@@ -3,7 +3,7 @@ import { replaceLinks } from "../replace-links";
 import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("ignore code", () => {
-	it("inline code", async () => {
+	it("inline code", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "example" }, { path: "code" }],
 			settings: {
@@ -11,7 +11,7 @@ describe("ignore code", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "`code` example",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -22,7 +22,7 @@ describe("ignore code", () => {
 		expect(result).toBe("`code` [[example]]");
 	});
 
-	it("code block", async () => {
+	it("code block", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "example" }, { path: "typescript" }],
 			settings: {
@@ -30,7 +30,7 @@ describe("ignore code", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "```typescript\nexample\n```",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -41,7 +41,7 @@ describe("ignore code", () => {
 		expect(result).toBe("```typescript\nexample\n```");
 	});
 
-	it("skips replacement when content is too short", async () => {
+	it("skips replacement when content is too short", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
 			settings: {
@@ -49,7 +49,7 @@ describe("ignore code", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "hello",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",

@@ -4,7 +4,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - alias handling", () => {
 	describe("basic alias", () => {
-		it("replaces alias", async () => {
+		it("replaces alias", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "HelloWorld", aliases: ["HW"] }],
 				settings: {
@@ -12,7 +12,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "HW",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -23,7 +23,7 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[HelloWorld|HW]]");
 		});
 
-		it("prefers exact match over alias", async () => {
+		it("prefers exact match over alias", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "HelloWorld" }, { path: "HW" }],
 				settings: {
@@ -31,7 +31,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "HW",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -44,7 +44,7 @@ describe("replaceLinks - alias handling", () => {
 	});
 
 	describe("namespaced alias", () => {
-		it("replaces namespaced alias", async () => {
+		it("replaces namespaced alias", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/HelloWorld", aliases: ["HW"] }],
 				settings: {
@@ -52,7 +52,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "HW",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -63,7 +63,7 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[pages/HelloWorld|HW]]");
 		});
 
-		it("replaces multiple occurrences of alias and normal candidate (with baseDir)", async () => {
+		it("replaces multiple occurrences of alias and normal candidate (with baseDir)", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "HelloWorld", aliases: ["Hello"] }],
 				settings: {
@@ -71,7 +71,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: "pages",
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "Hello HelloWorld",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -87,7 +87,7 @@ describe("replaceLinks - alias handling", () => {
 	});
 
 	describe("alias with restrictNamespace", () => {
-		it("respects restrictNamespace for alias", async () => {
+		it("respects restrictNamespace for alias", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
 				settings: {
@@ -95,7 +95,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: "pages",
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "HW",
 				linkResolverContext: {
 					filePath: "pages/set/current",
@@ -111,7 +111,7 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 
-		it("replace alias when restrictNamespace is false", async () => {
+		it("replace alias when restrictNamespace is false", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
 				settings: {
@@ -119,7 +119,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: "pages",
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "HW",
 				linkResolverContext: {
 					filePath: "pages/set/current",
@@ -135,7 +135,7 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 
-		it("does not replace alias when namespace does not match", async () => {
+		it("does not replace alias when namespace does not match", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
 				settings: {
@@ -143,7 +143,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: "pages",
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "HW",
 				linkResolverContext: {
 					filePath: "pages/other/current",
@@ -161,7 +161,7 @@ describe("replaceLinks - alias handling", () => {
 	});
 
 	describe("alias and baseDir", () => {
-		it("should replace alias with baseDir", async () => {
+		it("should replace alias with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
 				settings: {
@@ -169,7 +169,7 @@ describe("replaceLinks - alias handling", () => {
 					baseDir: "pages",
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "HW",
 				linkResolverContext: {
 					filePath: "pages/set/current",

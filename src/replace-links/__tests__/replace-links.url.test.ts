@@ -3,7 +3,7 @@ import { replaceLinks } from "../replace-links";
 import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("ignore url", () => {
-	it("one url", async () => {
+	it("one url", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
@@ -16,7 +16,7 @@ describe("ignore url", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "- https://example.com",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -34,7 +34,7 @@ describe("ignore url", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "- https://x.com/xxxx/status/12345?t=25S02Tda",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -52,7 +52,7 @@ describe("ignore url", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "Hello https://claude.ai/chat/xxx",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -70,7 +70,7 @@ describe("ignore url", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "こんにちは https://claude.ai/chat/xxx",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -82,7 +82,7 @@ describe("ignore url", () => {
 		}
 	});
 
-	it("multiple urls", async () => {
+	it("multiple urls", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example" },
@@ -95,7 +95,7 @@ describe("ignore url", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- https://example.com https://example1.com",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -106,7 +106,7 @@ describe("ignore url", () => {
 		expect(result).toBe("- https://example.com https://example1.com");
 	});
 
-	it("multiple urls with links", async () => {
+	it("multiple urls with links", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example1" },
@@ -120,7 +120,7 @@ describe("ignore url", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- https://example.com https://example1.com link",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -135,7 +135,7 @@ describe("ignore url", () => {
 });
 
 describe("ignore markdown url", () => {
-	it("one url", async () => {
+	it("one url", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example" },
@@ -148,7 +148,7 @@ describe("ignore markdown url", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- [title](https://example.com)",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -159,7 +159,7 @@ describe("ignore markdown url", () => {
 		expect(result).toBe("- [title](https://example.com)");
 	});
 
-	it("multiple urls", async () => {
+	it("multiple urls", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example1" },
@@ -174,7 +174,7 @@ describe("ignore markdown url", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- [title1](https://example1.com) [title2](https://example2.com)",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -187,7 +187,7 @@ describe("ignore markdown url", () => {
 		);
 	});
 
-	it("multiple urls with links", async () => {
+	it("multiple urls with links", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example1" },
@@ -203,7 +203,7 @@ describe("ignore markdown url", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- [title1](https://example1.com) [title2](https://example2.com) link",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",

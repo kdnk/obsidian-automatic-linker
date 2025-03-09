@@ -4,7 +4,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - restrict namespace", () => {
 	describe("automatic-linker-restrict-namespace with baseDir", () => {
-		it("should respect restrictNamespace with baseDir", async () => {
+		it("should respect restrictNamespace with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set/tag", aliases: [] },
@@ -31,7 +31,7 @@ describe("replaceLinks - restrict namespace", () => {
 			expect(result).toBe("[[set/tag|tag]]");
 		});
 
-		it("should not replace when namespace does not match with baseDir", async () => {
+		it("should not replace when namespace does not match with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set/tag" },
@@ -58,7 +58,7 @@ describe("replaceLinks - restrict namespace", () => {
 			expect(result).toBe("tag");
 		});
 
-		it("should handle multiple namespaces with restrictNamespace", async () => {
+		it("should handle multiple namespaces with restrictNamespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set1/tag1" },

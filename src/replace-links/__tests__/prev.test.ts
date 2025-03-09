@@ -5,7 +5,7 @@ import { replaceLinks } from "../replace-links";
 import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("basic", () => {
-	it("replaces links", async () => {
+	it("replaces links", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
 			settings: {
@@ -13,7 +13,7 @@ describe("basic", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "hello",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -25,7 +25,7 @@ describe("basic", () => {
 		expect(result).toBe("[[hello]]");
 	});
 
-	it("replaces links with bullet", async () => {
+	it("replaces links with bullet", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
 			settings: {
@@ -33,7 +33,7 @@ describe("basic", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- hello",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -44,7 +44,7 @@ describe("basic", () => {
 		expect(result).toBe("- [[hello]]");
 	});
 
-	it("replaces links with other texts", async () => {
+	it("replaces links with other texts", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
@@ -53,7 +53,7 @@ describe("basic", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "world hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -71,7 +71,7 @@ describe("basic", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "hello world",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -83,7 +83,7 @@ describe("basic", () => {
 		}
 	});
 
-	it("replaces links with other texts and bullet", async () => {
+	it("replaces links with other texts and bullet", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
@@ -92,7 +92,7 @@ describe("basic", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "- world hello",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -110,7 +110,7 @@ describe("basic", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "- hello world",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -122,7 +122,7 @@ describe("basic", () => {
 		}
 	});
 
-	it("replaces multiple links", async () => {
+	it("replaces multiple links", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
@@ -131,7 +131,7 @@ describe("basic", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "hello world",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -149,7 +149,7 @@ describe("basic", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "\nhello\nworld\n",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -167,7 +167,7 @@ describe("basic", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "\nhello\nworld aaaaa\n",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -185,7 +185,7 @@ describe("basic", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "\n aaaaa hello\nworld bbbbb\n",
 				linkResolverContext: {
 					filePath: "journals/2022-01-01",
@@ -199,7 +199,7 @@ describe("basic", () => {
 });
 
 describe("complex fileNames", () => {
-	it("unmatched namespace", async () => {
+	it("unmatched namespace", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 			settings: {
@@ -207,7 +207,7 @@ describe("complex fileNames", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "namespace",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -218,7 +218,7 @@ describe("complex fileNames", () => {
 		expect(result).toBe("namespace");
 	});
 
-	it("single namespace", async () => {
+	it("single namespace", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 			settings: {
@@ -226,7 +226,7 @@ describe("complex fileNames", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "namespace/tag1",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -237,7 +237,7 @@ describe("complex fileNames", () => {
 		expect(result).toBe("[[namespace/tag1|tag1]]");
 	});
 
-	it("multiple namespaces", async () => {
+	it("multiple namespaces", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "namespace/tag1" },
@@ -249,7 +249,7 @@ describe("complex fileNames", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "namespace/tag1 namespace/tag2",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -262,7 +262,7 @@ describe("complex fileNames", () => {
 });
 
 describe("containing CJK", () => {
-	it("unmatched namespace", async () => {
+	it("unmatched namespace", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/タグ" }],
 			settings: {
@@ -270,7 +270,7 @@ describe("containing CJK", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "namespace",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -281,7 +281,7 @@ describe("containing CJK", () => {
 		expect(result).toBe("namespace");
 	});
 
-	it("multiple namespaces", async () => {
+	it("multiple namespaces", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "namespace/tag1" },
@@ -293,7 +293,7 @@ describe("containing CJK", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "namespace/tag1 namespace/tag2 namespace/タグ3",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -308,7 +308,7 @@ describe("containing CJK", () => {
 });
 
 describe("starting CJK", () => {
-	it("unmatched namespace", async () => {
+	it("unmatched namespace", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/タグ" }],
 			settings: {
@@ -316,7 +316,7 @@ describe("starting CJK", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "名前空間",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -327,7 +327,7 @@ describe("starting CJK", () => {
 		expect(result).toBe("名前空間");
 	});
 
-	it("single namespace", async () => {
+	it("single namespace", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "名前空間/tag1" },
@@ -339,7 +339,7 @@ describe("starting CJK", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "名前空間/tag1",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -350,7 +350,7 @@ describe("starting CJK", () => {
 		expect(result).toBe("[[名前空間/tag1|tag1]]");
 	});
 
-	it("multiple namespaces", async () => {
+	it("multiple namespaces", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "名前空間/tag1" },
@@ -362,7 +362,7 @@ describe("starting CJK", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -375,7 +375,7 @@ describe("starting CJK", () => {
 		);
 	});
 
-	it("multiple CJK words", async () => {
+	it("multiple CJK words", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "漢字" }, { path: "ひらがな" }],
 			settings: {
@@ -383,7 +383,7 @@ describe("starting CJK", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- 漢字　ひらがな",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -394,7 +394,7 @@ describe("starting CJK", () => {
 		expect(result).toBe("- [[漢字]]　[[ひらがな]]");
 	});
 
-	it("multiple same CJK words", async () => {
+	it("multiple same CJK words", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "ひらがな" }],
 			settings: {
@@ -402,7 +402,7 @@ describe("starting CJK", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "- ひらがなとひらがな",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -415,7 +415,7 @@ describe("starting CJK", () => {
 });
 
 describe("CJK - Korean", () => {
-	it("converts Korean words to links", async () => {
+	it("converts Korean words to links", () => {
 		// 韓国語の候補ファイル
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "한글" }, { path: "테스트" }, { path: "예시" }],
@@ -424,7 +424,7 @@ describe("CJK - Korean", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "한글 테스트 예시",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -435,7 +435,7 @@ describe("CJK - Korean", () => {
 		expect(result).toBe("[[한글]] [[테스트]] [[예시]]");
 	});
 
-	it("converts Korean words within sentence", async () => {
+	it("converts Korean words within sentence", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "문서" }],
 			settings: {
@@ -443,7 +443,7 @@ describe("CJK - Korean", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "이 문서는 문서이다.",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -456,7 +456,7 @@ describe("CJK - Korean", () => {
 });
 
 describe("CJK - Chinese", () => {
-	it("converts Chinese words to links", async () => {
+	it("converts Chinese words to links", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "汉字" }, { path: "测试" }, { path: "示例" }],
 			settings: {
@@ -464,7 +464,7 @@ describe("CJK - Chinese", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "汉字 测试 示例",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -475,7 +475,7 @@ describe("CJK - Chinese", () => {
 		expect(result).toBe("[[汉字]] [[测试]] [[示例]]");
 	});
 
-	it("converts Chinese words within sentence", async () => {
+	it("converts Chinese words within sentence", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "文档" }],
 			settings: {
@@ -483,7 +483,7 @@ describe("CJK - Chinese", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "这个文档很好。",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -496,7 +496,7 @@ describe("CJK - Chinese", () => {
 });
 
 describe("base character (pages)", () => {
-	it("unmatched namespace", async () => {
+	it("unmatched namespace", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/tags" }],
 			settings: {
@@ -504,7 +504,7 @@ describe("base character (pages)", () => {
 				baseDir: "pages",
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "tags",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -517,7 +517,7 @@ describe("base character (pages)", () => {
 	});
 });
 
-it("multiple links in the same line", async () => {
+it("multiple links in the same line", () => {
 	const { candidateMap, trie } = buildCandidateTrieForTest({
 		files: [{ path: "pages/tags" }, { path: "サウナ" }, { path: "tags" }],
 		settings: {
@@ -525,7 +525,7 @@ it("multiple links in the same line", async () => {
 			baseDir: undefined,
 		},
 	});
-	const result = await replaceLinks({
+	const result = replaceLinks({
 		body: "サウナ tags pages/tags",
 		linkResolverContext: {
 			filePath: "journals/2022-01-01",
@@ -537,7 +537,7 @@ it("multiple links in the same line", async () => {
 });
 
 describe("nested links", () => {
-	it("", async () => {
+	it("", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "アジャイルリーダーコンピテンシーマップ" },
@@ -548,7 +548,7 @@ describe("nested links", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "アジャイルリーダーコンピテンシーマップ",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -559,7 +559,7 @@ describe("nested links", () => {
 		expect(result).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 	});
 
-	it("existing links", async () => {
+	it("existing links", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "アジャイルリーダーコンピテンシーマップ" },
@@ -570,7 +570,7 @@ describe("nested links", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "[[アジャイルリーダーコンピテンシーマップ]]",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -583,7 +583,7 @@ describe("nested links", () => {
 });
 
 describe("aliases", () => {
-	it("replaces alias with canonical form using file path and alias", async () => {
+	it("replaces alias with canonical form using file path and alias", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/HelloWorld", aliases: ["Hello", "HW"] }],
 			settings: {
@@ -591,7 +591,7 @@ describe("aliases", () => {
 				baseDir: "pages",
 			},
 		});
-		const result1 = await replaceLinks({
+		const result1 = replaceLinks({
 			body: "Hello",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -602,7 +602,7 @@ describe("aliases", () => {
 		});
 		expect(result1).toBe("[[HelloWorld|Hello]]");
 
-		const result2 = await replaceLinks({
+		const result2 = replaceLinks({
 			body: "HelloWorld",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -614,7 +614,7 @@ describe("aliases", () => {
 		expect(result2).toBe("[[HelloWorld]]");
 	});
 
-	it("replaces multiple occurrences of alias and normal candidate", async () => {
+	it("replaces multiple occurrences of alias and normal candidate", () => {
 		const files: PathAndAliases[] = [
 			{
 				path: "pages/HelloWorld",
@@ -623,7 +623,7 @@ describe("aliases", () => {
 			},
 		];
 		const { candidateMap, trie } = buildCandidateTrie(files, "pages");
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "Hello HelloWorld",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -639,7 +639,7 @@ describe("aliases", () => {
 });
 
 describe("namespace resolution", () => {
-	it("replaces candidate with namespace when full candidate is provided", async () => {
+	it("replaces candidate with namespace when full candidate is provided", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespaces/link" }],
 			settings: {
@@ -647,7 +647,7 @@ describe("namespace resolution", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "namespaces/link",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -659,7 +659,7 @@ describe("namespace resolution", () => {
 		expect(result).toBe("[[namespaces/link|link]]");
 	});
 
-	it("replaces candidate without namespace correctly", async () => {
+	it("replaces candidate without namespace correctly", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "link" }],
 			settings: {
@@ -667,7 +667,7 @@ describe("namespace resolution", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "link",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -679,7 +679,7 @@ describe("namespace resolution", () => {
 		expect(result).toBe("[[link]]");
 	});
 
-	it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", async () => {
+	it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025/02/08" }],
 			settings: {
@@ -687,7 +687,7 @@ describe("namespace resolution", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "2025-02-08",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -701,7 +701,7 @@ describe("namespace resolution", () => {
 });
 
 describe("namespace resolution nearlest file path", () => {
-	it("closest siblings namespace should be used", async () => {
+	it("closest siblings namespace should be used", () => {
 		{
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
@@ -715,7 +715,7 @@ describe("namespace resolution nearlest file path", () => {
 				},
 			});
 
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "link",
 				linkResolverContext: {
 					filePath: "namespace/a/b/c/current-file",
@@ -738,7 +738,7 @@ describe("namespace resolution nearlest file path", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "link",
 				linkResolverContext: {
 					filePath: "namespace/a/b/c/d/current-file",
@@ -763,7 +763,7 @@ describe("namespace resolution nearlest file path", () => {
 					baseDir: undefined,
 				},
 			});
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body: "link",
 				linkResolverContext: {
 					filePath: "namespace/current-file",
@@ -776,7 +776,7 @@ describe("namespace resolution nearlest file path", () => {
 		}
 	});
 
-	it("closest children namespace should be used", async () => {
+	it("closest children namespace should be used", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "namespace1/subnamespace/link" },
@@ -791,7 +791,7 @@ describe("namespace resolution nearlest file path", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "link",
 			linkResolverContext: {
 				filePath: "namespace/a/b/current-file",
@@ -803,7 +803,7 @@ describe("namespace resolution nearlest file path", () => {
 		expect(result).toBe("[[namespace/a/b/c/link|link]]");
 	});
 
-	it("find closest path if the current path is in base dir and the candidate is not", async () => {
+	it("find closest path if the current path is in base dir and the candidate is not", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link" },
@@ -825,7 +825,7 @@ describe("namespace resolution nearlest file path", () => {
 				baseDir: "base",
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "link link2",
 			linkResolverContext: {
 				filePath: "base/current-file",
@@ -838,7 +838,7 @@ describe("namespace resolution nearlest file path", () => {
 			"[[looooooooooooooooooooooooooooooooooooooong/link|link]] [[namespace1/link2|link2]]",
 		);
 
-		const result2 = await replaceLinks({
+		const result2 = replaceLinks({
 			body: "link link2",
 			linkResolverContext: {
 				filePath: "base/current-file",
@@ -851,7 +851,7 @@ describe("namespace resolution nearlest file path", () => {
 	});
 });
 
-it("ignore month notes", async () => {
+it("ignore month notes", () => {
 	const { candidateMap, trie } = buildCandidateTrieForTest({
 		files: [
 			{ path: "01" },
@@ -902,7 +902,7 @@ it("ignore month notes", async () => {
 			baseDir: undefined,
 		},
 	});
-	const result = await replaceLinks({
+	const result = replaceLinks({
 		body: "01 1 12 namespace/01",
 		linkResolverContext: {
 			filePath: "journals/2022-01-01",
@@ -914,7 +914,7 @@ it("ignore month notes", async () => {
 });
 
 describe("ignoreDateFormats setting", () => {
-	it("should not replace date format when ignoreDateFormats is true", async () => {
+	it("should not replace date format when ignoreDateFormats is true", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025-02-10" }, { path: "journals/2025-02-10" }],
 			settings: {
@@ -922,7 +922,7 @@ describe("ignoreDateFormats setting", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "2025-02-10",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -938,7 +938,7 @@ describe("ignoreDateFormats setting", () => {
 		expect(result).toBe("2025-02-10");
 	});
 
-	it("should replace date format when ignoreDateFormats is false", async () => {
+	it("should replace date format when ignoreDateFormats is false", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025-02-10" }],
 			settings: {
@@ -946,7 +946,7 @@ describe("ignoreDateFormats setting", () => {
 				baseDir: undefined,
 			},
 		});
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body: "2025-02-10",
 			linkResolverContext: {
 				filePath: "journals/2022-01-01",
@@ -1072,10 +1072,10 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		],
 	]);
 
-	it("CJK - Korean > converts Korean words within sentence", async () => {
+	it("CJK - Korean > converts Korean words within sentence", () => {
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "이 문서는 문서이다.";
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body,
 			linkResolverContext: {
 				filePath: "namespace/note",
@@ -1087,10 +1087,10 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		expect(result).toBe("이 문서는 [[문서]]이다.");
 	});
 
-	it("starting CJK > multiple same CJK words", async () => {
+	it("starting CJK > multiple same CJK words", () => {
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "- ひらがなひらがな";
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body,
 			linkResolverContext: {
 				filePath: "namespace/note",
@@ -1102,10 +1102,10 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		expect(result).toBe("- [[ひらがな]][[ひらがな]]");
 	});
 
-	it("CJK - Chinese > converts Chinese words within sentence", async () => {
+	it("CJK - Chinese > converts Chinese words within sentence", () => {
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "这个文档很好。";
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body,
 			linkResolverContext: {
 				filePath: "namespace/note",
@@ -1117,10 +1117,10 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		expect(result).toBe("这个[[文档]]很好。");
 	});
 
-	it("base character (pages) > unmatched namespace", async () => {
+	it("base character (pages) > unmatched namespace", () => {
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "tags";
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body,
 			linkResolverContext: {
 				filePath: "root-note",
@@ -1132,10 +1132,10 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		expect(result).toBe("[[tags]]");
 	});
 
-	it("aliases > replaces alias with canonical form using file path and alias", async () => {
+	it("aliases > replaces alias with canonical form using file path and alias", () => {
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "HelloWorld";
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body,
 			linkResolverContext: {
 				filePath: "pages/Note",
@@ -1147,10 +1147,10 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		expect(result).toBe("[[HelloWorld]]");
 	});
 
-	it("aliases > replaces multiple occurrences of alias and normal candidate", async () => {
+	it("aliases > replaces multiple occurrences of alias and normal candidate", () => {
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "Hello HelloWorld";
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body,
 			linkResolverContext: {
 				filePath: "pages/Note",
@@ -1162,10 +1162,10 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		expect(result).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
 	});
 
-	it("replaceLinks > should not replace when inside a protected segment", async () => {
+	it("replaceLinks > should not replace when inside a protected segment", () => {
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "Some text `x` more text";
-		const result = await replaceLinks({
+		const result = replaceLinks({
 			body,
 			linkResolverContext: {
 				filePath: "namespace/note",
@@ -1187,11 +1187,11 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		});
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 
-		it("should replace candidate with restrictNamespace when effective namespace matches", async () => {
+		it("should replace candidate with restrictNamespace when effective namespace matches", () => {
 			// Current file is in "pages/set/...", so effective namespace is "set"
 			const body = "a";
 			const filePath = "pages/set/current";
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body,
 				linkResolverContext: { filePath, trie, candidateMap },
 				settings: {
@@ -1203,11 +1203,11 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			expect(result).toBe("[[set/a|a]]");
 		});
 
-		it("should not replace candidate with restrictNamespace when effective namespace does not match", async () => {
+		it("should not replace candidate with restrictNamespace when effective namespace does not match", () => {
 			// Current file is in "pages/other/...", so effective namespace is "other"
 			const body = "a";
 			const filePath = "pages/other/current";
-			const result = await replaceLinks({
+			const result = replaceLinks({
 				body,
 				linkResolverContext: { filePath, trie, candidateMap },
 				settings: {

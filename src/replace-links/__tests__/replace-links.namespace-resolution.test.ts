@@ -4,7 +4,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - namespace resolution", () => {
 	describe("basic namespace resolution", () => {
-		it("unmatched namespace", async () => {
+		it("unmatched namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 				settings: {
@@ -23,7 +23,7 @@ describe("replaceLinks - namespace resolution", () => {
 			expect(result).toBe("namespace");
 		});
 
-		it("single namespace", async () => {
+		it("single namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
 				settings: {
@@ -42,7 +42,7 @@ describe("replaceLinks - namespace resolution", () => {
 			expect(result).toBe("[[namespace/tag1|tag1]]");
 		});
 
-		it("multiple namespaces", async () => {
+		it("multiple namespaces", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace/tag1" },
@@ -69,7 +69,7 @@ describe("replaceLinks - namespace resolution", () => {
 	});
 
 	describe("namespace resolution nearest file path", () => {
-		it("closest siblings namespace should be used", async () => {
+		it("closest siblings namespace should be used", () => {
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
 					files: [
@@ -144,7 +144,7 @@ describe("replaceLinks - namespace resolution", () => {
 			}
 		});
 
-		it("closest children namespace should be used", async () => {
+		it("closest children namespace should be used", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace1/subnamespace/link" },
@@ -171,7 +171,7 @@ describe("replaceLinks - namespace resolution", () => {
 			expect(result).toBe("[[namespace/a/b/c/link|link]]");
 		});
 
-		it("find closest path if the current path is in base dir and the candidate is not", async () => {
+		it("find closest path if the current path is in base dir and the candidate is not", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link" },
@@ -220,7 +220,7 @@ describe("replaceLinks - namespace resolution", () => {
 	});
 
 	describe("namespace resoluton with aliases", () => {
-		it("should resolve without aliases", async () => {
+		it("should resolve without aliases", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace/xx/yy/link" },
@@ -243,7 +243,7 @@ describe("replaceLinks - namespace resolution", () => {
 			expect(result).toBe("[[namespace/xx/link|link]]");
 		});
 
-		it("should resolve aliases", async () => {
+		it("should resolve aliases", () => {
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
 					files: [

@@ -4,7 +4,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - CJK handling", () => {
 	describe("containing CJK", () => {
-		it("complex word boundary", async () => {
+		it("complex word boundary", () => {
 			{
 				const { candidateMap, trie } = buildCandidateTrieForTest({
 					files: [{ path: "第 3 の存在" }],
@@ -116,7 +116,7 @@ describe("replaceLinks - CJK handling", () => {
 				);
 			}
 		});
-		it("unmatched namespace", async () => {
+		it("unmatched namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/タグ" }],
 				settings: {
@@ -135,7 +135,7 @@ describe("replaceLinks - CJK handling", () => {
 			expect(result).toBe("namespace");
 		});
 
-		it("multiple namespaces", async () => {
+		it("multiple namespaces", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace/tag1" },
@@ -162,7 +162,7 @@ describe("replaceLinks - CJK handling", () => {
 	});
 
 	describe("starting CJK", () => {
-		it("unmatched namespace", async () => {
+		it("unmatched namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/タグ" }],
 				settings: {
@@ -181,7 +181,7 @@ describe("replaceLinks - CJK handling", () => {
 			expect(result).toBe("名前空間");
 		});
 
-		it("single namespace", async () => {
+		it("single namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "名前空間/tag1" },
@@ -204,7 +204,7 @@ describe("replaceLinks - CJK handling", () => {
 			expect(result).toBe("[[名前空間/tag1|tag1]]");
 		});
 
-		it("multiple namespaces", async () => {
+		it("multiple namespaces", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "名前空間/tag1" },
@@ -231,7 +231,7 @@ describe("replaceLinks - CJK handling", () => {
 	});
 
 	describe("automatic-linker-restrict-namespace with CJK", () => {
-		it("should respect restrictNamespace for CJK with baseDir", async () => {
+		it("should respect restrictNamespace for CJK with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/セット/タグ", aliases: [] },
@@ -258,7 +258,7 @@ describe("replaceLinks - CJK handling", () => {
 			expect(result).toBe("[[セット/タグ|タグ]]");
 		});
 
-		it("should not replace CJK when namespace does not match with baseDir", async () => {
+		it("should not replace CJK when namespace does not match with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/セット/タグ", aliases: [] },
@@ -286,7 +286,7 @@ describe("replaceLinks - CJK handling", () => {
 		});
 	});
 
-	it("multiple same CJK words", async () => {
+	it("multiple same CJK words", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "ひらがな" }],
 			settings: {
@@ -306,7 +306,7 @@ describe("replaceLinks - CJK handling", () => {
 	});
 
 	describe("CJK with namespaces", () => {
-		it("should convert CJK text with namespace prefix", async () => {
+		it("should convert CJK text with namespace prefix", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "RM/関係性の勇者", aliases: [] }],
 				settings: {
@@ -332,7 +332,7 @@ describe("replaceLinks - CJK handling", () => {
 			);
 		});
 
-		it("should convert CJK text with namespace and alias", async () => {
+		it("should convert CJK text with namespace and alias", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "RM/関係性の勇者", aliases: ["勇者"] }],
 				settings: {
@@ -358,7 +358,7 @@ describe("replaceLinks - CJK handling", () => {
 			);
 		});
 
-		it("should convert CJK text with namespace and spaces", async () => {
+		it("should convert CJK text with namespace and spaces", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "RM/関係性の勇者", aliases: [] }],
 				settings: {
