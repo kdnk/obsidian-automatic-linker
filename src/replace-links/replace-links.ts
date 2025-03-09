@@ -43,9 +43,9 @@ export const replaceLinks = ({
 		parseInt(candidate, 10) >= 1 &&
 		parseInt(candidate, 10) <= 12;
 
-	// Regex to protect code blocks, inline code, wikilinks, and Markdown links.
+	// Regex to protect code blocks, inline code, wikilinks, Markdown links, and URLs.
 	const protectedRegex =
-		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))/g;
+		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s]+)/g;
 
 	// Normalize the body text to NFC.
 	body = body.normalize("NFC");

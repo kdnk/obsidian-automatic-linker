@@ -44,6 +44,42 @@ describe("ignore url", () => {
 			});
 			expect(result).toBe("- https://x.com/xxxx/status/12345?t=25S02Tda");
 		}
+		{
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "http" }],
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
+			});
+			const result = await replaceLinks({
+				body: "Hello https://claude.ai/chat/xxx",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("Hello https://claude.ai/chat/xxx");
+		}
+		{
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "http" }],
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
+			});
+			const result = await replaceLinks({
+				body: "こんにちは https://claude.ai/chat/xxx",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+			});
+			expect(result).toBe("こんにちは https://claude.ai/chat/xxx");
+		}
 	});
 
 	it("multiple urls", async () => {
