@@ -35,6 +35,8 @@ const FALLBACK_REGEX = /^([\p{L}\p{N}_-]+)/u;
 // Utility functions
 const isWordBoundary = (char: string | undefined): boolean => {
 	if (char === undefined) return true;
+	// CJK characters should be considered as word boundaries
+	if (CJK_REGEX.test(char)) return true;
 	return !/[\p{L}\p{N}_/-]/u.test(char) || /[\t\n\r ]/.test(char);
 };
 
@@ -126,90 +128,13 @@ const processCjkText = (
 	trie: TrieNode,
 	candidateMap: Map<string, CandidateData>,
 	currentNamespace: string,
+	filePath: string,  // Add filePath parameter
 	settings: ReplaceLinksSettings = {}
 ): string => {
-	let result = "";
-	const processed = new Array(text.length).fill(false);
-	
-	for (let startPos = 0; startPos < text.length; startPos++) {
-		if (processed[startPos]) continue;
-		
-		// Try to find the longest match using the trie
-		let node = trie;
-		let lastCandidate: { candidate: string; length: number } | null = null;
-		let j = startPos;
-		
-		while (j < text.length) {
-			const ch = settings.ignoreCase ? text[j].toLowerCase() : text[j];
-			const child = node.children.get(ch);
-			if (!child) break;
-			
-			node = child;
-			if (node.candidate) {
-				lastCandidate = {
-					candidate: node.candidate,
-					length: j - startPos + 1,
-				};
-			}
-			j++;
-		}
-		
-		// If a candidate is found
-		if (lastCandidate) {
-			const candidate = text.substring(startPos, startPos + lastCandidate.length);
-			let candidateData: CandidateData | undefined;
-			
-			if (settings.ignoreCase) {
-				candidateData = Array.from(candidateMap.entries()).find(
-					([key]) => key.toLowerCase() === candidate.toLowerCase()
-				)?.[1];
-			} else {
-				candidateData = candidateMap.get(candidate);
-			}
-			
-			if (candidateData) {
-				// Skip if it's a date format or month note
-				if ((settings.ignoreDateFormats && DATE_FORMAT_REGEX.test(candidate)) || isMonthNote(candidate)) {
-					// Do nothing (output as is)
-				} 
-				// Skip if namespace restriction applies
-				else if (settings.namespaceResolution && candidateData.restrictNamespace && candidateData.namespace !== currentNamespace) {
-					// Do nothing if namespace restriction applies
-				} 
-				// Convert to link
-				else {
-					const { linkPath, alias, hasAlias } = extractLinkParts(candidateData.canonical);
-					const normalizedPath = normalizeCanonicalPath(linkPath, settings.baseDir);
-					
-					// Mark positions as processed
-					for (let k = startPos; k < startPos + lastCandidate.length; k++) {
-						processed[k] = true;
-					}
-					
-					// Format the link
-					if (hasAlias) {
-						result += `[[${normalizedPath}|${alias}]]`;
-					} else if (normalizedPath.includes("/")) {
-						const segments = normalizedPath.split("/");
-						const lastPart = segments[segments.length - 1];
-						result += `[[${normalizedPath}|${lastPart}]]`;
-					} else {
-						result += `[[${candidate}]]`;
-					}
-					
-					startPos += lastCandidate.length - 1; // Adjust the next starting position
-					continue;
-				}
-			}
-		}
-		
-		// If no match or processing was skipped, output the character as is
-		if (!processed[startPos]) {
-			result += text[startPos];
-		}
-	}
-	
-	return result;
+	// For CJK texts that might contain non-CJK terms like "taro-san", ensure we use a consistent approach
+	// Pass the proper filePath to maintain correct namespace resolution
+	return processStandardText(text, trie, candidateMap, buildFallbackIndex(candidateMap, settings.ignoreCase), 
+		filePath, currentNamespace, settings);
 };
 
 const handleKoreanSpecialCases = (
@@ -603,7 +528,7 @@ export const replaceLinks = ({
 		const isCjkText = CJK_REGEX.test(text);
 		
 		if (isCjkText) {
-			return processCjkText(text, trie, candidateMap, currentNamespace, settings);
+			return processCjkText(text, trie, candidateMap, currentNamespace, filePath, settings);
 		} else {
 			return processStandardText(text, trie, candidateMap, fallbackIndex, filePath, currentNamespace, settings);
 		}
