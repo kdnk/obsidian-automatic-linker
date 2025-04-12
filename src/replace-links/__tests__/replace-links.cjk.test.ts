@@ -115,6 +115,62 @@ describe("replaceLinks - CJK handling", () => {
 					"- ダニとハウスダスト[[アレルギー]]があった",
 				);
 			}
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					files: [{ path: "person/taro-san" }],
+					settings: {
+						restrictNamespace: false,
+						baseDir: "pages",
+						ignoreCase: true,
+					},
+				});
+				const result = replaceLinks({
+					body: "- 東京出身の taro-san は大阪で働いている",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						minCharCount: 0,
+						namespaceResolution: true,
+						baseDir: "pages",
+						ignoreDateFormats: true,
+						ignoreCase: true,
+					},
+				});
+				expect(result).toBe(
+					"- 東京出身の [[person/taro-san|taro-san]] は大阪で働いている",
+				);
+			}
+			{
+				const { candidateMap, trie } = buildCandidateTrieForTest({
+					files: [{ path: "person/taro-san" }],
+					settings: {
+						restrictNamespace: false,
+						baseDir: "pages",
+						ignoreCase: false,
+					},
+				});
+				const result = replaceLinks({
+					body: "- 東京出身の taro-san は大阪で働いている",
+					linkResolverContext: {
+						filePath: "journals/2022-01-01",
+						trie,
+						candidateMap,
+					},
+					settings: {
+						minCharCount: 0,
+						namespaceResolution: true,
+						baseDir: "pages",
+						ignoreDateFormats: true,
+						ignoreCase: false,
+					},
+				});
+				expect(result).toBe(
+					"- 東京出身の [[person/taro-san|taro-san]] は大阪で働いている",
+				);
+			}
 		});
 		it("unmatched namespace", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
