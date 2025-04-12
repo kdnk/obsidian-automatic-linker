@@ -105,6 +105,43 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 	}
 
+	async mofifyLinksSelection() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			return;
+		}
+		const editor = this.app.workspace.activeEditor;
+		if (!editor) {
+			return;
+		}
+		const cm = editor.editor;
+		if (!cm) {
+			return;
+		}
+
+		const selectedText = cm.getSelection();
+
+		if (!this.trie || !this.candidateMap) {
+			return;
+		}
+
+		const updatedText = replaceLinks({
+			body: selectedText,
+			linkResolverContext: {
+				filePath: activeFile.path.replace(/\.md$/, ""),
+				trie: this.trie,
+				candidateMap: this.candidateMap,
+			},
+			settings: {
+				minCharCount: this.settings.minCharCount,
+				namespaceResolution: this.settings.namespaceResolution,
+				baseDir: this.settings.baseDir,
+				ignoreDateFormats: this.settings.ignoreDateFormats,
+			},
+		});
+		cm.replaceSelection(updatedText);
+	}
+
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(
@@ -198,6 +235,18 @@ export default class AutomaticLinkerPlugin extends Plugin {
 							"Automatic Linker: Built all markdown files.",
 						);
 					}
+				} catch (error) {
+					console.error(error);
+				}
+			},
+		});
+
+		this.addCommand({
+			id: "link-selection",
+			name: "Link selection",
+			editorCallback: async () => {
+				try {
+					await this.mofifyLinksSelection();
 				} catch (error) {
 					console.error(error);
 				}
