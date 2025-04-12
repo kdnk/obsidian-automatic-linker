@@ -10,6 +10,9 @@ Automatic Linker Plugin automatically converts plain text file references into O
 - **Format on Save:**
   Optionally, the plugin can automatically format (i.e. convert links) when you save a file.
 
+- **Link Selected Text:**
+  Convert only selected text into links using the command palette or hotkeys.
+
 - **GitHub URL Formatting:**
   Automatically formats GitHub URLs to a more readable format. Also supports GitHub Enterprise URLs that you can configure in the settings.
 
@@ -51,6 +54,9 @@ Automatic Linker Plugin automatically converts plain text file references into O
 
 - **Manual Trigger:**
   You can also manually run the link conversion command via the Command Palette with the command **Link current file**.
+  
+- **Link Selected Text:**
+  Select text in your document and use the Command Palette to run **Link selection** to convert only the selected text to links.
 
 ## Configuration
 
