@@ -41,4 +41,9 @@ describe("exclude links", () => {
 		const result = excludeLinks("```\n[[hello]]\n```");
 		expect(result).toBe("```\n[[hello]]\n```");
 	});
+
+	it("replaces alias", () => {
+		const result = excludeLinks("[[hello|world]]");
+		expect(result).toBe("world");
+	});
 });

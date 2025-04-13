@@ -32,14 +32,18 @@ export const excludeLinks = (text: string) => {
 	}
 
 	// Process each segment
-	const regex = /\[\[(.*?)\]\]/g;
+	// Regex that matches both simple links and links with aliases [[link]] or [[link|alias]]
+	const regex = /\[\[(.*?)(?:\|(.*?))?\]\]/g;
 	const processedSegments = segments.map((segment) => {
 		if (segment.isCode) {
 			// Preserve code blocks
 			return segment.content;
 		} else {
-			// Replace links in non-code segments
-			return segment.content.replace(regex, "$1");
+			// Replace links in non-code segments, handling aliases
+			return segment.content.replace(regex, (match, link, alias) => {
+				// If there's an alias, use it, otherwise use the link text
+				return alias || link;
+			});
 		}
 	});
 
