@@ -13,6 +13,9 @@ Automatic Linker Plugin automatically converts plain text file references into O
 - **Link Selected Text:**
   Convert only selected text into links using the command palette or hotkeys.
 
+- **Copy Without Links:**
+  Copy the content of the current file to clipboard with wiki links converted back to plain text, preserving aliases.
+
 - **GitHub URL Formatting:**
   Automatically formats GitHub URLs to a more readable format. Also supports GitHub Enterprise URLs that you can configure in the settings.
 
