@@ -8,6 +8,7 @@ import {
 	Plugin,
 	PluginManifest,
 } from "obsidian";
+import { excludeLinks } from "./exclude-links";
 import { PathAndAliases } from "./path-and-aliases.types";
 import { replaceLinks } from "./replace-links/replace-links";
 import { formatGitHubURL } from "./replace-urls/github";
@@ -250,6 +251,22 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				} catch (error) {
 					console.error(error);
 				}
+			},
+		});
+
+		this.addCommand({
+			id: "copy-file-content-without-links",
+			name: "Copy file content without links",
+			editorCallback: async () => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					return;
+				}
+				const fileContent = await this.app.vault.read(activeFile);
+				const { contentStart } = getFrontMatterInfo(fileContent);
+				const body = fileContent.slice(contentStart);
+				const bodyWithoutLinks = excludeLinks(body);
+				navigator.clipboard.writeText(bodyWithoutLinks);
 			},
 		});
 
