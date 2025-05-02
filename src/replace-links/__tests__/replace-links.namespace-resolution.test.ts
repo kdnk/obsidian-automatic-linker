@@ -292,4 +292,27 @@ describe("replaceLinks - namespace resolution", () => {
 			}
 		});
 	});
+	describe("namespace resoluton with multiple words", () => {
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			files: [
+				{ path: "Biomarkers/ATP Levels" },
+				{ path: "namespace/cerebral blood flow (CBF)" },
+			],
+			settings: {
+				restrictNamespace: false,
+				baseDir: undefined,
+			},
+		});
+		const result = replaceLinks({
+			body: "ATP Levels cerebral blood flow (CBF)",
+			linkResolverContext: {
+				filePath: "namespace/xx/current-file",
+				trie,
+				candidateMap,
+			},
+		});
+		expect(result).toBe(
+			"[[Biomarkers/ATP Levels|ATP Levels]] [[namespace/cerebral blood flow (CBF)|cerebral blood flow (CBF)]]",
+		);
+	});
 });
