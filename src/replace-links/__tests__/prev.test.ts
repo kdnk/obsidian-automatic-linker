@@ -834,6 +834,7 @@ describe("namespace resolution nearlest file path", () => {
 			},
 			settings: { namespaceResolution: true, baseDir: "base" },
 		});
+		// longset path should be used
 		expect(result).toBe(
 			"[[looooooooooooooooooooooooooooooooooooooong/link|link]] [[namespace1/link2|link2]]",
 		);
