@@ -33,7 +33,6 @@ const KOREAN_REGEX = /^[\p{Script=Hangul}]+$/u;
 const JAPANESE_REGEX =
 	/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u;
 const URL_REGEX = /^(https?:\/\/[^\s]+)/;
-const FALLBACK_REGEX = /^([\p{L}\p{N}_-]+)/u;
 
 // Utility functions
 const isWordBoundary = (char: string | undefined): boolean => {
@@ -83,17 +82,6 @@ const getCurrentNamespace = (filePath: string, baseDir?: string): string => {
 
 	const segments = filePath.split("/");
 	return segments[0] || "";
-};
-
-const formatLink = (
-	linkPath: string,
-	displayText: string,
-	hasExplicitAlias: boolean,
-): string => {
-	if (hasExplicitAlias || linkPath.includes("/")) {
-		return `[[${linkPath}|${displayText}]]`;
-	}
-	return `[[${displayText}]]`;
 };
 
 const normalizeCanonicalPath = (linkPath: string, baseDir?: string): string => {
@@ -346,14 +334,16 @@ const processStandardText = (
 
 			// Use the candidate found in the trie (lastCandidate.candidate) to look up in candidateMap
 			const trieCandidateKey = lastCandidate.candidate;
-			let candidateData: CandidateData | undefined;
 
 			// candidateMap lookup should always use the exact key from the trie result.
 			// Case comparison happened during trie traversal if ignoreCase is true.
-			candidateData = candidateMap.get(trieCandidateKey);
+			const candidateData = candidateMap.get(trieCandidateKey);
 
 			// Store the original text matched for potential use as display text
-			const originalMatchedText = text.substring(i, i + lastCandidate.length);
+			const originalMatchedText = text.substring(
+				i,
+				i + lastCandidate.length,
+			);
 
 			if (candidateData) {
 				// Handle Korean special cases
@@ -441,7 +431,8 @@ const processStandardText = (
 					// Use original matched text for display if ignoreCase is true, otherwise use the last part of the path.
 					const displayText = settings.ignoreCase
 						? originalMatchedText
-						: normalizedPath.split("/").pop() || originalMatchedText; // Fallback to original text if split fails
+						: normalizedPath.split("/").pop() ||
+							originalMatchedText; // Fallback to original text if split fails
 					result += `[[${normalizedPath}|${displayText}]]`;
 				} else {
 					// No namespace, no explicit alias. Use the original matched text.
@@ -480,7 +471,6 @@ const processStandardText = (
 					// But a shorter version might have been valid, so we don't break yet.
 				}
 
-
 				const candidateList = fallbackIndex.get(searchWord);
 				if (candidateList) {
 					// Check word boundary at the beginning
@@ -491,7 +481,6 @@ const processStandardText = (
 						// We break the inner loop (k) because extending this further won't help.
 						break;
 					}
-
 
 					// Skip date formats
 					if (
@@ -513,7 +502,7 @@ const processStandardText = (
 						candidateList: candidateList,
 					};
 					// Continue checking for even longer matches
-				} else if (longestMatch && k > i + longestMatch.length -1) {
+				} else if (longestMatch && k > i + longestMatch.length - 1) {
 					// If we had a match but the current longer string doesn't match,
 					// stop extending for this starting position 'i'.
 					break;
@@ -536,11 +525,12 @@ const processStandardText = (
 				if (filteredCandidates.length === 1) {
 					bestCandidateData = filteredCandidates[0][1];
 				} else if (filteredCandidates.length > 1) {
-					const bestCandidateResult = findBestCandidateInSameNamespace(
-						filteredCandidates,
-						filePath,
-						settings,
-					);
+					const bestCandidateResult =
+						findBestCandidateInSameNamespace(
+							filteredCandidates,
+							filePath,
+							settings,
+						);
 					if (bestCandidateResult) {
 						bestCandidateData = bestCandidateResult[1];
 					}
@@ -565,7 +555,8 @@ const processStandardText = (
 						// Use original matched word for display if ignoreCase is true, otherwise use the last part of the path.
 						const displayText = settings.ignoreCase
 							? originalMatchedWord
-							: normalizedPath.split("/").pop() || originalMatchedWord; // Fallback to original word if split fails
+							: normalizedPath.split("/").pop() ||
+								originalMatchedWord; // Fallback to original word if split fails
 						result += `[[${normalizedPath}|${displayText}]]`;
 					} else {
 						// No namespace, no explicit alias. Use the original matched word.
