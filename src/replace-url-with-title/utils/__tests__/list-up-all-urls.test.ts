@@ -31,4 +31,10 @@ describe("listupAllUrls", () => {
 		const result = listupAllUrls(body);
 		expect(result).not.toContain("https://example.com");
 	});
+
+	it("ignore in replaceUrlWithTitleIgnoreDomains", () => {
+		const body = "Check this link: https://example.com";
+		const result = listupAllUrls(body, ["example.com"]);
+		expect(result).not.toContain("https://example.com");
+	});
 });
