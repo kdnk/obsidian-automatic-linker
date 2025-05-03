@@ -344,21 +344,16 @@ const processStandardText = (
 				continue;
 			}
 
-			// Find candidate data with case-insensitive matching when needed
-			let matchedCandidate = candidate;
+			// Use the candidate found in the trie (lastCandidate.candidate) to look up in candidateMap
+			const trieCandidateKey = lastCandidate.candidate;
 			let candidateData: CandidateData | undefined;
 
-			if (settings.ignoreCase) {
-				for (const [key, data] of candidateMap.entries()) {
-					if (key.toLowerCase() === candidate.toLowerCase()) {
-						matchedCandidate = key;
-						candidateData = data;
-						break;
-					}
-				}
-			} else {
-				candidateData = candidateMap.get(candidate);
-			}
+			// candidateMap lookup should always use the exact key from the trie result.
+			// Case comparison happened during trie traversal if ignoreCase is true.
+			candidateData = candidateMap.get(trieCandidateKey);
+
+			// Store the original text matched for potential use as display text
+			const originalMatchedText = text.substring(i, i + lastCandidate.length);
 
 			if (candidateData) {
 				// Handle Korean special cases
@@ -439,22 +434,18 @@ const processStandardText = (
 
 				// Format the link
 				if (hasAlias) {
+					// Use the explicit alias from the canonical path
 					result += `[[${normalizedPath}|${alias}]]`;
 				} else if (normalizedPath.includes("/")) {
-					// When ignoreCase is enabled, use the original text to preserve case
-					const originalText = settings.ignoreCase
-						? text.substring(i, i + candidate.length)
-						: candidate;
-					const originalSegments = originalText.split("/");
-					const displayText =
-						originalSegments[originalSegments.length - 1];
+					// Namespace exists, no explicit alias.
+					// Use original matched text for display if ignoreCase is true, otherwise use the last part of the path.
+					const displayText = settings.ignoreCase
+						? originalMatchedText
+						: normalizedPath.split("/").pop() || originalMatchedText; // Fallback to original text if split fails
 					result += `[[${normalizedPath}|${displayText}]]`;
 				} else {
-					// When ignoreCase is enabled, use the original text to preserve case
-					const displayText = settings.ignoreCase
-						? text.substring(i, i + candidate.length)
-						: matchedCandidate;
-					result += `[[${displayText}]]`;
+					// No namespace, no explicit alias. Use the original matched text.
+					result += `[[${originalMatchedText}]]`;
 				}
 
 				i += candidate.length;
@@ -462,113 +453,127 @@ const processStandardText = (
 			}
 		}
 
-		// Fallback: if no candidate was found via the trie.
+		// Fallback: if no candidate was found via the trie, try multi-word fallback lookup.
 		if (settings.namespaceResolution) {
-			const fallbackMatch = text.slice(i).match(FALLBACK_REGEX);
-			if (fallbackMatch) {
-				const word = settings.ignoreCase
-					? fallbackMatch[1].toLowerCase()
-					: fallbackMatch[1];
+			let longestMatch: {
+				word: string;
+				length: number;
+				key: string;
+				candidateList: Array<[string, CandidateData]>;
+			} | null = null;
 
-				// Skip date formats
-				if (
-					settings.ignoreDateFormats &&
-					DATE_FORMAT_REGEX.test(word)
-				) {
-					result += word;
-					i += word.length;
-					continue outer;
-				}
-
-				// Skip dates and month notes
-				if (/^\d{2}$/.test(word) && /\d{4}-\d{2}-$/.test(result)) {
-					result += text[i];
-					i++;
-					continue outer;
-				}
-
-				if (isMonthNote(word)) {
-					result += word;
-					i += word.length;
-					continue;
-				}
-
-				// Try fallback lookup
+			// Iterate through potential multi-word sequences starting from i
+			for (let k = i; k < text.length; k++) {
+				const potentialMatch = text.substring(i, k + 1);
 				const searchWord = settings.ignoreCase
-					? word.toLowerCase()
-					: word;
-				const candidateList = fallbackIndex.get(searchWord);
+					? potentialMatch.toLowerCase()
+					: potentialMatch;
 
+				// Basic boundary check: next char should be a boundary if not end of text
+				const nextChar = text[k + 1];
+				if (!isWordBoundary(nextChar)) {
+					// If the potential match itself isn't in the index, continue extending
+					if (!fallbackIndex.has(searchWord)) {
+						continue;
+					}
+					// If it is in the index, but the next char isn't a boundary, it's not a valid match end here.
+					// But a shorter version might have been valid, so we don't break yet.
+				}
+
+
+				const candidateList = fallbackIndex.get(searchWord);
 				if (candidateList) {
-					// Filter candidates to comply with namespace restrictions
-					const filteredCandidates = candidateList.filter(
-						([, data]) =>
-							!(
-								data.restrictNamespace &&
-								data.namespace !== currentNamespace
-							),
+					// Check word boundary at the beginning
+					const prevChar = text[i - 1];
+					if (!isWordBoundary(prevChar)) {
+						// If the start isn't a word boundary, this isn't a valid match.
+						// However, a shorter match starting later might be, so just continue the outer loop.
+						// We break the inner loop (k) because extending this further won't help.
+						break;
+					}
+
+
+					// Skip date formats
+					if (
+						settings.ignoreDateFormats &&
+						DATE_FORMAT_REGEX.test(potentialMatch)
+					) {
+						continue; // Try longer match
+					}
+					// Skip month notes
+					if (isMonthNote(potentialMatch)) {
+						continue; // Try longer match
+					}
+
+					// Found a potential candidate in the fallback index
+					longestMatch = {
+						word: potentialMatch,
+						length: potentialMatch.length,
+						key: searchWord,
+						candidateList: candidateList,
+					};
+					// Continue checking for even longer matches
+				} else if (longestMatch && k > i + longestMatch.length -1) {
+					// If we had a match but the current longer string doesn't match,
+					// stop extending for this starting position 'i'.
+					break;
+				}
+			}
+
+			// Process the longest valid match found
+			if (longestMatch) {
+				// Filter candidates based on namespace restrictions
+				const filteredCandidates = longestMatch.candidateList.filter(
+					([, data]) =>
+						!(
+							data.restrictNamespace &&
+							data.namespace !== currentNamespace
+						),
+				);
+
+				let bestCandidateData: CandidateData | null = null;
+
+				if (filteredCandidates.length === 1) {
+					bestCandidateData = filteredCandidates[0][1];
+				} else if (filteredCandidates.length > 1) {
+					const bestCandidateResult = findBestCandidateInSameNamespace(
+						filteredCandidates,
+						filePath,
+						settings,
+					);
+					if (bestCandidateResult) {
+						bestCandidateData = bestCandidateResult[1];
+					}
+				}
+
+				if (bestCandidateData) {
+					// Found a valid candidate through fallback
+					const { linkPath, alias, hasAlias } = extractLinkParts(
+						bestCandidateData.canonical,
+					);
+					const normalizedPath = normalizeCanonicalPath(
+						linkPath,
+						settings.baseDir,
 					);
 
-					if (filteredCandidates.length === 1) {
-						// Single match - straightforward case
-						const candidateData = filteredCandidates[0][1];
-						const { linkPath, alias, hasAlias } = extractLinkParts(
-							candidateData.canonical,
-						);
-						const normalizedPath = normalizeCanonicalPath(
-							linkPath,
-							settings.baseDir,
-						);
-
-						// Format the link
-						if (hasAlias) {
-							result += `[[${normalizedPath}|${alias}]]`;
-						} else if (normalizedPath.includes("/")) {
-							const originalText = settings.ignoreCase
-								? text.substring(i, i + word.length)
-								: word;
-							const originalSegments = originalText.split("/");
-							const displayText =
-								originalSegments[originalSegments.length - 1];
-							result += `[[${normalizedPath}|${displayText}]]`;
-						} else {
-							result += `[[${word}]]`;
-						}
-
-						i += word.length;
-						continue outer;
-					} else if (filteredCandidates.length > 1) {
-						// Multiple matches - find the best candidate
-						const bestCandidate = findBestCandidateInSameNamespace(
-							filteredCandidates,
-							filePath,
-							settings,
-						);
-
-						if (bestCandidate) {
-							const candidateData = bestCandidate[1];
-							const { linkPath, alias, hasAlias } =
-								extractLinkParts(candidateData.canonical);
-							const normalizedPath = normalizeCanonicalPath(
-								linkPath,
-								settings.baseDir,
-							);
-
-							// Format the link
-							if (hasAlias) {
-								result += `[[${normalizedPath}|${alias}]]`;
-							} else if (normalizedPath.includes("/")) {
-								const segments = normalizedPath.split("/");
-								const lastPart = segments[segments.length - 1];
-								result += `[[${normalizedPath}|${lastPart}]]`;
-							} else {
-								result += `[[${normalizedPath}]]`;
-							}
-
-							i += word.length;
-							continue outer;
-						}
+					// Format the link
+					const originalMatchedWord = longestMatch.word; // Use the actual matched word
+					if (hasAlias) {
+						result += `[[${normalizedPath}|${alias}]]`;
+					} else if (normalizedPath.includes("/")) {
+						// Namespace exists, no explicit alias.
+						// Use original matched word for display if ignoreCase is true, otherwise use the last part of the path.
+						const displayText = settings.ignoreCase
+							? originalMatchedWord
+							: normalizedPath.split("/").pop() || originalMatchedWord; // Fallback to original word if split fails
+						result += `[[${normalizedPath}|${displayText}]]`;
+					} else {
+						// No namespace, no explicit alias. Use the original matched word.
+						result += `[[${originalMatchedWord}]]`;
 					}
+
+					i += longestMatch.length; // Advance index by the length of the matched word
+					continue outer; // Continue processing from the new index
 				}
 			}
 		}
