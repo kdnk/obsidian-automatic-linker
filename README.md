@@ -50,4 +50,9 @@ Automatic Linker Plugin automatically converts plain text file references into O
 - **Show Load Notice:**
   When enabled, a notice is displayed each time markdown files are loaded.
 
-- **Replace Bare URLs with Page Titles**
+- **Replace Bare URLs with Page Titles:**
+  Finds bare URLs (like `https://example.com`) in your notes, fetches the title of the web page, and replaces the URL with a Markdown link `[Page Title](URL)`.
+  - Triggered manually via a command.
+  - Fetched titles are cached to minimize network requests.
+  - Ignores URLs already in Markdown links, angle brackets, or code blocks.
+  - Supports an internal list of domains to ignore (not yet configurable via UI).
