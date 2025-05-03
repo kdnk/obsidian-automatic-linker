@@ -10,7 +10,7 @@ const URL_REGEX = /https?:\/\/[^\s<>"'`]+/g; // Keep the original regex for broa
 const TRAILING_PUNCTUATION_REGEX = /[.,;!?)\]}]+$/;
 export const listupAllUrls = (
 	body: string,
-	replaceUrlWithTitleIgnoreDomains?: string[],
+	ignoredDomains?: string[],
 ): Set<Url> => {
 	const urls = new Set<Url>();
 	let match;
@@ -19,14 +19,17 @@ export const listupAllUrls = (
 	const codeBlockRanges: { start: number; end: number }[] = [];
 	// Regex to find fenced code blocks (handles different fence lengths and optional language specifiers)
 	// Matches from ``` or ~~~ at the start of a line to the next ``` or ~~~ at the start of a line
-	const codeBlockRegex = /^(?:```|~~~)[^\r\n]*?\r?\n([\s\S]*?)\r?\n^(?:```|~~~)$/gm;
+	const codeBlockRegex =
+		/^(?:```|~~~)[^\r\n]*?\r?\n([\s\S]*?)\r?\n^(?:```|~~~)$/gm;
 	let blockMatch;
 	while ((blockMatch = codeBlockRegex.exec(body)) !== null) {
-		codeBlockRanges.push({ start: blockMatch.index, end: blockMatch.index + blockMatch[0].length });
+		codeBlockRanges.push({
+			start: blockMatch.index,
+			end: blockMatch.index + blockMatch[0].length,
+		});
 	}
 	// Reset regex state if needed, though new exec calls should handle this
 	codeBlockRegex.lastIndex = 0;
-
 
 	while ((match = URL_REGEX.exec(body)) !== null) {
 		const url = match[0];
@@ -93,29 +96,37 @@ export const listupAllUrls = (
 			let shouldAdd = true;
 
 			// 5. Check Ignored Domains
-			if (replaceUrlWithTitleIgnoreDomains && replaceUrlWithTitleIgnoreDomains.length > 0) {
+			if (ignoredDomains && ignoredDomains.length > 0) {
 				try {
 					const parsedUrl = new URL(url);
 					const hostname = parsedUrl.hostname;
-					if (replaceUrlWithTitleIgnoreDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))) {
+					if (
+						ignoredDomains.some(
+							(domain) =>
+								hostname === domain ||
+								hostname.endsWith(`.${domain}`),
+						)
+					) {
 						shouldAdd = false;
 					}
 				} catch (e) {
 					// If URL parsing fails, it's likely not a valid URL to add anyway
-					console.warn(`Failed to parse URL for domain check: ${url}`, e);
+					console.warn(
+						`Failed to parse URL for domain check: ${url}`,
+						e,
+					);
 					shouldAdd = false;
 				}
 			}
 
 			// 6. Clean Trailing Punctuation (only if not ignored)
 			if (shouldAdd) {
-				finalUrl = url.replace(TRAILING_PUNCTUATION_REGEX, '');
+				finalUrl = url.replace(TRAILING_PUNCTUATION_REGEX, "");
 				// Ensure cleaning didn't make it invalid (e.g., just "http://")
-				if (!finalUrl.includes('//')) {
+				if (!finalUrl.includes("//")) {
 					shouldAdd = false;
 				}
 			}
-
 
 			// --- Add URL if context checks pass and not ignored ---
 			if (shouldAdd) {
