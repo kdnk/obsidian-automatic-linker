@@ -50,4 +50,11 @@ Automatic Linker Plugin automatically converts plain text file references into O
 - **Show Load Notice:**
   When enabled, a notice is displayed each time markdown files are loaded.
 
-- **Replace Bare URLs with Page Titles**
+### Replace Bare URLs with Page Titles
+
+The plugin can automatically find bare URLs (like `https://example.com`) in your notes, fetch the title of the web page from the URL, and replace the bare URL with a standard Markdown link using the fetched title (e.g., `[Example Domain](https://example.com)`). This feature is currently triggered manually via a command.
+
+*   **Title Fetching:** Retrieves the `<title>` tag from the HTML of the linked page.
+*   **Caching:** Fetched titles are cached in memory (`urlTitleMap`) during the Obsidian session to avoid redundant network requests.
+*   **Context Awareness:** Avoids replacing URLs that are already part of Markdown links (`[text](url)`), inside angle brackets (`<url>`), or within code blocks (inline `code` or fenced ```code blocks```).
+*   **Domain Ignore List:** You can configure a list of domains to ignore, preventing title fetching and replacement for those URLs (though this setting is not yet exposed in the UI).
