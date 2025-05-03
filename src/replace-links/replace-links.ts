@@ -344,21 +344,16 @@ const processStandardText = (
 				continue;
 			}
 
-			// Find candidate data with case-insensitive matching when needed
-			let matchedCandidate = candidate;
+			// Use the candidate found in the trie (lastCandidate.candidate) to look up in candidateMap
+			const trieCandidateKey = lastCandidate.candidate;
 			let candidateData: CandidateData | undefined;
 
-			if (settings.ignoreCase) {
-				for (const [key, data] of candidateMap.entries()) {
-					if (key.toLowerCase() === candidate.toLowerCase()) {
-						matchedCandidate = key;
-						candidateData = data;
-						break;
-					}
-				}
-			} else {
-				candidateData = candidateMap.get(candidate);
-			}
+			// candidateMap lookup should always use the exact key from the trie result.
+			// Case comparison happened during trie traversal if ignoreCase is true.
+			candidateData = candidateMap.get(trieCandidateKey);
+
+			// Store the original text matched for potential use as display text
+			const originalMatchedText = text.substring(i, i + lastCandidate.length);
 
 			if (candidateData) {
 				// Handle Korean special cases
@@ -439,22 +434,17 @@ const processStandardText = (
 
 				// Format the link
 				if (hasAlias) {
+					// Use the explicit alias from the canonical path
 					result += `[[${normalizedPath}|${alias}]]`;
 				} else if (normalizedPath.includes("/")) {
-					// When ignoreCase is enabled, use the original text to preserve case
-					const originalText = settings.ignoreCase
-						? text.substring(i, i + candidate.length)
-						: candidate;
-					const originalSegments = originalText.split("/");
-					const displayText =
-						originalSegments[originalSegments.length - 1];
+					// Namespace exists, use the last part of the normalized path as display text
+					// Tests expect the last part of the *path*, not the original text's potential multi-word form.
+					const segments = normalizedPath.split("/");
+					const displayText = segments[segments.length - 1];
 					result += `[[${normalizedPath}|${displayText}]]`;
 				} else {
-					// When ignoreCase is enabled, use the original text to preserve case
-					const displayText = settings.ignoreCase
-						? text.substring(i, i + candidate.length)
-						: matchedCandidate;
-					result += `[[${displayText}]]`;
+					// No namespace, no explicit alias. Use the original matched text.
+					result += `[[${originalMatchedText}]]`;
 				}
 
 				i += candidate.length;
@@ -521,18 +511,17 @@ const processStandardText = (
 						);
 
 						// Format the link
+						const originalMatchedWord = text.substring(i, i + word.length);
 						if (hasAlias) {
 							result += `[[${normalizedPath}|${alias}]]`;
 						} else if (normalizedPath.includes("/")) {
-							const originalText = settings.ignoreCase
-								? text.substring(i, i + word.length)
-								: word;
-							const originalSegments = originalText.split("/");
-							const displayText =
-								originalSegments[originalSegments.length - 1];
+							// Namespace exists, use the last part of the normalized path as display text
+							const segments = normalizedPath.split("/");
+							const displayText = segments[segments.length - 1];
 							result += `[[${normalizedPath}|${displayText}]]`;
 						} else {
-							result += `[[${word}]]`;
+							// No namespace, no explicit alias. Use the original matched word.
+							result += `[[${originalMatchedWord}]]`;
 						}
 
 						i += word.length;
@@ -555,14 +544,17 @@ const processStandardText = (
 							);
 
 							// Format the link
+							const originalMatchedWord = text.substring(i, i + word.length);
 							if (hasAlias) {
 								result += `[[${normalizedPath}|${alias}]]`;
 							} else if (normalizedPath.includes("/")) {
+								// Namespace exists, use the last part of the normalized path as display text
 								const segments = normalizedPath.split("/");
-								const lastPart = segments[segments.length - 1];
-								result += `[[${normalizedPath}|${lastPart}]]`;
+								const displayText = segments[segments.length - 1];
+								result += `[[${normalizedPath}|${displayText}]]`;
 							} else {
-								result += `[[${normalizedPath}]]`;
+								// No namespace, no explicit alias. Use the original matched word.
+								result += `[[${originalMatchedWord}]]`;
 							}
 
 							i += word.length;
