@@ -1,8 +1,13 @@
 type Url = string;
 
 // Regular expression to find URLs starting with http:// or https://
-// This is a simplified regex and might need refinement for edge cases.
-const URL_REGEX = /https?:\/\/[^\s<>"'`]+/g;
+// It avoids matching URLs immediately preceded by `](` or `<` or followed by `)` or `>`
+// It also tries to avoid including common trailing punctuation as part of the URL.
+// Still simplified and might need refinement for complex edge cases.
+const URL_REGEX = /https?:\/\/[^\s<>"'`]+/g; // Keep the original regex for broad matching, context checks handle specifics.
+
+// Regex to identify common trailing punctuation that shouldn't be part of the URL
+const TRAILING_PUNCTUATION_REGEX = /[.,;!?)\]}]+$/;
 export const listupAllUrls = (
 	body: string,
 	replaceUrlWithTitleIgnoreDomains?: string[],
@@ -69,9 +74,40 @@ export const listupAllUrls = (
 		// For now, we'll skip this check for simplicity, but acknowledge it's a limitation.
 		// A more robust solution would involve parsing the Markdown structure.
 
-		// --- Add URL if context checks pass ---
+		// --- Check Ignored Domains & Clean URL ---
 		if (isBareUrl) {
-			urls.add(url);
+			let finalUrl = url;
+			let shouldAdd = true;
+
+			// 5. Check Ignored Domains
+			if (replaceUrlWithTitleIgnoreDomains && replaceUrlWithTitleIgnoreDomains.length > 0) {
+				try {
+					const parsedUrl = new URL(url);
+					const hostname = parsedUrl.hostname;
+					if (replaceUrlWithTitleIgnoreDomains.some(domain => hostname === domain || hostname.endsWith(`.${domain}`))) {
+						shouldAdd = false;
+					}
+				} catch (e) {
+					// If URL parsing fails, it's likely not a valid URL to add anyway
+					console.warn(`Failed to parse URL for domain check: ${url}`, e);
+					shouldAdd = false;
+				}
+			}
+
+			// 6. Clean Trailing Punctuation (only if not ignored)
+			if (shouldAdd) {
+				finalUrl = url.replace(TRAILING_PUNCTUATION_REGEX, '');
+				// Ensure cleaning didn't make it invalid (e.g., just "http://")
+				if (!finalUrl.includes('//')) {
+					shouldAdd = false;
+				}
+			}
+
+
+			// --- Add URL if context checks pass and not ignored ---
+			if (shouldAdd) {
+				urls.add(finalUrl);
+			}
 		}
 
 		// Reset regex lastIndex to avoid issues with overlapping matches or zero-length matches
