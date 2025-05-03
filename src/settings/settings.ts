@@ -12,6 +12,8 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
+		containerEl.createEl("h2", { text: "General" });
+
 		// Toggle for "Format on Save" setting.
 		new Setting(containerEl)
 			.setName("Format on save")
@@ -38,19 +40,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.baseDir)
 					.onChange(async (value) => {
 						this.plugin.settings.baseDir = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
-
-		// Toggle for showing the load notice.
-		new Setting(containerEl)
-			.setName("Show load notice")
-			.setDesc("Display a notice when markdown files are loaded.")
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.showNotice)
-					.onChange(async (value) => {
-						this.plugin.settings.showNotice = value;
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
@@ -134,6 +123,8 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		containerEl.createEl("h2", { text: "URL Formatting" });
+
 		// Toggle for formatting GitHub URLs on save
 		new Setting(containerEl)
 			.setName("Format GitHub URLs on save")
@@ -210,6 +201,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 				// Make the text area taller
 				text.inputEl.rows = 4;
 				text.inputEl.cols = 50;
+			});
+
+		containerEl.createEl("h2", { text: "Debug" });
+
+		// Toggle for showing the load notice.
+		new Setting(containerEl)
+			.setName("Show load notice")
+			.setDesc("Display a notice when markdown files are loaded.")
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.showNotice)
+					.onChange(async (value) => {
+						this.plugin.settings.showNotice = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
 			});
 
 		// Toggle for debug logging
