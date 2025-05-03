@@ -13,6 +13,7 @@ export type AutomaticLinkerSettings = {
 	debug: boolean; // Enable debug logging
 	ignoreCase: boolean; // Ignore case when matching links
 	replaceUrlWithTitle: boolean; // Replace raw URLs with [Title](URL)
+	replaceUrlWithTitleIgnoreDomains: string[]; // List of domains to ignore when replacing URLs with titles
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -30,4 +31,5 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	debug: false, // Default: disable debug logging
 	ignoreCase: false, // Default: case-sensitive matching
 	replaceUrlWithTitle: false, // Default: disable replacing URLs with titles
+	replaceUrlWithTitleIgnoreDomains: [],
 };

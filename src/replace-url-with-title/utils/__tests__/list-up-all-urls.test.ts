@@ -32,10 +32,9 @@ describe("listupAllUrls", () => {
 		expect(result).not.toContain("https://example.com");
 	});
 
-	it("ignore in replaceUrlWithTitleIgnoreDomains", () => {
+	it("ignore domains", () => {
 		const body = "Check this link: https://example.com";
 		const result = listupAllUrls(body, ["example.com"]);
-		// Use .has() for Set and check if it's false
-		expect(result.has("https://example.com")).toBe(false);
+		expect(result).not.toContain("https://example.com");
 	});
 });
