@@ -3,7 +3,10 @@ type Url = string;
 // Regular expression to find URLs starting with http:// or https://
 // This is a simplified regex and might need refinement for edge cases.
 const URL_REGEX = /https?:\/\/[^\s<>"'`]+/g;
-export const listupAllUrls = (body: string): Set<Url> => {
+export const listupAllUrls = (
+	body: string,
+	replaceUrlWithTitleIgnoreDomains?: string[],
+): Set<Url> => {
 	const urls = new Set<Url>();
 	let match;
 
