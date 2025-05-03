@@ -4,10 +4,11 @@ type Url = string;
 // It avoids matching URLs immediately preceded by `](` or `<` or followed by `)` or `>`
 // It also tries to avoid including common trailing punctuation as part of the URL.
 // Still simplified and might need refinement for complex edge cases.
-const URL_REGEX = /https?:\/\/[^\s<>"'`]+/g; // Keep the original regex for broad matching, context checks handle specifics.
+// Added ')' to the negated set to prevent matching the closing parenthesis of a Markdown link.
+const URL_REGEX = /https?:\/\/[^\s<>"'`)]+/g;
 
 // Regex to identify common trailing punctuation that shouldn't be part of the URL
-const TRAILING_PUNCTUATION_REGEX = /[.,;!?)\]}]+$/;
+const TRAILING_PUNCTUATION_REGEX = /[.,;!?\]}]+$/; // Removed ')' as it's now handled by URL_REGEX exclusion
 export const listupAllUrls = (
 	body: string,
 	ignoredDomains?: string[],
@@ -135,13 +136,25 @@ export const listupAllUrls = (
 			}
 
 			// 6. Clean Trailing Punctuation (only if not ignored)
+			// We only clean punctuation if the URL wasn't already excluded by context checks.
 			if (shouldAdd) {
-				finalUrl = url.replace(TRAILING_PUNCTUATION_REGEX, "");
+				const cleanedUrl = url.replace(TRAILING_PUNCTUATION_REGEX, "");
 				// Ensure cleaning didn't make it invalid (e.g., just "http://")
-				if (!finalUrl.includes("//")) {
-					shouldAdd = false;
+				// or remove essential parts if the regex was too broad.
+				if (cleanedUrl.includes("://")) {
+					finalUrl = cleanedUrl; // Use the cleaned URL only if it's still valid-looking
+				} else {
+					// If cleaning resulted in an invalid URL, maybe don't add it,
+					// or reconsider the TRAILING_PUNCTUATION_REGEX.
+					// For now, let's stick with the original URL if cleaning fails badly.
+					// This case shouldn't happen often with the current regex.
+					finalUrl = url; // Revert to original if cleaning broke it
+					console.warn(`URL cleaning potentially broke the URL: ${url} -> ${cleanedUrl}`);
+					// Decide if we should still add the original potentially dirty url
+					// shouldAdd = false; // Option: Don't add if cleaning failed
 				}
 			}
+
 
 			// --- Add URL if context checks pass and not ignored ---
 			if (shouldAdd) {
