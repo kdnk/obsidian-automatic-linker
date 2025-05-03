@@ -7,10 +7,13 @@ import {
 	parseFrontMatterAliases,
 	Plugin,
 	PluginManifest,
+	request,
 } from "obsidian";
 import { excludeLinks } from "./exclude-links";
 import { PathAndAliases } from "./path-and-aliases.types";
 import { replaceLinks } from "./replace-links/replace-links";
+import { listupAllUrls, replaceUrlWithTitle } from "./replace-url-with-title";
+import { getTitleFromHtml } from "./replace-url-with-title/utils/get-title-from-html";
 import { formatGitHubURL } from "./replace-urls/github";
 import { formatJiraURL } from "./replace-urls/jira";
 import { replaceURLs } from "./replace-urls/replace-urls";
@@ -28,6 +31,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	private candidateMap: Map<string, CandidateData> | null = null;
 	// Preserved callback for the original save command
 	private originalSaveCallback: (() => Promise<void>) | undefined;
+	private urlTitleMap: Map<string, string> = new Map();
 
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
@@ -57,6 +61,30 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						this.settings,
 						formatJiraURL,
 					);
+				});
+			}
+
+			if (this.settings.replaceUrlWithTitle) {
+				const fileContent = await this.app.vault.read(activeFile);
+				const { contentStart } = getFrontMatterInfo(fileContent);
+				const body = fileContent.slice(contentStart);
+
+				const urls = listupAllUrls(body);
+				for (const url of urls) {
+					const response = await request(url);
+					const title = getTitleFromHtml(response);
+					this.urlTitleMap.set(url, title);
+				}
+
+				await this.app.vault.process(activeFile, (fileContent) => {
+					const { contentStart } = getFrontMatterInfo(fileContent);
+					const frontmatter = fileContent.slice(0, contentStart);
+					const body = fileContent.slice(contentStart);
+					const updatedBody = replaceUrlWithTitle({
+						body,
+						urlTitleMap: this.urlTitleMap,
+					});
+					return frontmatter + updatedBody;
 				});
 			}
 
