@@ -1,5 +1,5 @@
 interface ReplaceUrlWithTitleContext {
-	getTitle: (url: string) => Promise<string>;
+	getWebTitle: (url: string) => Promise<string>;
 }
 
 interface ReplaceUrlWithTitleOptions {
@@ -89,7 +89,7 @@ export const replaceUrlWithTitle =
 			const { startIndex, endIndex, url } = replacements[i];
 			try {
 				if (debug) console.log(`Fetching title for: ${url}`);
-				const title = await context.getTitle(url);
+				const title = await context.getWebTitle(url);
 				if (title) {
 					const markdownLink = `[${title}](${url})`;
 					newBody =
