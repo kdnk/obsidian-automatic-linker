@@ -35,6 +35,7 @@ describe("listupAllUrls", () => {
 	it("ignore in replaceUrlWithTitleIgnoreDomains", () => {
 		const body = "Check this link: https://example.com";
 		const result = listupAllUrls(body, ["example.com"]);
-		expect(result).not.toContain("https://example.com");
+		// Use .has() for Set and check if it's false
+		expect(result.has("https://example.com")).toBe(false);
 	});
 });
