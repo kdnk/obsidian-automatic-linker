@@ -12,8 +12,9 @@ import {
 import { excludeLinks } from "./exclude-links";
 import { PathAndAliases } from "./path-and-aliases.types";
 import { replaceLinks } from "./replace-links/replace-links";
-import { listupAllUrls, replaceUrlWithTitle } from "./replace-url-with-title";
+import { replaceUrlWithTitle } from "./replace-url-with-title";
 import { getTitleFromHtml } from "./replace-url-with-title/utils/get-title-from-html";
+import { listupAllUrls } from "./replace-url-with-title/utils/list-up-all-urls";
 import { formatGitHubURL } from "./replace-urls/github";
 import { formatJiraURL } from "./replace-urls/jira";
 import { replaceURLs } from "./replace-urls/replace-urls";
