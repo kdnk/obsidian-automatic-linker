@@ -20,4 +20,13 @@ describe("replaceUrlWithTitle", () => {
 			"Links: [Example Title](https://example.com) and [Another Title](https://another.com)",
 		);
 	});
+
+	it('should ignore markdown link []()', () => {
+		const body = "Check this link: [Example Title](https://example.com)";
+		const getTitle = async (url: string) => "New Title";
+		const result = replaceUrlWithTitle({ getTitle })({ body });
+		expect(result).toBe(
+			"Check this link: [Example Title](https://example.com)",
+		);
+	})
 });
