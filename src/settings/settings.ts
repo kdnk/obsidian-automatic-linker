@@ -203,6 +203,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 				text.inputEl.cols = 50;
 			});
 
+		// Toggle for replacing URLs with titles
+		new Setting(containerEl)
+			.setName("Replace URL with title")
+			.setDesc(
+				"When enabled, raw URLs will be replaced with [Page Title](URL). Requires fetching the URL content.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.replaceUrlWithTitle)
+					.onChange(async (value) => {
+						this.plugin.settings.replaceUrlWithTitle = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		containerEl.createEl("h2", { text: "Debug" });
 
 		// Toggle for showing the load notice.
