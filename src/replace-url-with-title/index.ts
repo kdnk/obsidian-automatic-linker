@@ -45,7 +45,9 @@ export const replaceUrlWithTitle = ({
 			}
 
 			// Add the text segment before the match
-			newBodyParts.push(resultBody.substring(currentIndex, nextOccurrence));
+			newBodyParts.push(
+				resultBody.substring(currentIndex, nextOccurrence),
+			);
 
 			// --- Context Check ---
 			let shouldReplace = true;
@@ -152,7 +154,8 @@ export const listupAllUrls = (body: string): Set<Url> => {
 		if (isBareUrl) {
 			const segmentBefore = body.substring(0, matchIndex);
 			// Count non-escaped backticks `(?<!\\)` ensures we don't count escaped ones like \`
-			const backticksCount = (segmentBefore.match(/(?<!\\)`/g) || []).length;
+			const backticksCount = (segmentBefore.match(/(?<!\\)`/g) || [])
+				.length;
 
 			if (backticksCount % 2 !== 0) {
 				// Odd number of backticks means we might be inside a code span.
@@ -162,7 +165,9 @@ export const listupAllUrls = (body: string): Set<Url> => {
 				// If not, we are inside the code span.
 				if (
 					lastBacktickIndex !== -1 &&
-					!segmentBefore.substring(lastBacktickIndex + 1).includes("`")
+					!segmentBefore
+						.substring(lastBacktickIndex + 1)
+						.includes("`")
 				) {
 					isBareUrl = false;
 				}
@@ -189,4 +194,8 @@ export const listupAllUrls = (body: string): Set<Url> => {
 	}
 
 	return urls;
+};
+
+export const getTitleFromHtml = (html: string): string => {
+	return "";
 };
