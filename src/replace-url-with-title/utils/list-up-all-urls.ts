@@ -15,6 +15,19 @@ export const listupAllUrls = (
 	const urls = new Set<Url>();
 	let match;
 
+	// --- Pre-calculate Fenced Code Block Ranges ---
+	const codeBlockRanges: { start: number; end: number }[] = [];
+	// Regex to find fenced code blocks (handles different fence lengths and optional language specifiers)
+	// Matches from ``` or ~~~ at the start of a line to the next ``` or ~~~ at the start of a line
+	const codeBlockRegex = /^(?:```|~~~)[^\r\n]*?\r?\n([\s\S]*?)\r?\n^(?:```|~~~)$/gm;
+	let blockMatch;
+	while ((blockMatch = codeBlockRegex.exec(body)) !== null) {
+		codeBlockRanges.push({ start: blockMatch.index, end: blockMatch.index + blockMatch[0].length });
+	}
+	// Reset regex state if needed, though new exec calls should handle this
+	codeBlockRegex.lastIndex = 0;
+
+
 	while ((match = URL_REGEX.exec(body)) !== null) {
 		const url = match[0];
 		const matchIndex = match.index;
