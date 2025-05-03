@@ -52,14 +52,16 @@ export const listupAllUrls = (
 		let isBareUrl = true;
 
 		// 1. Check if already part of a Markdown link: [...](url)
-		// Look for `](` immediately before the URL.
-		// Need to be careful with index boundaries.
-		if (matchIndex >= 2) {
-			const precedingChars = body.substring(matchIndex - 2, matchIndex);
-			// Check if the character immediately following the URL is ')'
-			const followingChar = body[matchIndex + url.length];
-			if (precedingChars === "](" && followingChar === ")") {
-				isBareUrl = false;
+		if (matchIndex >= 2) { // Need space for "]("
+			// Check if the URL is potentially followed by ')'
+			const followingCharIndex = matchIndex + url.length;
+			if (followingCharIndex < body.length && body[followingCharIndex] === ')') {
+				// If followed by ')', check if preceded by "]("
+				const precedingChars = body.substring(matchIndex - 2, matchIndex);
+				if (precedingChars === "](") {
+					// Only if both conditions are met, it's a Markdown link
+					isBareUrl = false;
+				}
 			}
 		}
 
