@@ -35,6 +35,19 @@ export const listupAllUrls = (
 		const url = match[0];
 		const matchIndex = match.index;
 
+		// --- Fenced Code Block Check ---
+		// Check if the match index falls within any calculated code block range
+		let isInCodeBlock = false;
+		for (const range of codeBlockRanges) {
+			if (matchIndex >= range.start && matchIndex < range.end) {
+				isInCodeBlock = true;
+				break;
+			}
+		}
+		if (isInCodeBlock) {
+			continue; // Skip this URL if it's inside a fenced code block
+		}
+
 		// --- Context Check ---
 		let isBareUrl = true;
 
