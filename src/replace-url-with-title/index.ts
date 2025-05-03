@@ -50,13 +50,20 @@ const isInsideCode = (body: string, index: number): boolean => {
 
 export const replaceUrlWithTitle =
 	(context: ReplaceUrlWithTitleContext) =>
-	async ({ body, debug = false }: ReplaceUrlWithTitleOptions): Promise<string> => {
+	async ({
+		body,
+		debug = false,
+	}: ReplaceUrlWithTitleOptions): Promise<string> => {
 		let newBody = body;
 		const matches = Array.from(body.matchAll(URL_REGEX));
-		const replacements: { startIndex: number; endIndex: number; url: string }[] =
-			[];
+		const replacements: {
+			startIndex: number;
+			endIndex: number;
+			url: string;
+		}[] = [];
 
-		if (debug) console.log("replaceUrlWithTitle: Found potential URLs:", matches);
+		if (debug)
+			console.log("replaceUrlWithTitle: Found potential URLs:", matches);
 
 		// Collect valid matches that are not inside code blocks
 		for (const match of matches) {
@@ -64,14 +71,18 @@ export const replaceUrlWithTitle =
 			const startIndex = match.index!;
 
 			if (!isInsideCode(body, startIndex)) {
-				replacements.push({ startIndex, endIndex: startIndex + url.length, url });
+				replacements.push({
+					startIndex,
+					endIndex: startIndex + url.length,
+					url,
+				});
 			} else {
 				if (debug) console.log(`Skipping URL inside code: ${url}`);
 			}
 		}
 
-		if (debug) console.log("replaceUrlWithTitle: Filtered URLs:", replacements);
-
+		if (debug)
+			console.log("replaceUrlWithTitle: Filtered URLs:", replacements);
 
 		// Process replacements from end to start to avoid index issues
 		for (let i = replacements.length - 1; i >= 0; i--) {
@@ -85,7 +96,8 @@ export const replaceUrlWithTitle =
 						newBody.substring(0, startIndex) +
 						markdownLink +
 						newBody.substring(endIndex);
-					if (debug) console.log(`Replaced ${url} with ${markdownLink}`);
+					if (debug)
+						console.log(`Replaced ${url} with ${markdownLink}`);
 				} else {
 					if (debug) console.log(`No title found for: ${url}`);
 				}
