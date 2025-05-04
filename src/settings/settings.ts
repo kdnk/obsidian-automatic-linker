@@ -12,7 +12,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		const { containerEl } = this;
 		containerEl.empty();
 
-		containerEl.createEl("h2", { text: "General" });
+		new Setting(containerEl).setName("General").setHeading();
 
 		// Toggle for "Format on Save" setting.
 		new Setting(containerEl)
@@ -123,7 +123,9 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
-		containerEl.createEl("h2", { text: "URL Formatting for GitHub" });
+		new Setting(containerEl)
+			.setName("URL Formatting for GitHub")
+			.setHeading();
 
 		// Toggle for formatting GitHub URLs on save
 		new Setting(containerEl)
@@ -165,7 +167,9 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 				text.inputEl.cols = 50;
 			});
 
-		containerEl.createEl("h2", { text: "URL Formatting for Jira" });
+		new Setting(containerEl)
+			.setName("URL Formatting for Jira")
+			.setHeading();
 
 		// Toggle for formatting JIRA URLs on save
 		new Setting(containerEl)
@@ -205,7 +209,9 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 				text.inputEl.cols = 50;
 			});
 
-		containerEl.createEl("h2", { text: "URL Replacement with Title" });
+		new Setting(containerEl)
+			.setName("URL Replacement with Title")
+			.setHeading();
 
 		// Toggle for replacing URLs with titles
 		new Setting(containerEl)
@@ -249,7 +255,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 				text.inputEl.cols = 50;
 			});
 
-		containerEl.createEl("h2", { text: "Debug" });
+		new Setting(containerEl).setName("Debug").setHeading();
 
 		// Toggle for showing the load notice.
 		new Setting(containerEl)
