@@ -464,48 +464,6 @@ const processStandardText = (
 							originalMatchedText;
 					linkContent = `${normalizedPath}|${displayText}`;
 				} else {
-					// If no alias and no namespace, the link text is the original matched text.
-					// However, to ensure it's treated as a link and not plain text if it matches a filename directly,
-					// we should use the normalizedPath for the link part.
-					// If originalMatchedText is different from normalizedPath (e.g. due to case),
-					// and we want to preserve the original casing for display, we form an alias.
-					if (settings.ignoreCase && originalMatchedText.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedText !== normalizedPath) {
-						linkContent = `${normalizedPath}|${originalMatchedText}`;
-					} else if (originalMatchedText !== normalizedPath && !normalizedPath.includes("/")) {
-                        // This case handles when originalMatchedText might be different from normalizedPath (e.g. "Note" vs "note")
-                        // and we want to ensure the display text is the original matched text.
-                        linkContent = `${normalizedPath}|${originalMatchedText}`;
-                    }
-                    else {
-						linkContent = normalizedPath; // Default to normalizedPath if no other condition met
-                        // If originalMatchedText is what should be displayed and it's different from normalizedPath,
-                        // it implies an alias should be formed.
-                        if (originalMatchedText !== normalizedPath) {
-                           linkContent = `${normalizedPath}|${originalMatchedText}`;
-                        }
-					}
-                    // If after all, linkContent is just the originalMatchedText and it's different from normalizedPath,
-                    // it means we should use normalizedPath as the link and originalMatchedText as alias.
-                    // This logic was a bit complex, simplifying:
-                    // If no alias and no namespace, the link is `[[normalizedPath]]`
-                    // If we want to display originalMatchedText and it's different, it becomes `[[normalizedPath|originalMatchedText]]`
-
-                    if (originalMatchedText.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedText !== normalizedPath) {
-                        linkContent = `${normalizedPath}|${originalMatchedText}`;
-                    } else if (originalMatchedText !== normalizedPath && !normalizedPath.includes("/")) {
-                         linkContent = `${normalizedPath}|${originalMatchedText}`;
-                    } else if (!normalizedPath.includes("/")){
-                        linkContent = normalizedPath;
-                         if (originalMatchedText !== normalizedPath) {
-                           linkContent = `${normalizedPath}|${originalMatchedText}`;
-                        }
-                    } else {
-                        // This case should have been handled by `normalizedPath.includes("/")`
-                        // For safety, default to normalizedPath
-                        linkContent = normalizedPath;
-                    }
-
-
                     // Simpler logic for the "else" block (no explicit alias, no namespace in normalizedPath)
                     if (settings.ignoreCase && originalMatchedText.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedText !== normalizedPath) {
                         // Case difference, use original as alias
