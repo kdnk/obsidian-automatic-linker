@@ -463,18 +463,28 @@ const processStandardText = (
 						: normalizedPath.split("/").pop() ||
 							originalMatchedText;
 					linkContent = `${normalizedPath}|${displayText}`;
-				} else {
-                    // Simpler logic for the "else" block (no explicit alias, no namespace in normalizedPath)
-                    if (settings.ignoreCase && originalMatchedText.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedText !== normalizedPath) {
-                        // Case difference, use original as alias
-                        linkContent = `${normalizedPath}|${originalMatchedText}`;
-                    } else if (!settings.ignoreCase && originalMatchedText !== normalizedPath) {
-                        // Different text, not due to case, use original as alias
-                        linkContent = `${normalizedPath}|${originalMatchedText}`;
-                    }
-                    else {
-                        // Otherwise, just the path
-                        linkContent = normalizedPath;
+				} else { // No explicit alias, no '/' in normalizedPath
+                    if (settings.ignoreCase) {
+                        // When ignoring case:
+                        if (originalMatchedText.toLowerCase() === normalizedPath.toLowerCase()) {
+                            // If they are the same word, just different casing (or same casing)
+                            // The link path should be the originalMatchedText itself.
+                            linkContent = originalMatchedText;
+                        } else {
+                            // They are different words (e.g., original "Apple", normalized "Orange")
+                            // Use normalizedPath as link, originalMatchedText as alias.
+                            linkContent = `${normalizedPath}|${originalMatchedText}`;
+                        }
+                    } else {
+                        // When not ignoring case (case-sensitive matching):
+                        if (originalMatchedText !== normalizedPath) {
+                            // If original text is different from the normalized path,
+                            // use normalizedPath as link, originalMatchedText as alias.
+                            linkContent = `${normalizedPath}|${originalMatchedText}`;
+                        } else {
+                            // They are identical.
+                            linkContent = normalizedPath;
+                        }
                     }
 				}
 
@@ -603,18 +613,28 @@ const processStandardText = (
 							: normalizedPath.split("/").pop() ||
 								originalMatchedWord;
 						linkContent = `${normalizedPath}|${displayText}`;
-					} else {
-                        // Simpler logic for the "else" block (no explicit alias, no namespace in normalizedPath)
-                        if (settings.ignoreCase && originalMatchedWord.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedWord !== normalizedPath) {
-                            // Case difference, use original as alias
-                            linkContent = `${normalizedPath}|${originalMatchedWord}`;
-                        } else if (!settings.ignoreCase && originalMatchedWord !== normalizedPath) {
-                            // Different text, not due to case, use original as alias
-                            linkContent = `${normalizedPath}|${originalMatchedWord}`;
-                        }
-                        else {
-                            // Otherwise, just the path
-                            linkContent = normalizedPath;
+					} else { // No explicit alias, no '/' in normalizedPath
+                        if (settings.ignoreCase) {
+                            // When ignoring case:
+                            if (originalMatchedWord.toLowerCase() === normalizedPath.toLowerCase()) {
+                                // If they are the same word, just different casing (or same casing)
+                                // The link path should be the originalMatchedWord itself.
+                                linkContent = originalMatchedWord;
+                            } else {
+                                // They are different words (e.g., original "Apple", normalized "Orange")
+                                // Use normalizedPath as link, originalMatchedWord as alias.
+                                linkContent = `${normalizedPath}|${originalMatchedWord}`;
+                            }
+                        } else {
+                            // When not ignoring case (case-sensitive matching):
+                            if (originalMatchedWord !== normalizedPath) {
+                                // If original text is different from the normalized path,
+                                // use normalizedPath as link, originalMatchedWord as alias.
+                                linkContent = `${normalizedPath}|${originalMatchedWord}`;
+                            } else {
+                                // They are identical.
+                                linkContent = normalizedPath;
+                            }
                         }
 					}
 
