@@ -576,6 +576,15 @@ const processStandardText = (
 
 				if (bestCandidateData) {
 					// Found a valid candidate through fallback
+
+					// Skip linking if inside a Markdown table (check for fallback logic)
+					// The index 'i' corresponds to the start of 'longestMatch.word' in 'text'
+					if (isIndexInsideMarkdownTable(text, i)) {
+						result += longestMatch.word; // Append the original matched word
+						i += longestMatch.length;
+						continue outer;
+					}
+
 					const { linkPath, alias, hasAlias } = extractLinkParts(
 						bestCandidateData.canonical,
 					);
