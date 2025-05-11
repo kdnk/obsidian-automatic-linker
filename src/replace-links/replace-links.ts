@@ -377,13 +377,6 @@ const processStandardText = (
 			);
 
 			if (candidateData) {
-				// Skip linking if inside a Markdown table
-				if (isIndexInsideMarkdownTable(text, i)) {
-					result += candidate;
-					i += lastCandidate.length;
-					continue outer;
-				}
-
 				// Handle Korean special cases
 				const isKorean = KOREAN_REGEX.test(candidate);
 				if (isKorean) {
@@ -460,22 +453,78 @@ const processStandardText = (
 					settings.baseDir,
 				);
 
-				// Format the link
+				// Determine link content (path and alias if any)
+				let linkContent: string;
 				if (hasAlias) {
-					// Use the explicit alias from the canonical path
-					result += `[[${normalizedPath}|${alias}]]`;
+					linkContent = `${normalizedPath}|${alias}`;
 				} else if (normalizedPath.includes("/")) {
-					// Namespace exists, no explicit alias.
-					// Use original matched text for display if ignoreCase is true, otherwise use the last part of the path.
 					const displayText = settings.ignoreCase
 						? originalMatchedText
 						: normalizedPath.split("/").pop() ||
-							originalMatchedText; // Fallback to original text if split fails
-					result += `[[${normalizedPath}|${displayText}]]`;
+							originalMatchedText;
+					linkContent = `${normalizedPath}|${displayText}`;
 				} else {
-					// No namespace, no explicit alias. Use the original matched text.
-					result += `[[${originalMatchedText}]]`;
+					// If no alias and no namespace, the link text is the original matched text.
+					// However, to ensure it's treated as a link and not plain text if it matches a filename directly,
+					// we should use the normalizedPath for the link part.
+					// If originalMatchedText is different from normalizedPath (e.g. due to case),
+					// and we want to preserve the original casing for display, we form an alias.
+					if (settings.ignoreCase && originalMatchedText.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedText !== normalizedPath) {
+						linkContent = `${normalizedPath}|${originalMatchedText}`;
+					} else if (originalMatchedText !== normalizedPath && !normalizedPath.includes("/")) {
+                        // This case handles when originalMatchedText might be different from normalizedPath (e.g. "Note" vs "note")
+                        // and we want to ensure the display text is the original matched text.
+                        linkContent = `${normalizedPath}|${originalMatchedText}`;
+                    }
+                    else {
+						linkContent = normalizedPath; // Default to normalizedPath if no other condition met
+                        // If originalMatchedText is what should be displayed and it's different from normalizedPath,
+                        // it implies an alias should be formed.
+                        if (originalMatchedText !== normalizedPath) {
+                           linkContent = `${normalizedPath}|${originalMatchedText}`;
+                        }
+					}
+                    // If after all, linkContent is just the originalMatchedText and it's different from normalizedPath,
+                    // it means we should use normalizedPath as the link and originalMatchedText as alias.
+                    // This logic was a bit complex, simplifying:
+                    // If no alias and no namespace, the link is `[[normalizedPath]]`
+                    // If we want to display originalMatchedText and it's different, it becomes `[[normalizedPath|originalMatchedText]]`
+
+                    if (originalMatchedText.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedText !== normalizedPath) {
+                        linkContent = `${normalizedPath}|${originalMatchedText}`;
+                    } else if (originalMatchedText !== normalizedPath && !normalizedPath.includes("/")) {
+                         linkContent = `${normalizedPath}|${originalMatchedText}`;
+                    } else if (!normalizedPath.includes("/")){
+                        linkContent = normalizedPath;
+                         if (originalMatchedText !== normalizedPath) {
+                           linkContent = `${normalizedPath}|${originalMatchedText}`;
+                        }
+                    } else {
+                        // This case should have been handled by `normalizedPath.includes("/")`
+                        // For safety, default to normalizedPath
+                        linkContent = normalizedPath;
+                    }
+
+
+                    // Simpler logic for the "else" block (no explicit alias, no namespace in normalizedPath)
+                    if (settings.ignoreCase && originalMatchedText.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedText !== normalizedPath) {
+                        // Case difference, use original as alias
+                        linkContent = `${normalizedPath}|${originalMatchedText}`;
+                    } else if (!settings.ignoreCase && originalMatchedText !== normalizedPath) {
+                        // Different text, not due to case, use original as alias
+                        linkContent = `${normalizedPath}|${originalMatchedText}`;
+                    }
+                    else {
+                        // Otherwise, just the path
+                        linkContent = normalizedPath;
+                    }
 				}
+
+				// Escape pipe if inside a table and an alias exists (i.e., linkContent contains '|')
+				if (isIndexInsideMarkdownTable(text, i) && linkContent.includes("|")) {
+					linkContent = linkContent.replace(/\|/g, "\\|"); // Replace all pipes
+				}
+				result += `[[${linkContent}]]`;
 
 				i += candidate.length;
 				continue outer;
@@ -577,14 +626,6 @@ const processStandardText = (
 				if (bestCandidateData) {
 					// Found a valid candidate through fallback
 
-					// Skip linking if inside a Markdown table (check for fallback logic)
-					// The index 'i' corresponds to the start of 'longestMatch.word' in 'text'
-					if (isIndexInsideMarkdownTable(text, i)) {
-						result += longestMatch.word; // Append the original matched word
-						i += longestMatch.length;
-						continue outer;
-					}
-
 					const { linkPath, alias, hasAlias } = extractLinkParts(
 						bestCandidateData.canonical,
 					);
@@ -593,22 +634,37 @@ const processStandardText = (
 						settings.baseDir,
 					);
 
-					// Format the link
-					const originalMatchedWord = longestMatch.word; // Use the actual matched word
+					// Determine link content (path and alias if any)
+					const originalMatchedWord = longestMatch.word;
+					let linkContent: string;
 					if (hasAlias) {
-						result += `[[${normalizedPath}|${alias}]]`;
+						linkContent = `${normalizedPath}|${alias}`;
 					} else if (normalizedPath.includes("/")) {
-						// Namespace exists, no explicit alias.
-						// Use original matched word for display if ignoreCase is true, otherwise use the last part of the path.
 						const displayText = settings.ignoreCase
 							? originalMatchedWord
 							: normalizedPath.split("/").pop() ||
-								originalMatchedWord; // Fallback to original word if split fails
-						result += `[[${normalizedPath}|${displayText}]]`;
+								originalMatchedWord;
+						linkContent = `${normalizedPath}|${displayText}`;
 					} else {
-						// No namespace, no explicit alias. Use the original matched word.
-						result += `[[${originalMatchedWord}]]`;
+                        // Simpler logic for the "else" block (no explicit alias, no namespace in normalizedPath)
+                        if (settings.ignoreCase && originalMatchedWord.toLowerCase() === normalizedPath.toLowerCase() && originalMatchedWord !== normalizedPath) {
+                            // Case difference, use original as alias
+                            linkContent = `${normalizedPath}|${originalMatchedWord}`;
+                        } else if (!settings.ignoreCase && originalMatchedWord !== normalizedPath) {
+                            // Different text, not due to case, use original as alias
+                            linkContent = `${normalizedPath}|${originalMatchedWord}`;
+                        }
+                        else {
+                            // Otherwise, just the path
+                            linkContent = normalizedPath;
+                        }
 					}
+
+					// Escape pipe if inside a table and an alias exists (i.e., linkContent contains '|')
+					if (isIndexInsideMarkdownTable(text, i) && linkContent.includes("|")) {
+						linkContent = linkContent.replace(/\|/g, "\\|"); // Replace all pipes
+					}
+					result += `[[${linkContent}]]`;
 
 					i += longestMatch.length; // Advance index by the length of the matched word
 					continue outer; // Continue processing from the new index
