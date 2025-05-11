@@ -110,6 +110,37 @@ const extractLinkParts = (
 	return { linkPath, alias, hasAlias };
 };
 
+function isMarkdownTableLine(line: string): boolean {
+    const trimmedLine = line.trim();
+    // A line is considered a table line if it's not empty and starts and ends with '|'
+    // This covers data rows, header rows, and separator lines like |---|---|
+    // It also handles lines that might only contain the separator like |---|
+    if (!trimmedLine || !trimmedLine.includes('|')) {
+        return false;
+    }
+    // Check if it's a separator line: |---|---| or |:---|:---|
+    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|') && /^[|:\s-]+$/.test(trimmedLine)) {
+        return true;
+    }
+    // Check if it's a data/header row: | Col A | Col B |
+    return trimmedLine.startsWith('|') && trimmedLine.endsWith('|');
+}
+
+function isIndexInsideMarkdownTable(text: string, index: number): boolean {
+    const lines = text.split('\n');
+    let charCount = 0;
+    for (const line of lines) {
+        const lineStart = charCount;
+        const lineEnd = charCount + line.length;
+
+        if (index >= lineStart && index <= lineEnd) {
+            return isMarkdownTableLine(line);
+        }
+        charCount += line.length + 1; // +1 for the newline character
+    }
+    return false;
+}
+
 // Processing functions for different text types
 const processCjkText = (
 	text: string,
@@ -346,6 +377,13 @@ const processStandardText = (
 			);
 
 			if (candidateData) {
+				// Skip linking if inside a Markdown table
+				if (isIndexInsideMarkdownTable(text, i)) {
+					result += candidate;
+					i += lastCandidate.length;
+					continue outer;
+				}
+
 				// Handle Korean special cases
 				const isKorean = KOREAN_REGEX.test(candidate);
 				if (isKorean) {
