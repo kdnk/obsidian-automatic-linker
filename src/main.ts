@@ -311,7 +311,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		const saveCommandDefinition =
 			// @ts-expect-error
 			this.app?.commands?.commands?.["editor:save-file"];
-		const save = saveCommandDefinition?.callback;
+		const save = saveCommandDefinition?.checkCallback;
+		console.log(`[main.ts:315] save: `, save);
 		if (typeof save === "function") {
 			// Preserve the original save callback to call it after modifying links.
 			this.originalSaveCallback = save;
@@ -329,7 +330,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				300,
 				{ leading: true },
 			);
-			saveCommandDefinition.callback = async () => {
+			saveCommandDefinition.checkCallback = async () => {
 				safeWrite("save", async () => {
 					await throttledModifyLinks();
 				});
@@ -346,7 +347,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// @ts-expect-error
 			this.app?.commands?.commands?.["editor:save-file"];
 		if (saveCommandDefinition && this.originalSaveCallback) {
-			saveCommandDefinition.callback = this.originalSaveCallback;
+			saveCommandDefinition.checkCallback = this.originalSaveCallback;
 		}
 	}
 
