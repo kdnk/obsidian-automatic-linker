@@ -203,11 +203,16 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				urlTitleMap: this.urlTitleMap,
 			});
 		}
+		const currentCuror = cm.getCursor();
 		cm.replaceRange(
 			lineText,
 			{ line, ch: 0 },
 			{ line, ch: originalLineText.length },
 		);
+		cm.setCursor({
+			line: currentCuror.line,
+			ch: currentCuror.ch,
+		});
 	}
 
 	async formatOnSave() {
