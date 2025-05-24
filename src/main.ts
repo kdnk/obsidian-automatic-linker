@@ -135,6 +135,92 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 	}
 
+	async modifyLinksCurrentLine() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			return;
+		}
+		const editor = this.app.workspace.activeEditor;
+		if (!editor) {
+			return;
+		}
+		const cm = editor.editor;
+		if (!cm) {
+			return;
+		}
+
+		const line = cm.getCursor().line;
+		const originalLineText = cm.getLine(line);
+		let lineText = originalLineText;
+
+		if (!this.trie || !this.candidateMap) {
+			return;
+		}
+		lineText = replaceLinks({
+			body: lineText,
+			linkResolverContext: {
+				filePath: activeFile.path.replace(/\.md$/, ""),
+				trie: this.trie,
+				candidateMap: this.candidateMap,
+			},
+			settings: {
+				minCharCount: this.settings.minCharCount,
+				namespaceResolution: this.settings.namespaceResolution,
+				baseDir: this.settings.baseDir,
+				ignoreDateFormats: this.settings.ignoreDateFormats,
+			},
+		});
+		if (this.settings.formatGitHubURLs) {
+			lineText = replaceURLs(
+				cm.getLine(line),
+				this.settings,
+				formatGitHubURL,
+			);
+		}
+
+		if (this.settings.formatJiraURLs) {
+			lineText = replaceURLs(
+				cm.getLine(line),
+				this.settings,
+				formatJiraURL,
+			);
+		}
+
+		if (this.settings.replaceUrlWithTitle) {
+			const fileContent = await this.app.vault.read(activeFile);
+			const { contentStart } = getFrontMatterInfo(fileContent);
+			const body = fileContent.slice(contentStart);
+
+			const urls = listupAllUrls(body);
+			for (const url of urls) {
+				const response = await request(url);
+				const title = getTitleFromHtml(response);
+				this.urlTitleMap.set(url, title);
+			}
+
+			lineText = replaceUrlWithTitle({
+				body: lineText,
+				urlTitleMap: this.urlTitleMap,
+			});
+		}
+		cm.replaceRange(
+			lineText,
+			{ line, ch: 0 },
+			{ line, ch: originalLineText.length },
+		);
+	}
+
+	async formatOnSave() {
+		if (!this.settings.formatOnSave) {
+			return;
+		}
+		if (!this.settings.formatOnSaveCurrentLine) {
+			await this.modifyLinks();
+		} else {
+			await this.modifyLinksCurrentLine();
+		}
+	}
+
 	async mofifyLinksSelection() {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
@@ -312,7 +398,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// @ts-expect-error
 			this.app?.commands?.commands?.["editor:save-file"];
 		const save = saveCommandDefinition?.checkCallback;
-		console.log(`[main.ts:315] save: `, save);
 		if (typeof save === "function") {
 			// Preserve the original save callback to call it after modifying links.
 			this.originalSaveCallback = save;
@@ -321,7 +406,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				async () => {
 					if (this.settings.formatOnSave) {
 						try {
-							await this.modifyLinks();
+							await this.formatOnSave();
 						} catch (error) {
 							console.error(error);
 						}

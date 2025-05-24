@@ -29,6 +29,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Toggle for "Format on save for a current line" setting.
+		new Setting(containerEl)
+			.setName("Format on save for a current line")
+			.setDesc(
+				"When enabled, the current line will be formatted (links replaced) when saving.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.formatOnSaveCurrentLine)
+					.onChange(async (value) => {
+						this.plugin.settings.formatOnSaveCurrentLine = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		// Setting for base directories.
 		new Setting(containerEl)
 			.setName("Base directory")

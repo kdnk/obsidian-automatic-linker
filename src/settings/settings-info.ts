@@ -1,5 +1,6 @@
 export type AutomaticLinkerSettings = {
 	formatOnSave: boolean;
+	formatOnSaveCurrentLine: boolean;
 	baseDir: string;
 	showNotice: boolean;
 	minCharCount: number; // Minimum character count setting
@@ -18,6 +19,7 @@ export type AutomaticLinkerSettings = {
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	formatOnSave: false,
+	formatOnSaveCurrentLine: false,
 	baseDir: "pages",
 	showNotice: false,
 	minCharCount: 0, // Default value: 0 (always replace links)
