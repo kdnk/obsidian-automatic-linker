@@ -33,7 +33,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Format on save for a current line")
 			.setDesc(
-				"When enabled, the current line will be formatted (links replaced) when saving.",
+				"When enabled, the current line will be formatted (links replaced) when saving. If you enable this, the 'Format on save' setting will be ignored for the current line.",
 			)
 			.addToggle((toggle) => {
 				toggle
