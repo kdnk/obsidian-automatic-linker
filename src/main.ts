@@ -407,7 +407,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// Preserve the original save callback to call it after modifying links.
 			this.originalSaveCallback = save;
 
-			const throttledModifyLinks = throttle(
+			const throttledFormatOnSave = throttle(
 				async () => {
 					if (this.settings.formatOnSave) {
 						try {
@@ -422,7 +422,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			);
 			saveCommandDefinition.checkCallback = async () => {
 				safeWrite("save", async () => {
-					await throttledModifyLinks();
+					await throttledFormatOnSave();
 				});
 				safeWrite("save", async () => {
 					await save?.();
