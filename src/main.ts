@@ -31,7 +31,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	private trie: TrieNode | null = null;
 	private candidateMap: Map<string, CandidateData> | null = null;
 	// Preserved callback for the original save command
-	private originalSaveCallback: (() => Promise<void>) | undefined;
+	private originalSaveCallback: (checking: boolean) => boolean | void;
 	private urlTitleMap: Map<string, string> = new Map();
 
 	constructor(app: App, pluginManifest: PluginManifest) {
@@ -421,26 +421,26 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				{ leading: true },
 			);
 			saveCommandDefinition.checkCallback = async (checking: boolean) => {
-				const activeFile = this.app.workspace.getActiveFile();
-				if (!activeFile) {
-					return;
-				}
-				const editor = this.app.workspace.activeEditor;
-				if (!editor) {
-					return;
-				}
-				const cm = editor.editor;
-				if (!cm) {
-					return;
-				}
-
 				if (checking) {
 					return save(checking);
 				} else {
-					const currentCuror = cm.getCursor();
 					safeWrite("save", async () => {
 						await save(checking);
 					});
+
+					const activeFile = this.app.workspace.getActiveFile();
+					if (!activeFile) {
+						return;
+					}
+					const editor = this.app.workspace.activeEditor;
+					if (!editor) {
+						return;
+					}
+					const cm = editor.editor;
+					if (!cm) {
+						return;
+					}
+					const currentCuror = cm.getCursor();
 					safeWrite("save", async () => {
 						await throttledFormatOnSave();
 					});
@@ -449,7 +449,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						ch: currentCuror.ch,
 					});
 				}
-				return true;
 			};
 		}
 	}
