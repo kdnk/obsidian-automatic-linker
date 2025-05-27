@@ -434,13 +434,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					return;
 				}
 
-				if (!checking) {
+				if (checking) {
+					return save(checking);
+				} else {
 					const currentCuror = cm.getCursor();
 					safeWrite("save", async () => {
-						await throttledFormatOnSave();
+						await save(checking);
 					});
 					safeWrite("save", async () => {
-						await save?.();
+						await throttledFormatOnSave();
 					});
 					cm.setCursor({
 						line: currentCuror.line,
