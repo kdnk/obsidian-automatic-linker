@@ -420,13 +420,34 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				300,
 				{ leading: true },
 			);
-			saveCommandDefinition.checkCallback = async () => {
-				safeWrite("save", async () => {
-					await throttledFormatOnSave();
-				});
-				safeWrite("save", async () => {
-					await save?.();
-				});
+			saveCommandDefinition.checkCallback = async (checking: boolean) => {
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					return;
+				}
+				const editor = this.app.workspace.activeEditor;
+				if (!editor) {
+					return;
+				}
+				const cm = editor.editor;
+				if (!cm) {
+					return;
+				}
+
+				if (!checking) {
+					const currentCuror = cm.getCursor();
+					safeWrite("save", async () => {
+						await throttledFormatOnSave();
+					});
+					safeWrite("save", async () => {
+						await save?.();
+					});
+					cm.setCursor({
+						line: currentCuror.line,
+						ch: currentCuror.ch,
+					});
+				}
+				return true;
 			};
 		}
 	}
