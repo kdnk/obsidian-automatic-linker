@@ -1,4 +1,3 @@
-import AsyncLock from "async-lock";
 import throttle from "just-throttle";
 import {
 	App,
@@ -24,6 +23,8 @@ import {
 	DEFAULT_SETTINGS,
 } from "./settings/settings-info";
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
@@ -390,14 +391,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 		});
 
-		const lock = new AsyncLock();
-		const safeWrite = (
-			key: string,
-			writeOperation: () => Promise<void>,
-		): Promise<void> => {
-			return lock.acquire(key, writeOperation);
-		};
-
 		// Optionally, override the default save command to run modifyLinks (throttled).
 		const saveCommandDefinition =
 			// @ts-expect-error
@@ -406,51 +399,45 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		if (typeof save === "function") {
 			// Preserve the original save callback to call it after modifying links.
 			this.originalSaveCallback = save;
-
-			const throttledFormatOnSave = throttle(
-				async () => {
-					if (this.settings.formatOnSave) {
-						try {
-							await this.formatOnSave();
-						} catch (error) {
-							console.error(error);
-						}
-					}
-				},
-				300,
-				{ leading: true },
-			);
-			saveCommandDefinition.checkCallback = async (checking: boolean) => {
-				if (checking) {
-					return save(checking);
-				} else {
-					safeWrite("save", async () => {
-						await save(checking);
-					});
-
-					const activeFile = this.app.workspace.getActiveFile();
-					if (!activeFile) {
-						return;
-					}
-					const editor = this.app.workspace.activeEditor;
-					if (!editor) {
-						return;
-					}
-					const cm = editor.editor;
-					if (!cm) {
-						return;
-					}
-					const currentCuror = cm.getCursor();
-					safeWrite("save", async () => {
-						await throttledFormatOnSave();
-					});
-					cm.setCursor({
-						line: currentCuror.line,
-						ch: currentCuror.ch,
-					});
-				}
-			};
 		}
+
+		const formatOnSave = async () => {
+			if (this.settings.formatOnSave) {
+				try {
+					await this.formatOnSave();
+				} catch (error) {
+					console.error(error);
+				}
+			}
+		};
+		saveCommandDefinition.checkCallback = async (checking: boolean) => {
+			if (checking) {
+				return save?.(checking);
+			} else {
+				await save?.(checking);
+				const activeFile = this.app.workspace.getActiveFile();
+				if (!activeFile) {
+					return;
+				}
+				const editor = this.app.workspace.activeEditor;
+				if (!editor) {
+					return;
+				}
+				const cm = editor.editor;
+				if (!cm) {
+					return;
+				}
+				const currentCuror = cm.getCursor();
+				await formatOnSave();
+
+				await sleep(100);
+
+				cm.setCursor({
+					line: currentCuror.line,
+					ch: currentCuror.ch,
+				});
+			}
+		};
 	}
 
 	async onunload() {
