@@ -395,10 +395,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		const saveCommandDefinition =
 			// @ts-expect-error
 			this.app?.commands?.commands?.["editor:save-file"];
-		const save = saveCommandDefinition?.checkCallback;
-		if (typeof save === "function") {
+		const saveCallback = saveCommandDefinition?.checkCallback;
+		if (typeof saveCallback === "function") {
 			// Preserve the original save callback to call it after modifying links.
-			this.originalSaveCallback = save;
+			this.originalSaveCallback = saveCallback;
 		}
 
 		const formatOnSave = async () => {
@@ -412,9 +412,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		};
 		saveCommandDefinition.checkCallback = async (checking: boolean) => {
 			if (checking) {
-				return save?.(checking);
+				return saveCallback?.(checking);
 			} else {
-				await save?.(checking);
+				await saveCallback?.(checking);
 				const activeFile = this.app.workspace.getActiveFile();
 				if (!activeFile) {
 					return;
