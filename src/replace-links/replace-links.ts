@@ -21,35 +21,49 @@ export interface ReplaceLinksOptions {
 	settings?: ReplaceLinksSettings;
 }
 
-// RegEx patterns
-const PROTECTED_REGEX =
-	/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s]+)/g;
-const DATE_FORMAT_REGEX = /^\d{4}-\d{2}-\d{2}$/;
-const MONTH_NOTE_REGEX = /^[0-9]{1,2}$/;
-const CJK_REGEX = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
-const CJK_CANDIDATE_REGEX =
-	/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u;
-const KOREAN_REGEX = /^[\p{Script=Hangul}]+$/u;
-const JAPANESE_REGEX =
-	/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u;
-const URL_REGEX = /^(https?:\/\/[^\s]+)/;
+// Constants and Regular Expressions
+const REGEX_PATTERNS = {
+	PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s]+)/g,
+	DATE_FORMAT: /^\d{4}-\d{2}-\d{2}$/,
+	MONTH_NOTE: /^[0-9]{1,2}$/,
+	CJK: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u,
+	CJK_CANDIDATE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u,
+	KOREAN: /^[\p{Script=Hangul}]+$/u,
+	JAPANESE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u,
+	URL: /^(https?:\/\/[^\s]+)/,
+	PROTECTED_LINK: /^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/,
+	KOREAN_SUFFIX: /^(이다\.?)/,
+	KOREAN_PARTICLES: /^(는|은)/,
+	JAPANESE_PARTICLES: /^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
+	TABLE_SEPARATOR: /^[|:\s-]+$/,
+	WORD_BOUNDARY: /[\p{L}\p{N}_\/-]/u,
+	WHITESPACE: /[\t\n\r ]/
+} as const;
 
-// Utility functions
+// Text Analysis Utilities
 const isWordBoundary = (char: string | undefined): boolean => {
 	if (char === undefined) return true;
-	// CJK characters should be considered as word boundaries
-	if (CJK_REGEX.test(char)) return true;
-	return !/[\p{L}\p{N}_/-]/u.test(char) || /[\t\n\r ]/.test(char);
+	if (REGEX_PATTERNS.CJK.test(char)) return true;
+	return !REGEX_PATTERNS.WORD_BOUNDARY.test(char) || REGEX_PATTERNS.WHITESPACE.test(char);
 };
 
 const isMonthNote = (candidate: string): boolean =>
-	MONTH_NOTE_REGEX.test(candidate) &&
+	REGEX_PATTERNS.MONTH_NOTE.test(candidate) &&
 	parseInt(candidate, 10) >= 1 &&
 	parseInt(candidate, 10) <= 12;
 
-const isProtectedLink = (body: string): boolean => {
-	return /^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/.test(body);
-};
+const isProtectedLink = (body: string): boolean => 
+	REGEX_PATTERNS.PROTECTED_LINK.test(body);
+
+const isCjkText = (text: string): boolean => REGEX_PATTERNS.CJK.test(text);
+
+const isCjkCandidate = (candidate: string): boolean => 
+	REGEX_PATTERNS.CJK_CANDIDATE.test(candidate);
+
+const isKoreanText = (text: string): boolean => REGEX_PATTERNS.KOREAN.test(text);
+
+const isJapaneseText = (text: string): boolean => 
+	REGEX_PATTERNS.JAPANESE.test(text) && !REGEX_PATTERNS.KOREAN.test(text);
 
 const buildFallbackIndex = (
 	candidateMap: Map<string, CandidateData>,
@@ -110,36 +124,89 @@ const extractLinkParts = (
 	return { linkPath, alias, hasAlias };
 };
 
-function isMarkdownTableLine(line: string): boolean {
-    const trimmedLine = line.trim();
-    // A line is considered a table line if it's not empty and starts and ends with '|'
-    // This covers data rows, header rows, and separator lines like |---|---|
-    // It also handles lines that might only contain the separator like |---|
-    if (!trimmedLine || !trimmedLine.includes('|')) {
-        return false;
-    }
-    // Check if it's a separator line: |---|---| or |:---|:---|
-    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|') && /^[|:\s-]+$/.test(trimmedLine)) {
-        return true;
-    }
-    // Check if it's a data/header row: | Col A | Col B |
-    return trimmedLine.startsWith('|') && trimmedLine.endsWith('|');
-}
+// Link Content Creation
+const createLinkContent = (
+	candidateData: CandidateData,
+	originalMatchedText: string,
+	settings: ReplaceLinksSettings = {},
+): string => {
+	const { linkPath, alias, hasAlias } = extractLinkParts(candidateData.canonical);
+	const normalizedPath = normalizeCanonicalPath(linkPath, settings.baseDir);
 
-function isIndexInsideMarkdownTable(text: string, index: number): boolean {
-    const lines = text.split('\n');
-    let charCount = 0;
-    for (const line of lines) {
-        const lineStart = charCount;
-        const lineEnd = charCount + line.length;
+	if (hasAlias) {
+		return `${normalizedPath}|${alias}`;
+	}
 
-        if (index >= lineStart && index <= lineEnd) {
-            return isMarkdownTableLine(line);
-        }
-        charCount += line.length + 1; // +1 for the newline character
-    }
-    return false;
-}
+	if (normalizedPath.includes("/")) {
+		const displayText = settings.ignoreCase
+			? originalMatchedText
+			: normalizedPath.split("/").pop() || originalMatchedText;
+		return `${normalizedPath}|${displayText}`;
+	}
+
+	// No explicit alias, no '/' in normalizedPath
+	if (settings.ignoreCase) {
+		if (originalMatchedText.toLowerCase() === normalizedPath.toLowerCase()) {
+			return originalMatchedText;
+		} else {
+			return `${normalizedPath}|${originalMatchedText}`;
+		}
+	} else {
+		if (originalMatchedText !== normalizedPath) {
+			return `${normalizedPath}|${originalMatchedText}`;
+		} else {
+			return normalizedPath;
+		}
+	}
+};
+
+const formatFinalLink = (
+	linkContent: string,
+	isInTable: boolean,
+): string => {
+	if (isInTable && linkContent.includes("|")) {
+		linkContent = linkContent.replace(/\|/g, "\\|");
+	}
+	return `[[${linkContent}]]`;
+};
+
+// Candidate Validation
+const shouldSkipCandidate = (candidate: string, settings: ReplaceLinksSettings): boolean => {
+	if (settings.ignoreDateFormats && REGEX_PATTERNS.DATE_FORMAT.test(candidate)) {
+		return true;
+	}
+	return isMonthNote(candidate);
+};
+
+// Markdown Table Detection
+const isMarkdownTableLine = (line: string): boolean => {
+	const trimmedLine = line.trim();
+	if (!trimmedLine || !trimmedLine.includes('|')) {
+		return false;
+	}
+	
+	if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|') && 
+		REGEX_PATTERNS.TABLE_SEPARATOR.test(trimmedLine)) {
+		return true;
+	}
+	
+	return trimmedLine.startsWith('|') && trimmedLine.endsWith('|');
+};
+
+const isIndexInsideMarkdownTable = (text: string, index: number): boolean => {
+	const lines = text.split('\n');
+	let charCount = 0;
+	for (const line of lines) {
+		const lineStart = charCount;
+		const lineEnd = charCount + line.length;
+
+		if (index >= lineStart && index <= lineEnd) {
+			return isMarkdownTableLine(line);
+		}
+		charCount += line.length + 1;
+	}
+	return false;
+};
 
 // Processing functions for different text types
 const processCjkText = (
@@ -163,6 +230,108 @@ const processCjkText = (
 	);
 };
 
+// Fallback Search Processing
+const processFallbackSearch = (
+	text: string,
+	startIndex: number,
+	fallbackIndex: Map<string, Array<[string, CandidateData]>>,
+	filePath: string,
+	currentNamespace: string,
+	settings: ReplaceLinksSettings
+): { result: string; newIndex: number } | null => {
+	let longestMatch: {
+		word: string;
+		length: number;
+		key: string;
+		candidateList: Array<[string, CandidateData]>;
+	} | null = null;
+
+	// Iterate through potential multi-word sequences starting from startIndex
+	for (let k = startIndex; k < text.length; k++) {
+		const potentialMatch = text.substring(startIndex, k + 1);
+		const searchWord = settings.ignoreCase
+			? potentialMatch.toLowerCase()
+			: potentialMatch;
+
+		// Basic boundary check: next char should be a boundary if not end of text
+		const nextChar = text[k + 1];
+		if (!isWordBoundary(nextChar)) {
+			// If the potential match itself isn't in the index, continue extending
+			if (!fallbackIndex.has(searchWord)) {
+				continue;
+			}
+			// If it is in the index, but the next char isn't a boundary, it's not a valid match end here.
+			// But a shorter version might have been valid, so we don't break yet.
+		}
+
+		const candidateList = fallbackIndex.get(searchWord);
+		if (candidateList) {
+			// Check word boundary at the beginning
+			const prevChar = text[startIndex - 1];
+			if (!isWordBoundary(prevChar)) {
+				// If the start isn't a word boundary, this isn't a valid match.
+				// However, a shorter match starting later might be, so just continue the outer loop.
+				// We break the inner loop (k) because extending this further won't help.
+				break;
+			}
+
+			// Skip date formats and month notes
+			if (shouldSkipCandidate(potentialMatch, settings)) {
+				continue; // Try longer match
+			}
+
+			// Found a potential candidate in the fallback index
+			longestMatch = {
+				word: potentialMatch,
+				length: potentialMatch.length,
+				key: searchWord,
+				candidateList: candidateList,
+			};
+			// Continue checking for even longer matches
+		} else if (longestMatch && k > startIndex + longestMatch.length - 1) {
+			// If we had a match but the current longer string doesn't match,
+			// stop extending for this starting position.
+			break;
+		}
+	}
+
+	// Process the longest valid match found
+	if (!longestMatch) return null;
+
+	// Filter candidates based on namespace restrictions
+	const filteredCandidates = longestMatch.candidateList.filter(
+		([, data]) => !(data.restrictNamespace && data.namespace !== currentNamespace)
+	);
+
+	let bestCandidateData: CandidateData | null = null;
+
+	if (filteredCandidates.length === 1) {
+		bestCandidateData = filteredCandidates[0][1];
+	} else if (filteredCandidates.length > 1) {
+		const bestCandidateResult = findBestCandidateInSameNamespace(
+			filteredCandidates,
+			filePath,
+			settings,
+		);
+		if (bestCandidateResult) {
+			bestCandidateData = bestCandidateResult[1];
+		}
+	}
+
+	if (!bestCandidateData) return null;
+
+	// Create the link
+	const linkContent = createLinkContent(bestCandidateData, longestMatch.word, settings);
+	const isInTable = isIndexInsideMarkdownTable(text, startIndex);
+	const finalLink = formatFinalLink(linkContent, isInTable);
+
+	return {
+		result: finalLink,
+		newIndex: startIndex + longestMatch.length
+	};
+};
+
+// Korean Language Processing
 const handleKoreanSpecialCases = (
 	text: string,
 	i: number,
@@ -173,37 +342,19 @@ const handleKoreanSpecialCases = (
 	const remaining = text.slice(i + candidate.length);
 
 	// Special handling when followed by "이다"
-	const suffixMatch = remaining.match(/^(이다\.?)/);
+	const suffixMatch = remaining.match(REGEX_PATTERNS.KOREAN_SUFFIX);
 	if (suffixMatch) {
-		const { linkPath, alias, hasAlias } = extractLinkParts(
-			candidateData.canonical,
-		);
-		const normalizedPath = normalizeCanonicalPath(
-			linkPath,
-			settings.baseDir,
-		);
-
-		let result = "";
-		// Format the link with the suffix
-		if (hasAlias) {
-			result = `[[${normalizedPath}|${alias}]]` + suffixMatch[0];
-		} else if (normalizedPath.includes("/")) {
-			const segments = normalizedPath.split("/");
-			const lastPart = segments[segments.length - 1];
-			result = `[[${normalizedPath}|${lastPart}]]` + suffixMatch[0];
-		} else {
-			result = `[[${normalizedPath}]]` + suffixMatch[0];
-		}
-
+		const linkContent = createLinkContent(candidateData, candidate, settings);
+		const finalLink = formatFinalLink(linkContent, false);
+		
 		return {
-			result,
+			result: finalLink + suffixMatch[0],
 			newIndex: i + candidate.length + suffixMatch[0].length,
 		};
 	}
 
 	// Special handling when followed by particles like "는" or "은"
-	if (remaining.match(/^(는|은)/)) {
-		// Don't convert to links when followed by Korean particles
+	if (remaining.match(REGEX_PATTERNS.KOREAN_PARTICLES)) {
 		return {
 			result: text[i],
 			newIndex: i + 1,
@@ -311,7 +462,7 @@ const processStandardText = (
 
 	outer: while (i < text.length) {
 		// Check for URLs first
-		const urlMatch = text.slice(i).match(URL_REGEX);
+		const urlMatch = text.slice(i).match(REGEX_PATTERNS.URL);
 		if (urlMatch) {
 			result += urlMatch[0];
 			i += urlMatch[0].length;
@@ -331,9 +482,9 @@ const processStandardText = (
 			node = child;
 			if (node.candidate) {
 				const candidate = text.substring(i, j + 1);
-				const isCjkCandidate = CJK_CANDIDATE_REGEX.test(candidate);
+				const candidateIsCjk = isCjkCandidate(candidate);
 
-				if (isCjkCandidate || isWordBoundary(text[j + 1])) {
+				if (candidateIsCjk || isWordBoundary(text[j + 1])) {
 					lastCandidate = {
 						candidate: node.candidate,
 						length: j - i + 1,
@@ -349,7 +500,7 @@ const processStandardText = (
 			// Skip if it's a date format
 			if (
 				settings.ignoreDateFormats &&
-				DATE_FORMAT_REGEX.test(candidate)
+				REGEX_PATTERNS.DATE_FORMAT.test(candidate)
 			) {
 				result += candidate;
 				i += lastCandidate.length;
@@ -378,7 +529,7 @@ const processStandardText = (
 
 			if (candidateData) {
 				// Handle Korean special cases
-				const isKorean = KOREAN_REGEX.test(candidate);
+				const isKorean = isKoreanText(candidate);
 				if (isKorean) {
 					const koreanResult = handleKoreanSpecialCases(
 						text,
@@ -395,8 +546,8 @@ const processStandardText = (
 				}
 
 				// Word boundary check for non-CJK text
-				const isCjkCandidate = CJK_CANDIDATE_REGEX.test(candidate);
-				if (!isCjkCandidate) {
+				const candidateIsCjk = isCjkCandidate(candidate);
+				if (!candidateIsCjk) {
 					const left = i > 0 ? text[i - 1] : undefined;
 					const right =
 						i + candidate.length < text.length
@@ -411,9 +562,7 @@ const processStandardText = (
 				}
 
 				// Check for Japanese particles
-				const isJapaneseCandidate =
-					JAPANESE_REGEX.test(candidate) &&
-					!KOREAN_REGEX.test(candidate);
+				const isJapaneseCandidate = isJapaneseText(candidate);
 				if (isJapaneseCandidate) {
 					const right =
 						i + candidate.length < text.length
@@ -424,11 +573,7 @@ const processStandardText = (
 							: "";
 
 					// Check for Japanese particles (no action needed, just a check point)
-					if (
-						right.match(
-							/^(が|は|を|に|で|と|から|まで|より|へ|の|や|で|も)/,
-						)
-					) {
+					if (right.match(REGEX_PATTERNS.JAPANESE_PARTICLES)) {
 						// Skip word boundary check for Japanese particles
 					}
 				}
@@ -444,209 +589,26 @@ const processStandardText = (
 					continue outer;
 				}
 
-				// Process the link
-				const { linkPath, alias, hasAlias } = extractLinkParts(
-					candidateData.canonical,
-				);
-				const normalizedPath = normalizeCanonicalPath(
-					linkPath,
-					settings.baseDir,
-				);
-
-				// Determine link content (path and alias if any)
-				let linkContent: string;
-				if (hasAlias) {
-					linkContent = `${normalizedPath}|${alias}`;
-				} else if (normalizedPath.includes("/")) {
-					const displayText = settings.ignoreCase
-						? originalMatchedText
-						: normalizedPath.split("/").pop() ||
-							originalMatchedText;
-					linkContent = `${normalizedPath}|${displayText}`;
-				} else { // No explicit alias, no '/' in normalizedPath
-                    if (settings.ignoreCase) {
-                        // When ignoring case:
-                        if (originalMatchedText.toLowerCase() === normalizedPath.toLowerCase()) {
-                            // If they are the same word, just different casing (or same casing)
-                            // The link path should be the originalMatchedText itself.
-                            linkContent = originalMatchedText;
-                        } else {
-                            // They are different words (e.g., original "Apple", normalized "Orange")
-                            // Use normalizedPath as link, originalMatchedText as alias.
-                            linkContent = `${normalizedPath}|${originalMatchedText}`;
-                        }
-                    } else {
-                        // When not ignoring case (case-sensitive matching):
-                        if (originalMatchedText !== normalizedPath) {
-                            // If original text is different from the normalized path,
-                            // use normalizedPath as link, originalMatchedText as alias.
-                            linkContent = `${normalizedPath}|${originalMatchedText}`;
-                        } else {
-                            // They are identical.
-                            linkContent = normalizedPath;
-                        }
-                    }
-				}
-
-				// Escape pipe if inside a table and an alias exists (i.e., linkContent contains '|')
-				if (isIndexInsideMarkdownTable(text, i) && linkContent.includes("|")) {
-					linkContent = linkContent.replace(/\|/g, "\\|"); // Replace all pipes
-				}
-				result += `[[${linkContent}]]`;
+				// Create the link
+				const linkContent = createLinkContent(candidateData, originalMatchedText, settings);
+				const isInTable = isIndexInsideMarkdownTable(text, i);
+				const finalLink = formatFinalLink(linkContent, isInTable);
+				result += finalLink;
 
 				i += candidate.length;
 				continue outer;
 			}
 		}
 
-		// Fallback: if no candidate was found via the trie, try multi-word fallback lookup.
+		// Fallback: multi-word lookup using fallback index
 		if (settings.namespaceResolution) {
-			let longestMatch: {
-				word: string;
-				length: number;
-				key: string;
-				candidateList: Array<[string, CandidateData]>;
-			} | null = null;
-
-			// Iterate through potential multi-word sequences starting from i
-			for (let k = i; k < text.length; k++) {
-				const potentialMatch = text.substring(i, k + 1);
-				const searchWord = settings.ignoreCase
-					? potentialMatch.toLowerCase()
-					: potentialMatch;
-
-				// Basic boundary check: next char should be a boundary if not end of text
-				const nextChar = text[k + 1];
-				if (!isWordBoundary(nextChar)) {
-					// If the potential match itself isn't in the index, continue extending
-					if (!fallbackIndex.has(searchWord)) {
-						continue;
-					}
-					// If it is in the index, but the next char isn't a boundary, it's not a valid match end here.
-					// But a shorter version might have been valid, so we don't break yet.
-				}
-
-				const candidateList = fallbackIndex.get(searchWord);
-				if (candidateList) {
-					// Check word boundary at the beginning
-					const prevChar = text[i - 1];
-					if (!isWordBoundary(prevChar)) {
-						// If the start isn't a word boundary, this isn't a valid match.
-						// However, a shorter match starting later might be, so just continue the outer loop.
-						// We break the inner loop (k) because extending this further won't help.
-						break;
-					}
-
-					// Skip date formats
-					if (
-						settings.ignoreDateFormats &&
-						DATE_FORMAT_REGEX.test(potentialMatch)
-					) {
-						continue; // Try longer match
-					}
-					// Skip month notes
-					if (isMonthNote(potentialMatch)) {
-						continue; // Try longer match
-					}
-
-					// Found a potential candidate in the fallback index
-					longestMatch = {
-						word: potentialMatch,
-						length: potentialMatch.length,
-						key: searchWord,
-						candidateList: candidateList,
-					};
-					// Continue checking for even longer matches
-				} else if (longestMatch && k > i + longestMatch.length - 1) {
-					// If we had a match but the current longer string doesn't match,
-					// stop extending for this starting position 'i'.
-					break;
-				}
-			}
-
-			// Process the longest valid match found
-			if (longestMatch) {
-				// Filter candidates based on namespace restrictions
-				const filteredCandidates = longestMatch.candidateList.filter(
-					([, data]) =>
-						!(
-							data.restrictNamespace &&
-							data.namespace !== currentNamespace
-						),
-				);
-
-				let bestCandidateData: CandidateData | null = null;
-
-				if (filteredCandidates.length === 1) {
-					bestCandidateData = filteredCandidates[0][1];
-				} else if (filteredCandidates.length > 1) {
-					const bestCandidateResult =
-						findBestCandidateInSameNamespace(
-							filteredCandidates,
-							filePath,
-							settings,
-						);
-					if (bestCandidateResult) {
-						bestCandidateData = bestCandidateResult[1];
-					}
-				}
-
-				if (bestCandidateData) {
-					// Found a valid candidate through fallback
-
-					const { linkPath, alias, hasAlias } = extractLinkParts(
-						bestCandidateData.canonical,
-					);
-					const normalizedPath = normalizeCanonicalPath(
-						linkPath,
-						settings.baseDir,
-					);
-
-					// Determine link content (path and alias if any)
-					const originalMatchedWord = longestMatch.word;
-					let linkContent: string;
-					if (hasAlias) {
-						linkContent = `${normalizedPath}|${alias}`;
-					} else if (normalizedPath.includes("/")) {
-						const displayText = settings.ignoreCase
-							? originalMatchedWord
-							: normalizedPath.split("/").pop() ||
-								originalMatchedWord;
-						linkContent = `${normalizedPath}|${displayText}`;
-					} else { // No explicit alias, no '/' in normalizedPath
-                        if (settings.ignoreCase) {
-                            // When ignoring case:
-                            if (originalMatchedWord.toLowerCase() === normalizedPath.toLowerCase()) {
-                                // If they are the same word, just different casing (or same casing)
-                                // The link path should be the originalMatchedWord itself.
-                                linkContent = originalMatchedWord;
-                            } else {
-                                // They are different words (e.g., original "Apple", normalized "Orange")
-                                // Use normalizedPath as link, originalMatchedWord as alias.
-                                linkContent = `${normalizedPath}|${originalMatchedWord}`;
-                            }
-                        } else {
-                            // When not ignoring case (case-sensitive matching):
-                            if (originalMatchedWord !== normalizedPath) {
-                                // If original text is different from the normalized path,
-                                // use normalizedPath as link, originalMatchedWord as alias.
-                                linkContent = `${normalizedPath}|${originalMatchedWord}`;
-                            } else {
-                                // They are identical.
-                                linkContent = normalizedPath;
-                            }
-                        }
-					}
-
-					// Escape pipe if inside a table and an alias exists (i.e., linkContent contains '|')
-					if (isIndexInsideMarkdownTable(text, i) && linkContent.includes("|")) {
-						linkContent = linkContent.replace(/\|/g, "\\|"); // Replace all pipes
-					}
-					result += `[[${linkContent}]]`;
-
-					i += longestMatch.length; // Advance index by the length of the matched word
-					continue outer; // Continue processing from the new index
-				}
+			const fallbackResult = processFallbackSearch(
+				text, i, fallbackIndex, filePath, currentNamespace, settings
+			);
+			if (fallbackResult) {
+				result += fallbackResult.result;
+				i = fallbackResult.newIndex;
+				continue outer;
 			}
 		}
 
@@ -691,9 +653,9 @@ export const replaceLinks = ({
 	// Process segments of text
 	const processTextSegment = (text: string): string => {
 		// Check if the text contains CJK characters
-		const isCjkText = CJK_REGEX.test(text);
+		const hasCjkText = isCjkText(text);
 
-		if (isCjkText) {
+		if (hasCjkText) {
 			return processCjkText(
 				text,
 				trie,
@@ -719,7 +681,7 @@ export const replaceLinks = ({
 	let resultBody = "";
 	let lastIndex = 0;
 
-	for (const m of body.matchAll(PROTECTED_REGEX)) {
+	for (const m of body.matchAll(REGEX_PATTERNS.PROTECTED)) {
 		const mIndex = m.index ?? 0;
 		const segment = body.slice(lastIndex, mIndex);
 		resultBody += processTextSegment(segment);
