@@ -65,10 +65,31 @@ const isKoreanText = (text: string): boolean => REGEX_PATTERNS.KOREAN.test(text)
 const isJapaneseText = (text: string): boolean => 
 	REGEX_PATTERNS.JAPANESE.test(text) && !REGEX_PATTERNS.KOREAN.test(text);
 
+// Cache for fallback index to avoid rebuilding
+const fallbackIndexCache = new WeakMap<
+	Map<string, CandidateData>,
+	Map<string, Map<string, Array<[string, CandidateData]>>>
+>();
+
 const buildFallbackIndex = (
 	candidateMap: Map<string, CandidateData>,
 	ignoreCase?: boolean,
 ): Map<string, Array<[string, CandidateData]>> => {
+	// Get or create cache for this candidateMap
+	let cacheForMap = fallbackIndexCache.get(candidateMap);
+	if (!cacheForMap) {
+		cacheForMap = new Map();
+		fallbackIndexCache.set(candidateMap, cacheForMap);
+	}
+
+	// Check if we have cached result for this ignoreCase setting
+	const cacheKey = ignoreCase ? "ignoreCase" : "normal";
+	const cached = cacheForMap.get(cacheKey);
+	if (cached) {
+		return cached;
+	}
+
+	// Build new fallback index
 	const fallbackIndex = new Map<string, Array<[string, CandidateData]>>();
 
 	for (const [key, data] of candidateMap.entries()) {
@@ -86,6 +107,8 @@ const buildFallbackIndex = (
 		arr.push([key, data]);
 	}
 
+	// Cache the result
+	cacheForMap.set(cacheKey, fallbackIndex);
 	return fallbackIndex;
 };
 
@@ -194,18 +217,21 @@ const isMarkdownTableLine = (line: string): boolean => {
 };
 
 const isIndexInsideMarkdownTable = (text: string, index: number): boolean => {
-	const lines = text.split('\n');
-	let charCount = 0;
-	for (const line of lines) {
-		const lineStart = charCount;
-		const lineEnd = charCount + line.length;
-
-		if (index >= lineStart && index <= lineEnd) {
-			return isMarkdownTableLine(line);
-		}
-		charCount += line.length + 1;
+	// Find the start of the line containing the index
+	let lineStart = text.lastIndexOf('\n', index - 1) + 1;
+	if (lineStart === 0 && text[0] !== '\n') {
+		lineStart = 0;
 	}
-	return false;
+
+	// Find the end of the line containing the index
+	let lineEnd = text.indexOf('\n', index);
+	if (lineEnd === -1) {
+		lineEnd = text.length;
+	}
+
+	// Extract the line and check if it's a table line
+	const line = text.slice(lineStart, lineEnd);
+	return isMarkdownTableLine(line);
 };
 
 // Processing functions for different text types
@@ -239,6 +265,12 @@ const processFallbackSearch = (
 	currentNamespace: string,
 	settings: ReplaceLinksSettings
 ): { result: string; newIndex: number } | null => {
+	// Early boundary check - if start isn't a word boundary, skip
+	const prevChar = text[startIndex - 1];
+	if (!isWordBoundary(prevChar)) {
+		return null;
+	}
+
 	let longestMatch: {
 		word: string;
 		length: number;
@@ -247,52 +279,44 @@ const processFallbackSearch = (
 	} | null = null;
 
 	// Iterate through potential multi-word sequences starting from startIndex
-	for (let k = startIndex; k < text.length; k++) {
-		const potentialMatch = text.substring(startIndex, k + 1);
+	const maxSearchLength = Math.min(text.length - startIndex, 100); // Limit search length for performance
+	for (let length = 1; length <= maxSearchLength; length++) {
+		const endIndex = startIndex + length;
+		const potentialMatch = text.substring(startIndex, endIndex);
 		const searchWord = settings.ignoreCase
 			? potentialMatch.toLowerCase()
 			: potentialMatch;
 
-		// Basic boundary check: next char should be a boundary if not end of text
-		const nextChar = text[k + 1];
-		if (!isWordBoundary(nextChar)) {
-			// If the potential match itself isn't in the index, continue extending
-			if (!fallbackIndex.has(searchWord)) {
-				continue;
-			}
-			// If it is in the index, but the next char isn't a boundary, it's not a valid match end here.
-			// But a shorter version might have been valid, so we don't break yet.
-		}
-
+		// Check if this potential match exists in fallback index
 		const candidateList = fallbackIndex.get(searchWord);
-		if (candidateList) {
-			// Check word boundary at the beginning
-			const prevChar = text[startIndex - 1];
-			if (!isWordBoundary(prevChar)) {
-				// If the start isn't a word boundary, this isn't a valid match.
-				// However, a shorter match starting later might be, so just continue the outer loop.
-				// We break the inner loop (k) because extending this further won't help.
+		if (!candidateList) {
+			// If no match found and we already have a longest match, 
+			// unlikely to find longer matches, so break early
+			if (longestMatch) {
 				break;
 			}
-
-			// Skip date formats and month notes
-			if (shouldSkipCandidate(potentialMatch, settings)) {
-				continue; // Try longer match
-			}
-
-			// Found a potential candidate in the fallback index
-			longestMatch = {
-				word: potentialMatch,
-				length: potentialMatch.length,
-				key: searchWord,
-				candidateList: candidateList,
-			};
-			// Continue checking for even longer matches
-		} else if (longestMatch && k > startIndex + longestMatch.length - 1) {
-			// If we had a match but the current longer string doesn't match,
-			// stop extending for this starting position.
-			break;
+			continue;
 		}
+
+		// Basic boundary check: next char should be a boundary if not end of text
+		const nextChar = text[endIndex];
+		if (!isWordBoundary(nextChar)) {
+			continue; // This isn't a valid match end
+		}
+
+		// Skip date formats and month notes
+		if (shouldSkipCandidate(potentialMatch, settings)) {
+			continue; // Try longer match
+		}
+
+		// Found a valid candidate
+		longestMatch = {
+			word: potentialMatch,
+			length: length,
+			key: searchWord,
+			candidateList: candidateList,
+		};
+		// Continue checking for even longer matches
 	}
 
 	// Process the longest valid match found
