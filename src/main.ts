@@ -401,20 +401,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			this.originalSaveCallback = saveCallback;
 		}
 
-		const formatOnSave = async () => {
-			if (this.settings.formatOnSave) {
-				try {
-					await this.formatOnSave();
-				} catch (error) {
-					console.error(error);
-				}
-			}
-		};
 		saveCommandDefinition.checkCallback = async (checking: boolean) => {
 			if (checking) {
 				return saveCallback?.(checking);
 			} else {
-				await saveCallback?.(checking);
 				const activeFile = this.app.workspace.getActiveFile();
 				if (!activeFile) {
 					return;
@@ -428,7 +418,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					return;
 				}
 				const currentCuror = cm.getCursor();
-				await formatOnSave();
+				await this.formatOnSave();
 
 				await sleep(100);
 
@@ -436,6 +426,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					line: currentCuror.line,
 					ch: currentCuror.ch,
 				});
+
+				await saveCallback?.(checking);
 			}
 		};
 	}
