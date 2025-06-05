@@ -82,6 +82,9 @@ export const buildCandidateTrie = (
 		// Effective namespace computed relative to baseDir.
 		namespace: string;
 	};
+	const basePrefix = baseDir ? `${baseDir}/` : null;
+	const basePrefixLength = basePrefix?.length || 0;
+	
 	const candidates: Candidate[] = allFiles.map((f) => {
 		const candidate: Candidate = {
 			full: f.path,
@@ -89,11 +92,8 @@ export const buildCandidateTrie = (
 			restrictNamespace: f.restrictNamespace,
 			namespace: getEffectiveNamespace(f.path, baseDir),
 		};
-		if (baseDir) {
-			const prefix = `${baseDir}/`;
-			if (f.path.startsWith(prefix)) {
-				candidate.short = f.path.slice(prefix.length);
-			}
+		if (basePrefix && f.path.startsWith(basePrefix)) {
+			candidate.short = f.path.slice(basePrefixLength);
 		}
 		return candidate;
 	});
@@ -152,11 +152,8 @@ export const buildCandidateTrie = (
 		if (file.aliases) {
 			// Determine shorthand candidate for the file if available.
 			let short: string | null = null;
-			if (baseDir) {
-				const prefix = `${baseDir}/`;
-				if (file.path.startsWith(prefix)) {
-					short = file.path.slice(prefix.length);
-				}
+			if (basePrefix && file.path.startsWith(basePrefix)) {
+				short = file.path.slice(basePrefixLength);
 			}
 			for (const alias of file.aliases) {
 				// If alias equals the shorthand, use alias as canonical; otherwise use "full|alias".
@@ -178,8 +175,8 @@ export const buildCandidateTrie = (
 	// When ignoreCase is enabled, we need to add both the original and lowercase versions
 	const trieWords = ignoreCase
 		? words.flatMap(word => {
-			const segments = word.split('/');
-			const lastSegment = segments[segments.length - 1];
+			const lastSlashIndex = word.lastIndexOf('/');
+			const lastSegment = lastSlashIndex === -1 ? word : word.slice(lastSlashIndex + 1);
 			return [word, lastSegment.toLowerCase()];
 		})
 		: words;

@@ -136,15 +136,16 @@ const normalizeCanonicalPath = (linkPath: string, baseDir?: string): string => {
 const extractLinkParts = (
 	canonicalPath: string,
 ): { linkPath: string; alias: string; hasAlias: boolean } => {
-	const hasAlias = canonicalPath.includes("|");
-	let linkPath = canonicalPath;
-	let alias = "";
-
+	const pipeIndex = canonicalPath.indexOf("|");
+	const hasAlias = pipeIndex !== -1;
+	
 	if (hasAlias) {
-		[linkPath, alias] = canonicalPath.split("|");
+		const linkPath = canonicalPath.slice(0, pipeIndex);
+		const alias = canonicalPath.slice(pipeIndex + 1);
+		return { linkPath, alias, hasAlias };
 	}
 
-	return { linkPath, alias, hasAlias };
+	return { linkPath: canonicalPath, alias: "", hasAlias };
 };
 
 // Link Content Creation
@@ -281,11 +282,15 @@ const processFallbackSearch = (
 	// Iterate through potential multi-word sequences starting from startIndex
 	const maxSearchLength = Math.min(text.length - startIndex, 100); // Limit search length for performance
 
+	let potentialMatch = '';
+	let searchWord = '';
+	
 	for (let length = 1; length <= maxSearchLength; length++) {
 		const endIndex = startIndex + length;
-		const potentialMatch = text.substring(startIndex, endIndex);
-		const searchWord = settings.ignoreCase
-			? potentialMatch.toLowerCase()
+		const currentChar = text[startIndex + length - 1];
+		potentialMatch += currentChar;
+		searchWord = settings.ignoreCase 
+			? searchWord + currentChar.toLowerCase()
 			: potentialMatch;
 
 		// Check if this potential match exists in fallback index
@@ -495,16 +500,19 @@ const processStandardText = (
 		let node = trie;
 		let lastCandidate: { candidate: string; length: number } | null = null;
 		let j = i;
+		let candidateBuilder = '';
 
 		while (j < text.length) {
-			const ch = settings.ignoreCase ? text[j].toLowerCase() : text[j];
-			const child = node.children.get(ch);
+			const ch = text[j];
+			const chLower = settings.ignoreCase ? ch.toLowerCase() : ch;
+			candidateBuilder += ch;
+			
+			const child = node.children.get(chLower);
 			if (!child) break;
 
 			node = child;
 			if (node.candidate) {
-				const candidate = text.substring(i, j + 1);
-				const candidateIsCjk = isCjkCandidate(candidate);
+				const candidateIsCjk = isCjkCandidate(candidateBuilder);
 
 				if (candidateIsCjk || isWordBoundary(text[j + 1])) {
 					lastCandidate = {
@@ -517,7 +525,7 @@ const processStandardText = (
 		}
 
 		if (lastCandidate) {
-			const candidate = text.substring(i, i + lastCandidate.length);
+			const candidate = candidateBuilder.slice(0, lastCandidate.length);
 
 			// Skip if it's a date format
 			if (
