@@ -280,6 +280,7 @@ const processFallbackSearch = (
 
 	// Iterate through potential multi-word sequences starting from startIndex
 	const maxSearchLength = Math.min(text.length - startIndex, 100); // Limit search length for performance
+
 	for (let length = 1; length <= maxSearchLength; length++) {
 		const endIndex = startIndex + length;
 		const potentialMatch = text.substring(startIndex, endIndex);
@@ -290,11 +291,6 @@ const processFallbackSearch = (
 		// Check if this potential match exists in fallback index
 		const candidateList = fallbackIndex.get(searchWord);
 		if (!candidateList) {
-			// If no match found and we already have a longest match, 
-			// unlikely to find longer matches, so break early
-			if (longestMatch) {
-				break;
-			}
 			continue;
 		}
 
@@ -485,12 +481,14 @@ const processStandardText = (
 	let i = 0;
 
 	outer: while (i < text.length) {
-		// Check for URLs first
-		const urlMatch = text.slice(i).match(REGEX_PATTERNS.URL);
-		if (urlMatch) {
-			result += urlMatch[0];
-			i += urlMatch[0].length;
-			continue;
+		// Check for URLs first - only if current character could start a URL
+		if (text[i] === 'h' && text.slice(i, i + 4) === 'http') {
+			const urlMatch = text.slice(i).match(REGEX_PATTERNS.URL);
+			if (urlMatch) {
+				result += urlMatch[0];
+				i += urlMatch[0].length;
+				continue;
+			}
 		}
 
 		// Try to find a candidate using the trie
@@ -704,14 +702,23 @@ export const replaceLinks = ({
 	// Process the entire body while preserving protected segments
 	let resultBody = "";
 	let lastIndex = 0;
+	let match: RegExpExecArray | null;
 
-	for (const m of body.matchAll(REGEX_PATTERNS.PROTECTED)) {
-		const mIndex = m.index ?? 0;
+	// Reset the regex to start from the beginning
+	REGEX_PATTERNS.PROTECTED.lastIndex = 0;
+
+	while ((match = REGEX_PATTERNS.PROTECTED.exec(body)) !== null) {
+		const mIndex = match.index;
 		const segment = body.slice(lastIndex, mIndex);
 		resultBody += processTextSegment(segment);
 		// Append the protected segment unchanged
-		resultBody += m[0];
-		lastIndex = mIndex + m[0].length;
+		resultBody += match[0];
+		lastIndex = mIndex + match[0].length;
+
+		// Prevent infinite loop on zero-length matches
+		if (match[0].length === 0) {
+			REGEX_PATTERNS.PROTECTED.lastIndex++;
+		}
 	}
 
 	// Process the remaining text

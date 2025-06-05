@@ -174,9 +174,7 @@ export const buildCandidateTrie = (
 	}
 
 	// Build a trie from all candidate strings
-	const words = Array.from(candidateMap.keys()).sort(
-		(a, b) => b.length - a.length,
-	);
+	const words = Array.from(candidateMap.keys());
 	// When ignoreCase is enabled, we need to add both the original and lowercase versions
 	const trieWords = ignoreCase
 		? words.flatMap(word => {
