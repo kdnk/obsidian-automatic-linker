@@ -419,15 +419,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				}
 				const currentCuror = cm.getCursor();
 				await this.formatOnSave();
-
-				await sleep(100);
+				await saveCallback?.(checking);
 
 				cm.setCursor({
 					line: currentCuror.line,
 					ch: currentCuror.ch,
 				});
-
-				await saveCallback?.(checking);
 			}
 		};
 	}
