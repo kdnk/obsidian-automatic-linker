@@ -71,7 +71,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				const { contentStart } = getFrontMatterInfo(fileContent);
 				const body = fileContent.slice(contentStart);
 
-				const urls = listupAllUrls(body);
+				const urls = listupAllUrls(
+					body,
+					this.settings.replaceUrlWithTitleIgnoreDomains,
+				);
 				for (const url of urls) {
 					const response = await request(url);
 					const title = getTitleFromHtml(response);
