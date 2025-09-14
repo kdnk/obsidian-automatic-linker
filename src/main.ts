@@ -45,6 +45,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			return;
 		}
 
+		const metadata =
+			this.app.metadataCache.getFileCache(activeFile)?.frontmatter;
+		const disabled = metadata?.["automatic-linker-disabled"] === true;
+		if (disabled) {
+			return;
+		}
+
 		try {
 			if (this.settings.formatGitHubURLs) {
 				await this.app.vault.process(activeFile, (fileContent) => {
@@ -281,7 +288,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				const metadata =
 					this.app.metadataCache.getFileCache(file)?.frontmatter;
 				const restrictNamespace =
-					metadata?.["automatic-linker-restrict-namespace"] === true;
+					metadata?.["automatic-linker-restrict-namespace"] ===
+						true ||
+					metadata?.["automatic-linker-limited-namespace"] === true;
 				const aliases = (() => {
 					if (this.settings.considerAliases) {
 						const frontmatter =
