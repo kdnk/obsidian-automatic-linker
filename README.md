@@ -41,6 +41,9 @@ Automatic Linker Plugin automatically converts plain text file references into O
   When enabled, the plugin takes file aliases into account during link conversion, allowing you to reference a file by any of its aliases.
   _(Restart is required for changes to take effect.)_
 
+- **Prevent Linking:**
+  You can prevent specific files from being automatically linked from other files by adding `automatic-linker-prevent-linking: true` to the file's frontmatter. This is useful for private notes or files you don't want to appear in automatic links.
+
 - **Month Note Ignorance:**
   File references that consist solely of one or two digits (e.g. `1`, `01`, `12`) are commonly used to denote month notes. The plugin automatically ignores these as candidates unless they are explicitly namespaced (e.g. `namespace/01`), preventing unwanted link conversion.
 
