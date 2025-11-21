@@ -291,6 +291,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					metadata?.["automatic-linker-restrict-namespace"] ===
 						true ||
 					metadata?.["automatic-linker-limited-namespace"] === true;
+
+				// if this property exists, prevent this file from being linked from other files
+				const preventLinking =
+					metadata?.["automatic-linker-prevent-linking"] === true;
+
 				const aliases = (() => {
 					if (this.settings.considerAliases) {
 						const frontmatter =
@@ -307,6 +312,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					path,
 					aliases,
 					restrictNamespace,
+					preventLinking,
 				};
 			});
 			// Sort filenames in descending order (longer paths first)
