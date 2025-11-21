@@ -74,6 +74,9 @@ export const buildCandidateTrie = (
 	baseDir: string | undefined,
 	ignoreCase = false,
 ) => {
+	// Filter out files with preventLinking: true
+	const linkableFiles = allFiles.filter((f) => !f.preventLinking);
+
 	// Process candidate strings from file paths.
 	type Candidate = {
 		full: string;
@@ -84,8 +87,8 @@ export const buildCandidateTrie = (
 	};
 	const basePrefix = baseDir ? `${baseDir}/` : null;
 	const basePrefixLength = basePrefix?.length || 0;
-	
-	const candidates: Candidate[] = allFiles.map((f) => {
+
+	const candidates: Candidate[] = linkableFiles.map((f) => {
 		const candidate: Candidate = {
 			full: f.path,
 			short: null,
@@ -148,7 +151,7 @@ export const buildCandidateTrie = (
 	}
 
 	// Register alias candidates.
-	for (const file of allFiles) {
+	for (const file of linkableFiles) {
 		if (file.aliases) {
 			// Determine shorthand candidate for the file if available.
 			let short: string | null = null;
