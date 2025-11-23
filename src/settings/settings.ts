@@ -142,7 +142,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Exclude directories from automatic linking")
 			.setDesc(
-				"Directories to be excluded from automatic linking, one per line (e.g., 'Templates')",
+				"Directories to be excluded from automatic linking, one per line (e.g. 'Templates')",
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("")
@@ -185,7 +185,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("GitHub Enterprise URLs")
 			.setDesc(
-				"Add your GitHub Enterprise URLs, one per line (e.g., github.enterprise.com)",
+				"Add your GitHub Enterprise URLs, one per line (e.g. github.enterprise.com)",
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("github.enterprise.com\ngithub.company.com")
@@ -229,7 +229,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("JIRA URLs")
 			.setDesc(
-				"Add your JIRA URLs, one per line (e.g., jira.enterprise.com)",
+				"Add your JIRA URLs, one per line (e.g. jira.enterprise.com)",
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("jira.enterprise.com\njira.company.com")
@@ -270,7 +270,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 		new Setting(containerEl)
 			.setName("Igonre domains")
 			.setDesc(
-				"Ignore domains for replacing URLs with titles, one per line (e.g., x.com)",
+				"Ignore domains for replacing URLs with titles, one per line (e.g. x.com)",
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("")
