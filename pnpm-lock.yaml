@@ -14,9 +14,6 @@ importers:
       async-lock:
         specifier: ^1.4.1
         version: 1.4.1
-      just-throttle:
-        specifier: ^4.2.0
-        version: 4.2.0
     devDependencies:
       '@types/node':
         specifier: ^22.12.0
@@ -1752,9 +1749,6 @@ packages:
 
   jsonfile@4.0.0:
     resolution: {integrity: sha512-m6F1R3z8jjlf2imQHS2Qez5sjKWQzbuuhuJ/FKYFRZvPE3PuHcSMVZzfsLhGVOkfd20obL5SWEBew5ShlquNxg==}
-
-  just-throttle@4.2.0:
-    resolution: {integrity: sha512-/iAZv1953JcExpvsywaPKjSzfTiCLqeguUTE6+VmK15mOcwxBx7/FHrVvS4WEErMR03TRazH8kcBSHqMagYIYg==}
 
   katex@0.16.22:
     resolution: {integrity: sha512-XCHRdUw4lf3SKBaJe4EvgqIuWwkPSo9XoeO8GjQW94Bp7TWv9hNhzZjZ+OH9yf1UmLygb7DIT5GSFQiyt16zYg==}
@@ -4020,8 +4014,6 @@ snapshots:
   jsonfile@4.0.0:
     optionalDependencies:
       graceful-fs: 4.2.11
-
-  just-throttle@4.2.0: {}
 
   katex@0.16.22:
     dependencies:

@@ -1,4 +1,3 @@
-import throttle from "just-throttle";
 import {
 	App,
 	getFrontMatterInfo,
