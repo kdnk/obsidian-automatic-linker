@@ -32,7 +32,6 @@
 	},
 	"dependencies": {
 		"@types/async-lock": "^1.4.2",
-		"async-lock": "^1.4.1",
-		"just-throttle": "^4.2.0"
+		"async-lock": "^1.4.1"
 	}
 }
