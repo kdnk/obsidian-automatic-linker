@@ -138,6 +138,30 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Add excluding dirs that you wish to exclude from the automatic linking
+		new Setting(containerEl)
+			.setName("Exclude directories from automatic linking")
+			.setDesc(
+				"Directories to be excluded from automatic linking, one per line (e.g., 'Templates')",
+			)
+			.addTextArea((text) => {
+				text.setPlaceholder("")
+					.setValue(
+						this.plugin.settings.excludeDirsFromAutoLinking.join(
+							"\n",
+						),
+					)
+					.onChange(async (value) => {
+						// Split by newlines and filter out empty lines
+						const dirs = value
+							.split("\n")
+							.map((dir) => dir.trim())
+							.filter(Boolean);
+						this.plugin.settings.excludeDirsFromAutoLinking = dirs;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		new Setting(containerEl)
 			.setName("URL Formatting for GitHub")
 			.setHeading();
@@ -239,30 +263,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.replaceUrlWithTitle)
 					.onChange(async (value) => {
 						this.plugin.settings.replaceUrlWithTitle = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
-
-		// Add excluding dirs that you wish to exclude from the automatic linking
-		new Setting(containerEl)
-			.setName("Exclude directories from automatic linking")
-			.setDesc(
-				"Directories to be excluded from automatic linking, one per line (e.g., 'Templates')",
-			)
-			.addTextArea((text) => {
-				text.setPlaceholder("")
-					.setValue(
-						this.plugin.settings.excludeDirsFromAutoLinking.join(
-							"\n",
-						),
-					)
-					.onChange(async (value) => {
-						// Split by newlines and filter out empty lines
-						const dirs = value
-							.split("\n")
-							.map((dir) => dir.trim())
-							.filter(Boolean);
-						this.plugin.settings.excludeDirsFromAutoLinking = dirs;
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
