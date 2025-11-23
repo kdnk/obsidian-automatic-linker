@@ -23,8 +23,6 @@ import {
 } from "./settings/settings-info";
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
 	// Pre-built Trie for link candidate lookup
@@ -281,39 +279,53 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		const refreshFileDataAndTrie = () => {
 			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
-			const allFiles: PathAndAliases[] = allMarkdownFiles.map((file) => {
-				// Remove the .md extension
-				const path = file.path.replace(/\.md$/, "");
-				const metadata =
-					this.app.metadataCache.getFileCache(file)?.frontmatter;
-				const restrictNamespace =
-					metadata?.["automatic-linker-restrict-namespace"] ===
-						true ||
-					metadata?.["automatic-linker-limited-namespace"] === true;
+			const allFiles: PathAndAliases[] = allMarkdownFiles
+				.filter((file) => {
+					// Filter out files in excluded directories
+					const path = file.path.replace(/\.md$/, "");
+					return !this.settings.excludeDirsFromAutoLinking.some(
+						(excludeDir) => {
+							return (
+								path.startsWith(excludeDir + "/") ||
+								path === excludeDir
+							);
+						},
+					);
+				})
+				.map((file) => {
+					// Remove the .md extension
+					const path = file.path.replace(/\.md$/, "");
+					const metadata =
+						this.app.metadataCache.getFileCache(file)?.frontmatter;
+					const restrictNamespace =
+						metadata?.["automatic-linker-restrict-namespace"] ===
+							true ||
+						metadata?.["automatic-linker-limited-namespace"] ===
+							true;
 
-				// if this property exists, prevent this file from being linked from other files
-				const preventLinking =
-					metadata?.["automatic-linker-prevent-linking"] === true;
+					// if this property exists, prevent this file from being linked from other files
+					const preventLinking =
+						metadata?.["automatic-linker-prevent-linking"] === true;
 
-				const aliases = (() => {
-					if (this.settings.considerAliases) {
-						const frontmatter =
-							this.app.metadataCache.getFileCache(
-								file,
-							)?.frontmatter;
-						const aliases = parseFrontMatterAliases(frontmatter);
-						return aliases;
-					} else {
-						return null;
-					}
-				})();
-				return {
-					path,
-					aliases,
-					restrictNamespace,
-					preventLinking,
-				};
-			});
+					const aliases = (() => {
+						if (this.settings.considerAliases) {
+							const frontmatter =
+								this.app.metadataCache.getFileCache(
+									file,
+								)?.frontmatter;
+							const aliases = parseFrontMatterAliases(frontmatter);
+							return aliases;
+						} else {
+							return null;
+						}
+					})();
+					return {
+						path,
+						aliases,
+						restrictNamespace,
+						preventLinking,
+					};
+				});
 			// Sort filenames in descending order (longer paths first)
 			allFiles.sort((a, b) => b.path.length - a.path.length);
 
