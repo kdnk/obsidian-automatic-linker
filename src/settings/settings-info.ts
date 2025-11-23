@@ -15,6 +15,7 @@ export type AutomaticLinkerSettings = {
 	ignoreCase: boolean; // Ignore case when matching links
 	replaceUrlWithTitle: boolean; // Replace raw URLs with [Title](URL)
 	replaceUrlWithTitleIgnoreDomains: string[]; // List of domains to ignore when replacing URLs with titles
+	excludeDirsFromAutoLinking: string[]; // Optional: List of directories to exclude from auto-linking
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -34,4 +35,5 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	ignoreCase: false, // Default: case-sensitive matching
 	replaceUrlWithTitle: false, // Default: disable replacing URLs with titles
 	replaceUrlWithTitleIgnoreDomains: [],
+	excludeDirsFromAutoLinking: [], // Default: no excluded directories
 };
