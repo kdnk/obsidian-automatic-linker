@@ -1,6 +1,6 @@
 {
 	"name": "automatic-linker",
-	"version": "1.12.11",
+	"version": "1.13.0",
 	"description": "Automatically converts plain text file references into Obsidian wiki links (i.e. `[[...]]`)",
 	"main": "main.js",
 	"scripts": {
