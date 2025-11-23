@@ -145,7 +145,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 				"Directories to be excluded from automatic linking, one per line (e.g. 'Templates')",
 			)
 			.addTextArea((text) => {
-				text.setPlaceholder("")
+				text.setPlaceholder("Templates\nArchive")
 					.setValue(
 						this.plugin.settings.excludeDirsFromAutoLinking.join(
 							"\n",
