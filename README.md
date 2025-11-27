@@ -65,9 +65,8 @@ Automatic Linker Plugin automatically converts plain text file references into O
 
 ## Usage with Obsidian Linter
 
-To use this plugin with Obsidian Linter, ensure that the "Format on Save" option is disabled in Automatic Linker settings. Then, in Obsidian Linter settings, add "Automatic Linker: Format Current File" to the list of formatters to be executed on save. This setup allows Obsidian Linter to manage the formatting process while still utilizing Automatic Linker's link conversion capabilities.
+To use this plugin with Obsidian Linter, ensure that the "Lint on Save" option is disabled in Obsidian Linter settings to avoid conflicts.
 
-1. Disable "Format on Save" in Automatic Linker settings.
-2. Open Obsidian Linter settings.
-3. Add "Automatic Linker: Format Current File" to the `Custom Commands` setting.
-4. Enable Obsidian Linter's format on save feature.
+1. Disable "Lint on Save" in Obsidian Linter.
+2. Enable "Format on Save" in Automatic Linker settings.
+3. Enable "Run Obsidian Linter before formatting" in Automatic Linker settings.
