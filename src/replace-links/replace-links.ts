@@ -13,6 +13,7 @@ export interface ReplaceLinksSettings {
 	baseDir?: string;
 	ignoreDateFormats?: boolean;
 	ignoreCase?: boolean;
+	preventSelfLinking?: boolean;
 }
 
 export interface ReplaceLinksOptions {
@@ -138,7 +139,7 @@ const extractLinkParts = (
 ): { linkPath: string; alias: string; hasAlias: boolean } => {
 	const pipeIndex = canonicalPath.indexOf("|");
 	const hasAlias = pipeIndex !== -1;
-	
+
 	if (hasAlias) {
 		const linkPath = canonicalPath.slice(0, pipeIndex);
 		const alias = canonicalPath.slice(pipeIndex + 1);
@@ -146,6 +147,27 @@ const extractLinkParts = (
 	}
 
 	return { linkPath: canonicalPath, alias: "", hasAlias };
+};
+
+// Self-linking Prevention
+const isSelfLink = (
+	candidateData: CandidateData,
+	currentFilePath: string,
+	settings: ReplaceLinksSettings = {},
+): boolean => {
+	if (!settings.preventSelfLinking) {
+		return false;
+	}
+
+	// Extract the link path from the canonical path
+	const { linkPath } = extractLinkParts(candidateData.canonical);
+
+	// Normalize paths for comparison
+	const normalizedLinkPath = normalizeCanonicalPath(linkPath, settings.baseDir);
+	const normalizedCurrentPath = normalizeCanonicalPath(currentFilePath, settings.baseDir);
+
+	// Compare the paths
+	return normalizedLinkPath === normalizedCurrentPath;
 };
 
 // Link Content Creation
@@ -345,6 +367,14 @@ const processFallbackSearch = (
 
 	if (!bestCandidateData) return null;
 
+	// Check if this is a self-link and should be prevented
+	if (isSelfLink(bestCandidateData, filePath, settings)) {
+		return {
+			result: longestMatch.word,
+			newIndex: startIndex + longestMatch.length
+		};
+	}
+
 	// Create the link
 	const linkContent = createLinkContent(bestCandidateData, longestMatch.word, settings);
 	const isInTable = isIndexInsideMarkdownTable(text, startIndex);
@@ -362,6 +392,7 @@ const handleKoreanSpecialCases = (
 	i: number,
 	candidate: string,
 	candidateData: CandidateData,
+	filePath: string,
 	settings: ReplaceLinksSettings = {},
 ): { result: string; newIndex: number } | null => {
 	const remaining = text.slice(i + candidate.length);
@@ -369,9 +400,17 @@ const handleKoreanSpecialCases = (
 	// Special handling when followed by "이다"
 	const suffixMatch = remaining.match(REGEX_PATTERNS.KOREAN_SUFFIX);
 	if (suffixMatch) {
+		// Check if this is a self-link and should be prevented
+		if (isSelfLink(candidateData, filePath, settings)) {
+			return {
+				result: candidate + suffixMatch[0],
+				newIndex: i + candidate.length + suffixMatch[0].length,
+			};
+		}
+
 		const linkContent = createLinkContent(candidateData, candidate, settings);
 		const finalLink = formatFinalLink(linkContent, false);
-		
+
 		return {
 			result: finalLink + suffixMatch[0],
 			newIndex: i + candidate.length + suffixMatch[0].length,
@@ -558,6 +597,13 @@ const processStandardText = (
 			);
 
 			if (candidateData) {
+				// Check if this is a self-link and should be prevented
+				if (isSelfLink(candidateData, filePath, settings)) {
+					result += candidate;
+					i += candidate.length;
+					continue outer;
+				}
+
 				// Handle Korean special cases
 				const isKorean = isKoreanText(candidate);
 				if (isKorean) {
@@ -566,6 +612,7 @@ const processStandardText = (
 						i,
 						candidate,
 						candidateData,
+						filePath,
 						settings,
 					);
 					if (koreanResult) {

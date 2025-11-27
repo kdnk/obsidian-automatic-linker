@@ -126,6 +126,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						namespaceResolution: this.settings.namespaceResolution,
 						baseDir: this.settings.baseDir,
 						ignoreDateFormats: this.settings.ignoreDateFormats,
+						ignoreCase: this.settings.ignoreCase,
+						preventSelfLinking: this.settings.preventSelfLinking,
 					},
 				});
 
@@ -176,6 +178,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				namespaceResolution: this.settings.namespaceResolution,
 				baseDir: this.settings.baseDir,
 				ignoreDateFormats: this.settings.ignoreDateFormats,
+				ignoreCase: this.settings.ignoreCase,
+				preventSelfLinking: this.settings.preventSelfLinking,
 			},
 		});
 		if (this.settings.formatGitHubURLs) {
@@ -266,6 +270,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				namespaceResolution: this.settings.namespaceResolution,
 				baseDir: this.settings.baseDir,
 				ignoreDateFormats: this.settings.ignoreDateFormats,
+				ignoreCase: this.settings.ignoreCase,
+				preventSelfLinking: this.settings.preventSelfLinking,
 			},
 		});
 		cm.replaceSelection(updatedText);
