@@ -156,105 +156,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 	}
 
-	async modifyLinksCurrentLine() {
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			return;
-		}
-		const editor = this.app.workspace.activeEditor;
-		if (!editor) {
-			return;
-		}
-		const cm = editor.editor;
-		if (!cm) {
-			return;
-		}
-
-		const line = cm.getCursor().line;
-		const originalLineText = cm.getLine(line);
-		let lineText = originalLineText;
-
-		if (!this.trie || !this.candidateMap) {
-			return;
-		}
-		lineText = replaceLinks({
-			body: lineText,
-			linkResolverContext: {
-				filePath: activeFile.path.replace(/\.md$/, ""),
-				trie: this.trie,
-				candidateMap: this.candidateMap,
-			},
-			settings: {
-				minCharCount: this.settings.minCharCount,
-				namespaceResolution: this.settings.namespaceResolution,
-				baseDir: this.settings.baseDir,
-				ignoreDateFormats: this.settings.ignoreDateFormats,
-				ignoreCase: this.settings.ignoreCase,
-				preventSelfLinking: this.settings.preventSelfLinking,
-			},
-		});
-		if (this.settings.formatGitHubURLs) {
-			lineText = replaceURLs(
-				cm.getLine(line),
-				this.settings,
-				formatGitHubURL,
-			);
-		}
-
-		if (this.settings.formatJiraURLs) {
-			lineText = replaceURLs(
-				cm.getLine(line),
-				this.settings,
-				formatJiraURL,
-			);
-		}
-
-		if (this.settings.formatLinearURLs) {
-			lineText = replaceURLs(
-				cm.getLine(line),
-				this.settings,
-				formatLinearURL,
-			);
-		}
-
-		if (this.settings.replaceUrlWithTitle) {
-			const fileContent = await this.app.vault.read(activeFile);
-			const { contentStart } = getFrontMatterInfo(fileContent);
-			const body = fileContent.slice(contentStart);
-
-			const urls = listupAllUrls(body);
-			for (const url of urls) {
-				const response = await request(url);
-				const title = getTitleFromHtml(response);
-				this.urlTitleMap.set(url, title);
-			}
-
-			lineText = replaceUrlWithTitle({
-				body: lineText,
-				urlTitleMap: this.urlTitleMap,
-			});
-		}
-		const currentCuror = cm.getCursor();
-		cm.replaceRange(
-			lineText,
-			{ line, ch: 0 },
-			{ line, ch: originalLineText.length },
-		);
-		cm.setCursor({
-			line: currentCuror.line,
-			ch: currentCuror.ch,
-		});
-	}
-
 	async formatOnSave() {
 		if (!this.settings.formatOnSave) {
 			return;
 		}
-		if (!this.settings.formatOnSaveCurrentLine) {
-			await this.modifyLinks();
-		} else {
-			await this.modifyLinksCurrentLine();
-		}
+		await this.modifyLinks();
 	}
 
 	async mofifyLinksSelection() {
@@ -338,7 +244,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 								this.app.metadataCache.getFileCache(
 									file,
 								)?.frontmatter;
-							const aliases = parseFrontMatterAliases(frontmatter);
+							const aliases =
+								parseFrontMatterAliases(frontmatter);
 							return aliases;
 						} else {
 							return null;
