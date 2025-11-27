@@ -1,5 +1,6 @@
 import { AutomaticLinkerSettings } from "../settings/settings-info";
 import { formatJiraURL } from "./jira";
+import { formatLinearURL } from "./linear";
 
 type GitHubURLInfo = {
 	owner: string;
@@ -138,6 +139,13 @@ export function formatURL(
 		const formattedJiraURL = formatJiraURL(url, settings);
 		if (formattedJiraURL !== url) {
 			return formattedJiraURL;
+		}
+	}
+
+	if (settings.formatLinearURLs) {
+		const formattedLinearURL = formatLinearURL(url, settings);
+		if (formattedLinearURL !== url) {
+			return formattedLinearURL;
 		}
 	}
 

@@ -15,6 +15,7 @@ import { getTitleFromHtml } from "./replace-url-with-title/utils/get-title-from-
 import { listupAllUrls } from "./replace-url-with-title/utils/list-up-all-urls";
 import { formatGitHubURL } from "./replace-urls/github";
 import { formatJiraURL } from "./replace-urls/jira";
+import { formatLinearURL } from "./replace-urls/linear";
 import { replaceURLs } from "./replace-urls/replace-urls";
 import { AutomaticLinkerPluginSettingsTab } from "./settings/settings";
 import {
@@ -66,6 +67,16 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						fileContent,
 						this.settings,
 						formatJiraURL,
+					);
+				});
+			}
+
+			if (this.settings.formatLinearURLs) {
+				await this.app.vault.process(activeFile, (fileContent) => {
+					return replaceURLs(
+						fileContent,
+						this.settings,
+						formatLinearURL,
 					);
 				});
 			}
@@ -195,6 +206,14 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				cm.getLine(line),
 				this.settings,
 				formatJiraURL,
+			);
+		}
+
+		if (this.settings.formatLinearURLs) {
+			lineText = replaceURLs(
+				cm.getLine(line),
+				this.settings,
+				formatLinearURL,
 			);
 		}
 

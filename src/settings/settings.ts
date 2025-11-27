@@ -264,6 +264,25 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
+			.setName("URL Formatting for Linear")
+			.setHeading();
+
+		// Toggle for formatting Linear URLs on save
+		new Setting(containerEl)
+			.setName("Format Linear URLs on save")
+			.setDesc(
+				"When enabled, Linear URLs will be formatted when saving the file.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.formatLinearURLs)
+					.onChange(async (value) => {
+						this.plugin.settings.formatLinearURLs = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(containerEl)
 			.setName("URL Replacement with Title")
 			.setHeading();
 

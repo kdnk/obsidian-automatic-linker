@@ -11,6 +11,7 @@ export type AutomaticLinkerSettings = {
 	githubEnterpriseURLs: string[]; // List of GitHub Enterprise URLs
 	formatJiraURLs: boolean; // Format Jira URLs on save
 	jiraURLs: string[]; // List of Jira URLs (domains)
+	formatLinearURLs: boolean; // Format Linear URLs on save
 	debug: boolean; // Enable debug logging
 	ignoreCase: boolean; // Ignore case when matching links
 	replaceUrlWithTitle: boolean; // Replace raw URLs with [Title](URL)
@@ -32,6 +33,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	githubEnterpriseURLs: [], // Default: empty list
 	formatJiraURLs: true, // Default: format Jira URLs
 	jiraURLs: [], // Default: empty list
+	formatLinearURLs: true, // Default: format Linear URLs
 	debug: false, // Default: disable debug logging
 	ignoreCase: false, // Default: case-sensitive matching
 	replaceUrlWithTitle: false, // Default: disable replacing URLs with titles
