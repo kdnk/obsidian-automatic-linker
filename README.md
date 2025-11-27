@@ -44,6 +44,9 @@ Automatic Linker Plugin automatically converts plain text file references into O
 - **Prevent Linking:**
   You can prevent specific files from being automatically linked from other files by adding `automatic-linker-prevent-linking: true` to the file's frontmatter. This is useful for private notes or files you don't want to appear in automatic links.
 
+- **Remove Aliases in Directories:**
+  Specify directories where link aliases should be automatically removed. For example, if you configure `dir` as a target directory, the plugin will convert `[[dir/xxx|yyy]]` to `[[dir/xxx]]`. This applies to both auto-generated aliases (like `[[dir/file|file]]`) and frontmatter aliases. This is useful for keeping links clean in specific directories where you prefer full paths without aliases.
+
 - **Month Note Ignorance:**
   File references that consist solely of one or two digits (e.g. `1`, `01`, `12`) are commonly used to denote month notes. The plugin automatically ignores these as candidates unless they are explicitly namespaced (e.g. `namespace/01`), preventing unwanted link conversion.
 
@@ -59,3 +62,12 @@ Automatic Linker Plugin automatically converts plain text file references into O
   - Fetched titles are cached to minimize network requests.
   - Ignores URLs already in Markdown links, angle brackets, or code blocks.
   - Supports an internal list of domains to ignore (not yet configurable via UI).
+
+## Usage with Obsidian Linter
+
+To use this plugin with Obsidian Linter, ensure that the "Format on Save" option is disabled in Automatic Linker settings. Then, in Obsidian Linter settings, add "Automatic Linker: Format Current File" to the list of formatters to be executed on save. This setup allows Obsidian Linter to manage the formatting process while still utilizing Automatic Linker's link conversion capabilities.
+
+1. Disable "Format on Save" in Automatic Linker settings.
+2. Open Obsidian Linter settings.
+3. Add "Automatic Linker: Format Current File" to the `Custom Commands` setting.
+4. Enable Obsidian Linter's format on save feature.
