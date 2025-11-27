@@ -378,26 +378,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			if (checking) {
 				return saveCallback?.(checking);
 			} else {
-				const activeFile = this.app.workspace.getActiveFile();
-				if (!activeFile) {
-					return;
-				}
-				const editor = this.app.workspace.activeEditor;
-				if (!editor) {
-					return;
-				}
-				const cm = editor.editor;
-				if (!cm) {
-					return;
-				}
-				const currentCuror = cm.getCursor();
+				//@ts-expect-error
+				await this.app?.commands?.executeCommandById(
+					"obsidian-linter:lint-file",
+				);
 				await this.formatOnSave();
-				await saveCallback?.(checking);
-
-				cm.setCursor({
-					line: currentCuror.line,
-					ch: currentCuror.ch,
-				});
 			}
 		};
 	}
