@@ -120,6 +120,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						new Date().toISOString(),
 						"modifyLinks started",
 					);
+					new Notice(
+						`Automatic Linker: ${new Date().toISOString()} modifyLinks started.`,
+					);
 				}
 
 				const { contentStart } = getFrontMatterInfo(fileContent);
@@ -146,6 +149,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					console.log(
 						new Date().toISOString(),
 						"modifyLinks finished",
+					);
+					new Notice(
+						`Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`,
 					);
 				}
 
@@ -281,6 +287,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			refreshFileDataAndTrie();
 			if (this.settings.debug) {
 				console.log("Automatic Linker: Built all markdown files.");
+				new Notice("Automatic Linker: Built all markdown files.");
 			}
 
 			this.registerEvent(
@@ -315,6 +322,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					refreshFileDataAndTrie();
 					if (this.settings.debug) {
 						console.log(
+							"Automatic Linker: Built all markdown files.",
+						);
+						new Notice(
 							"Automatic Linker: Built all markdown files.",
 						);
 					}
