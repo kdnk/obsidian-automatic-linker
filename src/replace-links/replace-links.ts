@@ -754,6 +754,20 @@ export const replaceLinks = ({
 		}
 	};
 
+	// Extract and protect callout blocks first
+	// Match callout blocks: starts with > [!type] and continues with lines starting with >
+	const calloutPattern = /^>[ \t]*\[![\w-]+\].*?(\n>.*?)*(?=\n(?!>)|$)/gm;
+	const callouts: Array<{ placeholder: string; content: string }> = [];
+	let calloutIndex = 0;
+
+	// Replace callouts with placeholders
+	const bodyWithPlaceholders = body.replace(calloutPattern, (match) => {
+		const placeholder = `__CALLOUT_${calloutIndex}__`;
+		callouts.push({ placeholder, content: match });
+		calloutIndex++;
+		return placeholder;
+	});
+
 	// Process the entire body while preserving protected segments
 	let resultBody = "";
 	let lastIndex = 0;
@@ -762,9 +776,9 @@ export const replaceLinks = ({
 	// Reset the regex to start from the beginning
 	REGEX_PATTERNS.PROTECTED.lastIndex = 0;
 
-	while ((match = REGEX_PATTERNS.PROTECTED.exec(body)) !== null) {
+	while ((match = REGEX_PATTERNS.PROTECTED.exec(bodyWithPlaceholders)) !== null) {
 		const mIndex = match.index;
-		const segment = body.slice(lastIndex, mIndex);
+		const segment = bodyWithPlaceholders.slice(lastIndex, mIndex);
 		resultBody += processTextSegment(segment);
 		// Append the protected segment unchanged
 		resultBody += match[0];
@@ -777,7 +791,12 @@ export const replaceLinks = ({
 	}
 
 	// Process the remaining text
-	resultBody += processTextSegment(body.slice(lastIndex));
+	resultBody += processTextSegment(bodyWithPlaceholders.slice(lastIndex));
+
+	// Restore callouts
+	for (const { placeholder, content } of callouts) {
+		resultBody = resultBody.replace(placeholder, content);
+	}
 
 	return resultBody;
 };
