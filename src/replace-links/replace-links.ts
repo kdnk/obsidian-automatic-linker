@@ -14,6 +14,7 @@ export interface ReplaceLinksSettings {
 	ignoreDateFormats?: boolean;
 	ignoreCase?: boolean;
 	preventSelfLinking?: boolean;
+	removeAliasInDirs?: string[];
 }
 
 export interface ReplaceLinksOptions {
@@ -165,6 +166,27 @@ const isSelfLink = (
 	return normalizedLinkPath === normalizedCurrentPath;
 };
 
+// Helper function to check if a path should have its alias removed
+const shouldRemoveAlias = (normalizedPath: string, removeAliasInDirs?: string[]): boolean => {
+	if (!removeAliasInDirs || removeAliasInDirs.length === 0) {
+		return false;
+	}
+
+	// Early return for paths without slashes
+	if (!normalizedPath.includes("/")) {
+		return false;
+	}
+
+	// Check if the normalized path starts with any of the specified directories
+	for (const dir of removeAliasInDirs) {
+		if (normalizedPath === dir || normalizedPath.startsWith(dir + "/")) {
+			return true;
+		}
+	}
+
+	return false;
+};
+
 // Link Content Creation
 const createLinkContent = (
 	candidateData: CandidateData,
@@ -174,11 +196,23 @@ const createLinkContent = (
 	const { linkPath, alias, hasAlias } = extractLinkParts(candidateData.canonical);
 	const normalizedPath = normalizeCanonicalPath(linkPath, settings.baseDir);
 
+	// Check if alias should be removed for this directory
+	const removeAlias = shouldRemoveAlias(normalizedPath, settings.removeAliasInDirs);
+
 	if (hasAlias) {
+		// If alias removal is enabled for this directory, return path without alias
+		if (removeAlias) {
+			return normalizedPath;
+		}
 		return `${normalizedPath}|${alias}`;
 	}
 
 	if (normalizedPath.includes("/")) {
+		// If alias removal is enabled for this directory, return path without alias
+		if (removeAlias) {
+			return normalizedPath;
+		}
+
 		// For paths with slashes, use the last segment as the display text
 		const lastSegment = normalizedPath.split("/").pop() || originalMatchedText;
 

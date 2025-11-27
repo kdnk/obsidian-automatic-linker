@@ -142,6 +142,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						ignoreDateFormats: this.settings.ignoreDateFormats,
 						ignoreCase: this.settings.ignoreCase,
 						preventSelfLinking: this.settings.preventSelfLinking,
+						removeAliasInDirs: this.settings.removeAliasInDirs,
 					},
 				});
 
@@ -203,6 +204,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				ignoreDateFormats: this.settings.ignoreDateFormats,
 				ignoreCase: this.settings.ignoreCase,
 				preventSelfLinking: this.settings.preventSelfLinking,
+				removeAliasInDirs: this.settings.removeAliasInDirs,
 			},
 		});
 		cm.replaceSelection(updatedText);

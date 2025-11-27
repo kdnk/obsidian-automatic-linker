@@ -162,6 +162,28 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Remove aliases for links in specified directories
+		new Setting(containerEl)
+			.setName("Remove aliases in directories")
+			.setDesc(
+				"Directories where link aliases should be removed, one per line (e.g. 'dir' will convert [[dir/xxx|yyy]] to [[dir/xxx]]). This affects both auto-generated aliases and frontmatter aliases.",
+			)
+			.addTextArea((text) => {
+				text.setPlaceholder("dir1\ndir2/subdir")
+					.setValue(
+						this.plugin.settings.removeAliasInDirs.join("\n"),
+					)
+					.onChange(async (value) => {
+						// Split by newlines and filter out empty lines
+						const dirs = value
+							.split("\n")
+							.map((dir) => dir.trim())
+							.filter(Boolean);
+						this.plugin.settings.removeAliasInDirs = dirs;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		new Setting(containerEl)
 			.setName("URL Formatting for GitHub")
 			.setHeading();

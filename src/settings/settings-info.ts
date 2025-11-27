@@ -17,6 +17,7 @@ export type AutomaticLinkerSettings = {
 	replaceUrlWithTitleIgnoreDomains: string[]; // List of domains to ignore when replacing URLs with titles
 	excludeDirsFromAutoLinking: string[]; // Optional: List of directories to exclude from auto-linking
 	preventSelfLinking: boolean; // Prevent linking text to its own file
+	removeAliasInDirs: string[]; // Remove aliases for links in specified directories
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -38,4 +39,5 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	replaceUrlWithTitleIgnoreDomains: [],
 	excludeDirsFromAutoLinking: [], // Default: no excluded directories
 	preventSelfLinking: false, // Default: allow self-linking (backward compatibility)
+	removeAliasInDirs: [], // Default: no directories for alias removal
 };
