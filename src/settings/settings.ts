@@ -138,6 +138,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Toggle for preventing self-linking
+		new Setting(containerEl)
+			.setName("Prevent self-linking")
+			.setDesc(
+				"When enabled, text will not be linked to its own file. For example, the word 'VPN' inside VPN.md will not be converted to a link.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.preventSelfLinking)
+					.onChange(async (value) => {
+						this.plugin.settings.preventSelfLinking = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		// Add excluding dirs that you wish to exclude from the automatic linking
 		new Setting(containerEl)
 			.setName("Exclude directories from automatic linking")
