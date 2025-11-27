@@ -37,7 +37,7 @@ const REGEX_PATTERNS = {
 	KOREAN_PARTICLES: /^(는|은)/,
 	JAPANESE_PARTICLES: /^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
 	TABLE_SEPARATOR: /^[|:\s-]+$/,
-	WORD_BOUNDARY: /[\p{L}\p{N}_\/-]/u,
+	WORD_BOUNDARY: /[\p{L}\p{N}_/-]/u,
 	WHITESPACE: /[\t\n\r ]/
 } as const;
 
@@ -123,13 +123,8 @@ const getCurrentNamespace = (filePath: string, baseDir?: string): string => {
 };
 
 const normalizeCanonicalPath = (linkPath: string, baseDir?: string): string => {
-	if (baseDir) {
-		if (linkPath.startsWith("pages/")) {
-			linkPath = linkPath.slice("pages/".length);
-		}
-		if (linkPath.startsWith(baseDir + "/")) {
-			linkPath = linkPath.slice((baseDir + "/").length);
-		}
+	if (baseDir && linkPath.startsWith(baseDir + "/")) {
+		return linkPath.slice((baseDir + "/").length);
 	}
 	return linkPath;
 };
@@ -184,9 +179,22 @@ const createLinkContent = (
 	}
 
 	if (normalizedPath.includes("/")) {
-		const displayText = settings.ignoreCase
-			? originalMatchedText
-			: normalizedPath.split("/").pop() || originalMatchedText;
+		// For paths with slashes, use the last segment as the display text
+		const lastSegment = normalizedPath.split("/").pop() || originalMatchedText;
+
+		// If ignoreCase is enabled and originalMatchedText contains a slash,
+		// use the last segment of originalMatchedText to preserve case
+		let displayText = lastSegment;
+		if (settings.ignoreCase && originalMatchedText.includes("/")) {
+			const originalLastSegment = originalMatchedText.split("/").pop();
+			if (originalLastSegment) {
+				displayText = originalLastSegment;
+			}
+		} else if (settings.ignoreCase) {
+			// If originalMatchedText doesn't contain a slash, use it as-is
+			displayText = originalMatchedText;
+		}
+
 		return `${normalizedPath}|${displayText}`;
 	}
 
