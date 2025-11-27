@@ -29,6 +29,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Toggle for running linter before formatting
+		new Setting(containerEl)
+			.setName("Run Obsidian Linter before formatting")
+			.setDesc(
+				"When enabled, Obsidian Linter will be executed before Automatic Linker formatting. This requires the Obsidian Linter plugin to be installed.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.runLinterBeforeFormatting)
+					.onChange(async (value) => {
+						this.plugin.settings.runLinterBeforeFormatting = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		// Setting for base directories.
 		new Setting(containerEl)
 			.setName("Base directory")
