@@ -378,14 +378,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			if (checking) {
 				return saveCallback?.(checking);
 			} else {
-				// Run Obsidian Linter before formatting if enabled
-				if (this.settings.runLinterBeforeFormatting) {
+				await this.formatOnSave();
+
+				// Run Obsidian Linter after formatting if enabled
+				if (this.settings.runLinterAfterFormatting) {
 					//@ts-expect-error
 					await this.app?.commands?.executeCommandById(
 						"obsidian-linter:lint-file",
 					);
 				}
-				await this.formatOnSave();
 			}
 		};
 	}

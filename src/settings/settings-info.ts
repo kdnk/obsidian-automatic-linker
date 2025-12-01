@@ -18,7 +18,7 @@ export type AutomaticLinkerSettings = {
 	excludeDirsFromAutoLinking: string[]; // Optional: List of directories to exclude from auto-linking
 	preventSelfLinking: boolean; // Prevent linking text to its own file
 	removeAliasInDirs: string[]; // Remove aliases for links in specified directories
-	runLinterBeforeFormatting: boolean; // Run Obsidian Linter before automatic linker formatting
+	runLinterAfterFormatting: boolean; // Run Obsidian Linter after automatic linker formatting
 };
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -41,5 +41,5 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	excludeDirsFromAutoLinking: [], // Default: no excluded directories
 	preventSelfLinking: false, // Default: allow self-linking (backward compatibility)
 	removeAliasInDirs: [], // Default: no directories for alias removal
-	runLinterBeforeFormatting: false, // Default: do not run linter before formatting
+	runLinterAfterFormatting: false, // Default: do not run linter after formatting
 };

@@ -37,9 +37,9 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 			)
 			.addToggle((toggle) => {
 				toggle
-					.setValue(this.plugin.settings.runLinterBeforeFormatting)
+					.setValue(this.plugin.settings.runLinterAfterFormatting)
 					.onChange(async (value) => {
-						this.plugin.settings.runLinterBeforeFormatting = value;
+						this.plugin.settings.runLinterAfterFormatting = value;
 						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
