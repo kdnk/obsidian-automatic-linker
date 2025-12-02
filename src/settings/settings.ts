@@ -29,11 +29,11 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
-		// Toggle for running linter before formatting
+		// Toggle for running linter after formatting
 		new Setting(containerEl)
-			.setName("Run Obsidian Linter before formatting")
+			.setName("Run Obsidian Linter after formatting")
 			.setDesc(
-				"When enabled, Obsidian Linter will be executed before Automatic Linker formatting. This requires the Obsidian Linter plugin to be installed.",
+				"When enabled, Obsidian Linter will be executed after Automatic Linker formatting. This requires the Obsidian Linter plugin to be installed.",
 			)
 			.addToggle((toggle) => {
 				toggle
