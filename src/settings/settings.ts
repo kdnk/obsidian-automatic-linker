@@ -44,6 +44,24 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Setting for linter delay
+		new Setting(containerEl)
+			.setName("Linter delay (ms)")
+			.setDesc(
+				"Delay in milliseconds before running Obsidian Linter after formatting. Increase this value if the linter runs before the file is fully saved.",
+			)
+			.addText((text) => {
+				text.setPlaceholder("e.g. 100")
+					.setValue(this.plugin.settings.linterDelayMs.toString())
+					.onChange(async (value) => {
+						const parsedValue = parseInt(value);
+						if (!isNaN(parsedValue) && parsedValue >= 0) {
+							this.plugin.settings.linterDelayMs = parsedValue;
+							await this.plugin.saveData(this.plugin.settings);
+						}
+					});
+			});
+
 		// Setting for base directories.
 		new Setting(containerEl)
 			.setName("Base directory")
@@ -185,9 +203,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 			)
 			.addTextArea((text) => {
 				text.setPlaceholder("dir1\ndir2/subdir")
-					.setValue(
-						this.plugin.settings.removeAliasInDirs.join("\n"),
-					)
+					.setValue(this.plugin.settings.removeAliasInDirs.join("\n"))
 					.onChange(async (value) => {
 						// Split by newlines and filter out empty lines
 						const dirs = value
