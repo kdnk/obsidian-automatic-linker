@@ -382,6 +382,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 				// Run Obsidian Linter after formatting if enabled
 				if (this.settings.runLinterAfterFormatting) {
+					function sleep(ms: number) {
+						return new Promise((resolve) =>
+							setTimeout(resolve, ms),
+						);
+					}
+					await sleep(100);
 					//@ts-expect-error
 					await this.app?.commands?.executeCommandById(
 						"obsidian-linter:lint-file",
