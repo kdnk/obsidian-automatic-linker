@@ -43,5 +43,5 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
 	preventSelfLinking: false, // Default: allow self-linking (backward compatibility)
 	removeAliasInDirs: [], // Default: no directories for alias removal
 	runLinterAfterFormatting: false, // Default: do not run linter after formatting
-	linterDelayMs: 100, // Default: 100ms delay before running linter
+	linterDelayMs: 300, // Default: 300ms delay before running linter
 };
