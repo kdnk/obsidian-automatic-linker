@@ -24,6 +24,10 @@ import {
 } from "./settings/settings-info";
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
 
+const sleep = (ms: number) => {
+	return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
 export default class AutomaticLinkerPlugin extends Plugin {
 	settings: AutomaticLinkerSettings;
 	// Pre-built Trie for link candidate lookup
@@ -50,116 +54,107 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			return;
 		}
 
-		try {
+		await this.app.vault.process(activeFile, (fileContent) => {
 			if (this.settings.formatGitHubURLs) {
-				await this.app.vault.process(activeFile, (fileContent) => {
-					return replaceURLs(
-						fileContent,
-						this.settings,
-						formatGitHubURL,
-					);
-				});
+				fileContent = replaceURLs(
+					fileContent,
+					this.settings,
+					formatGitHubURL,
+				);
 			}
 
 			if (this.settings.formatJiraURLs) {
-				await this.app.vault.process(activeFile, (fileContent) => {
-					return replaceURLs(
-						fileContent,
-						this.settings,
-						formatJiraURL,
-					);
-				});
+				fileContent = replaceURLs(
+					fileContent,
+					this.settings,
+					formatJiraURL,
+				);
 			}
 
 			if (this.settings.formatLinearURLs) {
-				await this.app.vault.process(activeFile, (fileContent) => {
-					return replaceURLs(
-						fileContent,
-						this.settings,
-						formatLinearURL,
-					);
-				});
+				fileContent = replaceURLs(
+					fileContent,
+					this.settings,
+					formatLinearURL,
+				);
 			}
 
 			if (this.settings.replaceUrlWithTitle) {
-				const fileContent = await this.app.vault.read(activeFile);
-				const { contentStart } = getFrontMatterInfo(fileContent);
-				const body = fileContent.slice(contentStart);
-
-				const urls = listupAllUrls(
-					body,
-					this.settings.replaceUrlWithTitleIgnoreDomains,
-				);
-				for (const url of urls) {
-					const response = await request(url);
-					const title = getTitleFromHtml(response);
-					this.urlTitleMap.set(url, title);
-				}
-
-				await this.app.vault.process(activeFile, (fileContent) => {
-					const { contentStart } = getFrontMatterInfo(fileContent);
-					const frontmatter = fileContent.slice(0, contentStart);
-					const body = fileContent.slice(contentStart);
-					const updatedBody = replaceUrlWithTitle({
-						body,
-						urlTitleMap: this.urlTitleMap,
-					});
-					return frontmatter + updatedBody;
-				});
-			}
-
-			await this.app.vault.process(activeFile, (fileContent) => {
-				if (!this.trie || !this.candidateMap) {
-					return fileContent;
-				}
-
-				if (this.settings.debug) {
-					console.log("this.trie: ", this.trie);
-					console.log("this.candidateMap: ", this.candidateMap);
-					console.log(
-						new Date().toISOString(),
-						"modifyLinks started",
-					);
-					new Notice(
-						`Automatic Linker: ${new Date().toISOString()} modifyLinks started.`,
-					);
-				}
-
 				const { contentStart } = getFrontMatterInfo(fileContent);
 				const frontmatter = fileContent.slice(0, contentStart);
-
-				const updatedBody = replaceLinks({
-					body: fileContent.slice(contentStart),
-					linkResolverContext: {
-						filePath: activeFile.path.replace(/\.md$/, ""),
-						trie: this.trie,
-						candidateMap: this.candidateMap,
-					},
-					settings: {
-						minCharCount: this.settings.minCharCount,
-						namespaceResolution: this.settings.namespaceResolution,
-						baseDir: this.settings.baseDir,
-						ignoreDateFormats: this.settings.ignoreDateFormats,
-						ignoreCase: this.settings.ignoreCase,
-						preventSelfLinking: this.settings.preventSelfLinking,
-						removeAliasInDirs: this.settings.removeAliasInDirs,
-					},
+				const body = fileContent.slice(contentStart);
+				const updatedBody = replaceUrlWithTitle({
+					body,
+					urlTitleMap: this.urlTitleMap,
 				});
+				fileContent = frontmatter + updatedBody;
+			}
 
-				if (this.settings.debug) {
-					console.log(
-						new Date().toISOString(),
-						"modifyLinks finished",
-					);
-					new Notice(
-						`Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`,
-					);
-				}
+			if (!this.trie || !this.candidateMap) {
+				return fileContent;
+			}
 
-				return frontmatter + updatedBody;
+			if (this.settings.debug) {
+				console.log("this.trie: ", this.trie);
+				console.log("this.candidateMap: ", this.candidateMap);
+				console.log(new Date().toISOString(), "modifyLinks started");
+				new Notice(
+					`Automatic Linker: ${new Date().toISOString()} modifyLinks started.`,
+				);
+			}
+
+			const { contentStart } = getFrontMatterInfo(fileContent);
+			const frontmatter = fileContent.slice(0, contentStart);
+			const updatedBody = replaceLinks({
+				body: fileContent.slice(contentStart),
+				linkResolverContext: {
+					filePath: activeFile.path.replace(/\.md$/, ""),
+					trie: this.trie,
+					candidateMap: this.candidateMap,
+				},
+				settings: {
+					minCharCount: this.settings.minCharCount,
+					namespaceResolution: this.settings.namespaceResolution,
+					baseDir: this.settings.baseDir,
+					ignoreDateFormats: this.settings.ignoreDateFormats,
+					ignoreCase: this.settings.ignoreCase,
+					preventSelfLinking: this.settings.preventSelfLinking,
+					removeAliasInDirs: this.settings.removeAliasInDirs,
+				},
 			});
-		} catch (error) {
-			console.error(error);
+			fileContent = frontmatter + updatedBody;
+
+			if (this.settings.debug) {
+				console.log(new Date().toISOString(), "modifyLinks finished");
+				new Notice(
+					`Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`,
+				);
+			}
+
+			return fileContent;
+		});
+	}
+
+	async buildUrlTitleMap() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			return;
+		}
+		const fileContent = await this.app.vault.read(activeFile);
+		const { contentStart } = getFrontMatterInfo(fileContent);
+		const body = fileContent.slice(contentStart);
+
+		const urls = listupAllUrls(
+			body,
+			this.settings.replaceUrlWithTitleIgnoreDomains,
+		);
+		for (const url of urls) {
+			if (this.urlTitleMap.has(url)) {
+				continue;
+			}
+			const response = await request(url);
+			const title = getTitleFromHtml(response);
+			this.urlTitleMap.set(url, title);
 		}
 	}
 
@@ -167,6 +162,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		if (!this.settings.formatOnSave) {
 			return;
 		}
+
+		await this.buildUrlTitleMap();
 		await this.modifyLinks();
 	}
 
@@ -382,19 +379,33 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			this.originalSaveCallback = saveCallback;
 		}
 
+		const getUrls = async () => {
+			const activeFile = this.app.workspace.getActiveFile();
+			if (!activeFile) return;
+			const fileContent = await this.app.vault.read(activeFile);
+			const { contentStart } = getFrontMatterInfo(fileContent);
+			const body = fileContent.slice(contentStart);
+
+			const urls = listupAllUrls(
+				body,
+				this.settings.replaceUrlWithTitleIgnoreDomains,
+			);
+			for (const url of urls) {
+				const response = await request(url);
+				const title = getTitleFromHtml(response);
+				this.urlTitleMap.set(url, title);
+			}
+		};
+
 		saveCommandDefinition.checkCallback = async (checking: boolean) => {
 			if (checking) {
 				return saveCallback?.(checking);
 			} else {
+				await sleep(this.settings.linterDelayMs ?? 100);
 				await this.formatOnSave();
 
 				// Run Obsidian Linter after formatting if enabled
 				if (this.settings.runLinterAfterFormatting) {
-					const sleep = (ms: number) => {
-						return new Promise((resolve) =>
-							setTimeout(resolve, ms),
-						);
-					};
 					await sleep(this.settings.linterDelayMs ?? 100);
 					//@ts-expect-error
 					await this.app?.commands?.executeCommandById(
