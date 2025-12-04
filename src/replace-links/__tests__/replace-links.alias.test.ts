@@ -184,16 +184,41 @@ describe("replaceLinks - alias handling", () => {
 		});
 	});
 
+	it("Aliases with ignoreCase: false", () => {
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			files: [{ path: "pages/ティーチング", aliases: ["Teaching"] }],
+			settings: {
+				restrictNamespace: false,
+				baseDir: "pages",
+				ignoreCase: false,
+			},
+		});
+		const result = replaceLinks({
+			body: "Teaching teaching",
+			linkResolverContext: {
+				filePath: "pages/Teaching",
+				trie,
+				candidateMap,
+			},
+			settings: {
+				baseDir: "pages",
+				ignoreCase: false,
+			},
+		});
+		expect(result).toBe("[[ティーチング|Teaching]] teaching");
+	});
+
 	it("Aliases with ignoreCase: true", () => {
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/ティーチング", aliases: ["Teaching"] }],
 			settings: {
 				restrictNamespace: false,
 				baseDir: "pages",
+				ignoreCase: true,
 			},
 		});
 		const result = replaceLinks({
-			body: "Teaching",
+			body: "Teaching teaching",
 			linkResolverContext: {
 				filePath: "pages/Teaching",
 				trie,
@@ -204,6 +229,8 @@ describe("replaceLinks - alias handling", () => {
 				ignoreCase: true,
 			},
 		});
-		expect(result).toBe("[[ティーチング|Teaching]]");
+		expect(result).toBe(
+			"[[ティーチング|Teaching]] [[ティーチング|teaching]]",
+		);
 	});
 });
