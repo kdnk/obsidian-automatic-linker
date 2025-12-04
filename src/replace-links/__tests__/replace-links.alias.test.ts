@@ -185,48 +185,54 @@ describe("replaceLinks - alias handling", () => {
 	});
 
 	it("Aliases with ignoreCase: false", () => {
+		const ignoreCase = false;
+		const baseDir = "pages";
+
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/ティーチング", aliases: ["Teaching"] }],
 			settings: {
 				restrictNamespace: false,
-				baseDir: "pages",
-				ignoreCase: false,
+				baseDir,
+				ignoreCase,
 			},
 		});
 		const result = replaceLinks({
 			body: "Teaching teaching",
 			linkResolverContext: {
-				filePath: "pages/Teaching",
+				filePath: "pages/test",
 				trie,
 				candidateMap,
 			},
 			settings: {
-				baseDir: "pages",
-				ignoreCase: false,
+				baseDir,
+				ignoreCase,
 			},
 		});
 		expect(result).toBe("[[ティーチング|Teaching]] teaching");
 	});
 
 	it("Aliases with ignoreCase: true", () => {
+		const ignoreCase = true;
+		const baseDir = "pages";
+
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/ティーチング", aliases: ["Teaching"] }],
 			settings: {
 				restrictNamespace: false,
-				baseDir: "pages",
-				ignoreCase: true,
+				baseDir,
+				ignoreCase,
 			},
 		});
 		const result = replaceLinks({
 			body: "Teaching teaching",
 			linkResolverContext: {
-				filePath: "pages/Teaching",
+				filePath: "pages/test",
 				trie,
 				candidateMap,
 			},
 			settings: {
-				baseDir: "pages",
-				ignoreCase: true,
+				baseDir,
+				ignoreCase,
 			},
 		});
 		expect(result).toBe(
