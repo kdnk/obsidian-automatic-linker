@@ -1,3 +1,4 @@
+import { PathAndAliases } from "../../path-and-aliases.types";
 import { buildCandidateTrie, getEffectiveNamespace } from "../../trie";
 
 export const buildCandidateTrieForTest = ({
@@ -16,11 +17,14 @@ export const buildCandidateTrieForTest = ({
 	// Filter out files that are in excluded directories
 	const filteredFiles = files.filter((file) => {
 		return !excludeDirs.some((excludeDir) => {
-			return file.path.startsWith(excludeDir + "/") || file.path === excludeDir;
+			return (
+				file.path.startsWith(excludeDir + "/") ||
+				file.path === excludeDir
+			);
 		});
 	});
 
-	const sortedFiles = filteredFiles
+	const sortedFiles: PathAndAliases[] = filteredFiles
 		.slice()
 		.sort((a, b) => b.path.length - a.path.length)
 		.map(({ path, aliases, preventLinking }) => ({
