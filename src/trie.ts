@@ -169,21 +169,21 @@ export const buildCandidateTrie = (
 						namespace: getEffectiveNamespace(file.path, baseDir),
 					});
 				}
+				// Register lowercase version when ignoreCase is enabled
+				if (ignoreCase && !candidateMap.has(alias.toLowerCase())) {
+					candidateMap.set(alias.toLowerCase(), {
+						canonical: canonicalForAlias,
+						restrictNamespace: file.restrictNamespace,
+						namespace: getEffectiveNamespace(file.path, baseDir),
+					});
+				}
 			}
 		}
 	}
 
 	// Build a trie from all candidate strings
 	const words = Array.from(candidateMap.keys());
-	// When ignoreCase is enabled, we need to add both the original and lowercase versions
-	const trieWords = ignoreCase
-		? words.flatMap(word => {
-			const lastSlashIndex = word.lastIndexOf('/');
-			const lastSegment = lastSlashIndex === -1 ? word : word.slice(lastSlashIndex + 1);
-			return [word, lastSegment.toLowerCase()];
-		})
-		: words;
-	const trie = buildTrie(trieWords, ignoreCase);
+	const trie = buildTrie(words, ignoreCase);
 
 	return { candidateMap, trie };
 };

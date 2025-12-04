@@ -204,7 +204,9 @@ const createLinkContent = (
 		if (removeAlias) {
 			return normalizedPath;
 		}
-		return `${normalizedPath}|${alias}`;
+		// Use originalMatchedText to preserve case when ignoreCase is enabled
+		const displayAlias = settings.ignoreCase ? originalMatchedText : alias;
+		return `${normalizedPath}|${displayAlias}`;
 	}
 
 	if (normalizedPath.includes("/")) {
