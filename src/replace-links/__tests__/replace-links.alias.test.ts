@@ -183,4 +183,27 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 	});
+
+	it("Aliases with ignoreCase: true", () => {
+		const { candidateMap, trie } = buildCandidateTrieForTest({
+			files: [{ path: "pages/ティーチング", aliases: ["Teaching"] }],
+			settings: {
+				restrictNamespace: false,
+				baseDir: "pages",
+			},
+		});
+		const result = replaceLinks({
+			body: "Teaching",
+			linkResolverContext: {
+				filePath: "pages/Teaching",
+				trie,
+				candidateMap,
+			},
+			settings: {
+				baseDir: "pages",
+				ignoreCase: true,
+			},
+		});
+		expect(result).toBe("[[ティーチング|Teaching]]");
+	});
 });
