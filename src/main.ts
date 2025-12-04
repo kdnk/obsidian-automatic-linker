@@ -280,6 +280,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			const { candidateMap, trie } = buildCandidateTrie(
 				allFiles,
 				this.settings.baseDir,
+				this.settings.ignoreCase ?? false,
 			);
 			this.candidateMap = candidateMap;
 			this.trie = trie;
