@@ -269,6 +269,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// Sort filenames in descending order (longer paths first)
 			allFiles.sort((a, b) => b.path.length - a.path.length);
 
+			if (this.settings.debug) {
+				console.log(
+					"Automatic Linker: allFiles for Trie building: ",
+					allFiles,
+				);
+			}
+
 			// Build candidateMap and Trie using the helper function.
 			const { candidateMap, trie } = buildCandidateTrie(
 				allFiles,
