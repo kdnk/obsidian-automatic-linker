@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@codemirror/state':
-        specifier: ^6.5.2
-        version: 6.5.2
+        specifier: 6.5.0
+        version: 6.5.0
       '@types/async-lock':
         specifier: ^1.4.2
         version: 1.4.2
@@ -41,7 +41,7 @@ importers:
         version: 0.17.3
       obsidian:
         specifier: latest
-        version: 1.8.7(@codemirror/state@6.5.2)(@codemirror/view@6.36.7)
+        version: 1.8.7(@codemirror/state@6.5.0)(@codemirror/view@6.36.7)
       obsidian-typings:
         specifier: ^2.15.0
         version: 2.44.3(@codemirror/view@6.36.7)(@pixi/core@7.2.4)(@pixi/display@7.2.4(@pixi/core@7.2.4))(@pixi/utils@7.2.4)
@@ -98,8 +98,8 @@ packages:
   '@codemirror/search@6.5.10':
     resolution: {integrity: sha512-RMdPdmsrUf53pb2VwflKGHEe1XVM07hI7vV2ntgw1dmqhimpatSJKva4VA9h4TLUDOD4EIF02201oZurpnEFsg==}
 
-  '@codemirror/state@6.5.2':
-    resolution: {integrity: sha512-FVqsPqtPWKVVL3dPSxy8wEF/ymIEuVzF1PK3VbUgrxXpJUSHQWWZz4JMToquRxnkw+36LTamCZG2iua2Ptq0fA==}
+  '@codemirror/state@6.5.0':
+    resolution: {integrity: sha512-MwBHVK60IiIHDcoMet78lxt6iw5gJOGSbNbOIVBHWVXIH4/Nq1+GQgLLGgI1KlnN86WDXsPudVaqYHKBIx7Eyw==}
 
   '@codemirror/view@6.36.7':
     resolution: {integrity: sha512-kCWGW/chWGPgZqfZ36Um9Iz0X2IVpmCjg1P/qY6B6a2ecXtWRRAigmpJ6YgUQ5lTWXMyyVdfmpzhLZmsZQMbtg==}
@@ -2392,17 +2392,17 @@ snapshots:
 
   '@codemirror/search@6.5.10':
     dependencies:
-      '@codemirror/state': 6.5.2
+      '@codemirror/state': 6.5.0
       '@codemirror/view': 6.36.7
       crelt: 1.0.6
 
-  '@codemirror/state@6.5.2':
+  '@codemirror/state@6.5.0':
     dependencies:
       '@marijn/find-cluster-break': 1.0.2
 
   '@codemirror/view@6.36.7':
     dependencies:
-      '@codemirror/state': 6.5.2
+      '@codemirror/state': 6.5.0
       style-mod: 4.1.2
       w3c-keyname: 2.2.8
 
@@ -4162,7 +4162,7 @@ snapshots:
     dependencies:
       '@capacitor/core': 6.2.1
       '@codemirror/search': 6.5.10
-      '@codemirror/state': 6.5.2
+      '@codemirror/state': 6.5.0
       '@pixi/color': 7.2.4
       '@pixi/events': 7.2.4(@pixi/core@7.2.4)(@pixi/display@7.2.4(@pixi/core@7.2.4))
       '@pixi/settings': 7.2.4
@@ -4176,7 +4176,7 @@ snapshots:
       i18next: 23.16.8
       mermaid: 11.6.0
       moment: 2.30.1
-      obsidian: 1.8.7(@codemirror/state@6.5.2)(@codemirror/view@6.36.7)
+      obsidian: 1.8.7(@codemirror/state@6.5.0)(@codemirror/view@6.36.7)
       pdfjs-dist: 5.2.133
       pixi.js: 7.2.4(@pixi/utils@7.2.4)
       scrypt-js: 3.0.1
@@ -4188,9 +4188,9 @@ snapshots:
       - '@pixi/utils'
       - supports-color
 
-  obsidian@1.8.7(@codemirror/state@6.5.2)(@codemirror/view@6.36.7):
+  obsidian@1.8.7(@codemirror/state@6.5.0)(@codemirror/view@6.36.7):
     dependencies:
-      '@codemirror/state': 6.5.2
+      '@codemirror/state': 6.5.0
       '@codemirror/view': 6.36.7
       '@types/codemirror': 5.60.8
       moment: 2.29.4

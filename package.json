@@ -32,7 +32,7 @@
 		"@rollup/rollup-linux-x64-gnu": "4.6.1"
 	},
 	"dependencies": {
-		"@codemirror/state": "^6.5.2",
+		"@codemirror/state": "6.5.0",
 		"@types/async-lock": "^1.4.2",
 		"async-lock": "^1.4.1",
 		"diff-match-patch": "^1.0.5"
