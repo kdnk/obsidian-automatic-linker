@@ -58,10 +58,10 @@ Automatic Linker Plugin automatically converts plain text file references into O
 
 - **Replace Bare URLs with Page Titles:**
   Finds bare URLs (like `https://example.com`) in your notes, fetches the title of the web page, and replaces the URL with a Markdown link `[Page Title](URL)`.
-  - Triggered manually via a command.
-  - Fetched titles are cached to minimize network requests.
-  - Ignores URLs already in Markdown links, angle brackets, or code blocks.
-  - Supports an internal list of domains to ignore (not yet configurable via UI).
+    - Triggered manually via a command.
+    - Fetched titles are cached to minimize network requests.
+    - Ignores URLs already in Markdown links, angle brackets, or code blocks.
+    - Supports an internal list of domains to ignore (not yet configurable via UI).
 
 ## Usage with Obsidian Linter
 
@@ -70,3 +70,7 @@ To use this plugin with Obsidian Linter, ensure that the "Lint on Save" option i
 1. Disable "Lint on Save" in Obsidian Linter.
 2. Enable "Format on Save" in Automatic Linker settings.
 3. Enable "Run Obsidian Linter before formatting" in Automatic Linker settings.
+
+## Thanks
+
+- `updateEditor` function comes from https://github.com/platers/obsidian-linter.

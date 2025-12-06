@@ -1,6 +1,8 @@
 import {
 	App,
+	Editor,
 	getFrontMatterInfo,
+	MarkdownView,
 	Notice,
 	parseFrontMatterAliases,
 	Plugin,
@@ -23,6 +25,7 @@ import {
 	DEFAULT_SETTINGS,
 } from "./settings/settings-info";
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie";
+import { updateEditor } from "./update-editor";
 
 const sleep = (ms: number) => {
 	return new Promise((resolve) => setTimeout(resolve, ms));
@@ -41,6 +44,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		super(app, pluginManifest);
 	}
 
+	private getEditor(): Editor | null {
+		const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
+		if (!activeLeaf) return null;
+		return activeLeaf.editor;
+	}
+
 	async modifyLinks() {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
@@ -54,85 +63,89 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			return;
 		}
 
-		await this.app.vault.process(activeFile, (fileContent) => {
-			if (this.settings.formatGitHubURLs) {
-				fileContent = replaceURLs(
-					fileContent,
-					this.settings,
-					formatGitHubURL,
-				);
-			}
+		const editor = this.getEditor();
+		if (!editor) return;
 
-			if (this.settings.formatJiraURLs) {
-				fileContent = replaceURLs(
-					fileContent,
-					this.settings,
-					formatJiraURL,
-				);
-			}
+		let fileContent = editor.getValue();
+		const oldText = fileContent;
+		if (this.settings.formatGitHubURLs) {
+			fileContent = replaceURLs(
+				fileContent,
+				this.settings,
+				formatGitHubURL,
+			);
+		}
 
-			if (this.settings.formatLinearURLs) {
-				fileContent = replaceURLs(
-					fileContent,
-					this.settings,
-					formatLinearURL,
-				);
-			}
+		if (this.settings.formatJiraURLs) {
+			fileContent = replaceURLs(
+				fileContent,
+				this.settings,
+				formatJiraURL,
+			);
+		}
 
-			if (this.settings.replaceUrlWithTitle) {
-				const { contentStart } = getFrontMatterInfo(fileContent);
-				const frontmatter = fileContent.slice(0, contentStart);
-				const body = fileContent.slice(contentStart);
-				const updatedBody = replaceUrlWithTitle({
-					body,
-					urlTitleMap: this.urlTitleMap,
-				});
-				fileContent = frontmatter + updatedBody;
-			}
+		if (this.settings.formatLinearURLs) {
+			fileContent = replaceURLs(
+				fileContent,
+				this.settings,
+				formatLinearURL,
+			);
+		}
 
-			if (!this.trie || !this.candidateMap) {
-				return fileContent;
-			}
-
-			if (this.settings.debug) {
-				console.log("this.trie: ", this.trie);
-				console.log("this.candidateMap: ", this.candidateMap);
-				console.log(new Date().toISOString(), "modifyLinks started");
-				new Notice(
-					`Automatic Linker: ${new Date().toISOString()} modifyLinks started.`,
-				);
-			}
-
+		if (this.settings.replaceUrlWithTitle) {
 			const { contentStart } = getFrontMatterInfo(fileContent);
 			const frontmatter = fileContent.slice(0, contentStart);
-			const updatedBody = replaceLinks({
-				body: fileContent.slice(contentStart),
-				linkResolverContext: {
-					filePath: activeFile.path.replace(/\.md$/, ""),
-					trie: this.trie,
-					candidateMap: this.candidateMap,
-				},
-				settings: {
-					minCharCount: this.settings.minCharCount,
-					namespaceResolution: this.settings.namespaceResolution,
-					baseDir: this.settings.baseDir,
-					ignoreDateFormats: this.settings.ignoreDateFormats,
-					ignoreCase: this.settings.ignoreCase,
-					preventSelfLinking: this.settings.preventSelfLinking,
-					removeAliasInDirs: this.settings.removeAliasInDirs,
-				},
+			const body = fileContent.slice(contentStart);
+			const updatedBody = replaceUrlWithTitle({
+				body,
+				urlTitleMap: this.urlTitleMap,
 			});
 			fileContent = frontmatter + updatedBody;
+		}
 
-			if (this.settings.debug) {
-				console.log(new Date().toISOString(), "modifyLinks finished");
-				new Notice(
-					`Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`,
-				);
-			}
-
+		if (!this.trie || !this.candidateMap) {
 			return fileContent;
+		}
+
+		if (this.settings.debug) {
+			console.log("this.trie: ", this.trie);
+			console.log("this.candidateMap: ", this.candidateMap);
+			console.log(new Date().toISOString(), "modifyLinks started");
+			new Notice(
+				`Automatic Linker: ${new Date().toISOString()} modifyLinks started.`,
+			);
+		}
+
+		const { contentStart } = getFrontMatterInfo(fileContent);
+		const frontmatter = fileContent.slice(0, contentStart);
+		const updatedBody = replaceLinks({
+			body: fileContent.slice(contentStart),
+			linkResolverContext: {
+				filePath: activeFile.path.replace(/\.md$/, ""),
+				trie: this.trie,
+				candidateMap: this.candidateMap,
+			},
+			settings: {
+				minCharCount: this.settings.minCharCount,
+				namespaceResolution: this.settings.namespaceResolution,
+				baseDir: this.settings.baseDir,
+				ignoreDateFormats: this.settings.ignoreDateFormats,
+				ignoreCase: this.settings.ignoreCase,
+				preventSelfLinking: this.settings.preventSelfLinking,
+				removeAliasInDirs: this.settings.removeAliasInDirs,
+			},
 		});
+		fileContent = frontmatter + updatedBody;
+
+		if (this.settings.debug) {
+			console.log(new Date().toISOString(), "modifyLinks finished");
+			new Notice(
+				`Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`,
+			);
+		}
+
+		const newText = fileContent;
+		updateEditor(oldText, newText, editor);
 	}
 
 	async buildUrlTitleMap() {
@@ -378,24 +391,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			// Preserve the original save callback to call it after modifying links.
 			this.originalSaveCallback = saveCallback;
 		}
-
-		const getUrls = async () => {
-			const activeFile = this.app.workspace.getActiveFile();
-			if (!activeFile) return;
-			const fileContent = await this.app.vault.read(activeFile);
-			const { contentStart } = getFrontMatterInfo(fileContent);
-			const body = fileContent.slice(contentStart);
-
-			const urls = listupAllUrls(
-				body,
-				this.settings.replaceUrlWithTitleIgnoreDomains,
-			);
-			for (const url of urls) {
-				const response = await request(url);
-				const title = getTitleFromHtml(response);
-				this.urlTitleMap.set(url, title);
-			}
-		};
 
 		saveCommandDefinition.checkCallback = async (checking: boolean) => {
 			if (checking) {
