@@ -61,17 +61,17 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 
 		// Setting for linter delay
 		new Setting(containerEl)
-			.setName("Linter delay (ms)")
+			.setName("Format delay (ms)")
 			.setDesc(
-				"Delay in milliseconds before running Obsidian Linter after formatting. Increase this value if the linter runs before the file is fully saved.",
+				"Delay in milliseconds before formatting. Increase this value if the linter/prettier runs before the file is fully saved.",
 			)
 			.addText((text) => {
 				text.setPlaceholder("e.g. 100")
-					.setValue(this.plugin.settings.linterDelayMs.toString())
+					.setValue(this.plugin.settings.formatDelayMs.toString())
 					.onChange(async (value) => {
 						const parsedValue = parseInt(value);
 						if (!isNaN(parsedValue) && parsedValue >= 0) {
-							this.plugin.settings.linterDelayMs = parsedValue;
+							this.plugin.settings.formatDelayMs = parsedValue;
 							await this.plugin.saveData(this.plugin.settings);
 						}
 					});

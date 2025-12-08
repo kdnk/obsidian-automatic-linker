@@ -396,11 +396,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			if (checking) {
 				return saveCallback?.(checking);
 			} else {
-				await sleep(this.settings.linterDelayMs ?? 100);
+				await sleep(this.settings.formatDelayMs ?? 100);
 				await this.formatOnSave();
 
 				if (this.settings.runPrettierAfterFormatting) {
-					await sleep(this.settings.linterDelayMs ?? 100);
+					await sleep(this.settings.formatDelayMs ?? 100);
 					//@ts-expect-error
 					await this.app?.commands?.executeCommandById(
 						"prettier-format:format-file",
@@ -409,7 +409,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 				// Run Obsidian Linter after formatting if enabled
 				if (this.settings.runLinterAfterFormatting) {
-					await sleep(this.settings.linterDelayMs ?? 100);
+					await sleep(this.settings.formatDelayMs ?? 100);
 					//@ts-expect-error
 					await this.app?.commands?.executeCommandById(
 						"obsidian-linter:lint-file",
