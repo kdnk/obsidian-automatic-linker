@@ -231,6 +231,52 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 			});
 
 		new Setting(containerEl)
+			.setName("URL Replacement with Title")
+			.setHeading();
+
+		// Toggle for replacing URLs with titles
+		new Setting(containerEl)
+			.setName("Replace URL with title")
+			.setDesc(
+				"When enabled, raw URLs will be replaced with [Page Title](URL). Requires fetching the URL content.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.replaceUrlWithTitle)
+					.onChange(async (value) => {
+						this.plugin.settings.replaceUrlWithTitle = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
+		new Setting(containerEl)
+			.setName("Igonre domains")
+			.setDesc(
+				"Ignore domains for replacing URLs with titles, one per line (e.g. x.com)",
+			)
+			.addTextArea((text) => {
+				text.setPlaceholder("")
+					.setValue(
+						this.plugin.settings.replaceUrlWithTitleIgnoreDomains.join(
+							"\n",
+						),
+					)
+					.onChange(async (value) => {
+						// Split by newlines and filter out empty lines
+						const urls = value
+							.split("\n")
+							.map((url) => url.trim())
+							.filter(Boolean);
+						this.plugin.settings.replaceUrlWithTitleIgnoreDomains =
+							urls;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+				// Make the text area taller
+				text.inputEl.rows = 4;
+				text.inputEl.cols = 50;
+			});
+
+		new Setting(containerEl)
 			.setName("URL Formatting for GitHub")
 			.setHeading();
 
@@ -333,52 +379,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 						this.plugin.settings.formatLinearURLs = value;
 						await this.plugin.saveData(this.plugin.settings);
 					});
-			});
-
-		new Setting(containerEl)
-			.setName("URL Replacement with Title")
-			.setHeading();
-
-		// Toggle for replacing URLs with titles
-		new Setting(containerEl)
-			.setName("Replace URL with title")
-			.setDesc(
-				"When enabled, raw URLs will be replaced with [Page Title](URL). Requires fetching the URL content.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.replaceUrlWithTitle)
-					.onChange(async (value) => {
-						this.plugin.settings.replaceUrlWithTitle = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
-
-		new Setting(containerEl)
-			.setName("Igonre domains")
-			.setDesc(
-				"Ignore domains for replacing URLs with titles, one per line (e.g. x.com)",
-			)
-			.addTextArea((text) => {
-				text.setPlaceholder("")
-					.setValue(
-						this.plugin.settings.replaceUrlWithTitleIgnoreDomains.join(
-							"\n",
-						),
-					)
-					.onChange(async (value) => {
-						// Split by newlines and filter out empty lines
-						const urls = value
-							.split("\n")
-							.map((url) => url.trim())
-							.filter(Boolean);
-						this.plugin.settings.replaceUrlWithTitleIgnoreDomains =
-							urls;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-				// Make the text area taller
-				text.inputEl.rows = 4;
-				text.inputEl.cols = 50;
 			});
 
 		new Setting(containerEl).setName("Debug").setHeading();
