@@ -44,6 +44,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Toggle for running prettier after formatting
+		new Setting(containerEl)
+			.setName("Run Prettier after formatting")
+			.setDesc(
+				"When enabled, Prettier will be executed after Automatic Linker formatting. This requires prettier-format plugin to be installed. https://github.com/dylanarmstrong/obsidian-prettier-plugin",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.runPrettierAfterFormatting)
+					.onChange(async (value) => {
+						this.plugin.settings.runPrettierAfterFormatting = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		// Setting for linter delay
 		new Setting(containerEl)
 			.setName("Linter delay (ms)")
