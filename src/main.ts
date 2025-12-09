@@ -223,104 +223,107 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		cm.replaceSelection(updatedText);
 	}
 
+	refreshFileDataAndTrie() {
+		const allMarkdownFiles = this.app.vault.getMarkdownFiles();
+		const allFiles: PathAndAliases[] = allMarkdownFiles
+			.filter((file) => {
+				// Filter out files in excluded directories
+				const path = file.path.replace(/\.md$/, "");
+				return !this.settings.excludeDirsFromAutoLinking.some(
+					(excludeDir) => {
+						return (
+							path.startsWith(excludeDir + "/") ||
+							path === excludeDir
+						);
+					},
+				);
+			})
+			.map((file) => {
+				// Remove the .md extension
+				const path = file.path.replace(/\.md$/, "");
+				const metadata =
+					this.app.metadataCache.getFileCache(file)?.frontmatter;
+				const restrictNamespace =
+					metadata?.["automatic-linker-restrict-namespace"] ===
+						true ||
+					metadata?.["automatic-linker-limited-namespace"] === true;
+
+				// if this property exists, prevent this file from being linked from other files
+				const preventLinking =
+					metadata?.["automatic-linker-prevent-linking"] === true;
+
+				const aliases = (() => {
+					if (this.settings.considerAliases) {
+						const frontmatter =
+							this.app.metadataCache.getFileCache(
+								file,
+							)?.frontmatter;
+						const aliases = parseFrontMatterAliases(frontmatter);
+						return aliases;
+					} else {
+						return null;
+					}
+				})();
+				return {
+					path,
+					aliases,
+					restrictNamespace,
+					preventLinking,
+				};
+			});
+		// Sort filenames in descending order (longer paths first)
+		allFiles.sort((a, b) => b.path.length - a.path.length);
+
+		if (this.settings.debug) {
+			console.log(
+				"Automatic Linker: allFiles for Trie building: ",
+				allFiles,
+			);
+		}
+
+		// Build candidateMap and Trie using the helper function.
+		const { candidateMap, trie } = buildCandidateTrie(
+			allFiles,
+			this.settings.baseDir,
+			this.settings.ignoreCase ?? false,
+		);
+		this.candidateMap = candidateMap;
+		this.trie = trie;
+
+		if (this.settings.showNotice) {
+			new Notice(
+				`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
+			);
+		}
+	}
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(
 			new AutomaticLinkerPluginSettingsTab(this.app, this),
 		);
 
-		const refreshFileDataAndTrie = () => {
-			const allMarkdownFiles = this.app.vault.getMarkdownFiles();
-			const allFiles: PathAndAliases[] = allMarkdownFiles
-				.filter((file) => {
-					// Filter out files in excluded directories
-					const path = file.path.replace(/\.md$/, "");
-					return !this.settings.excludeDirsFromAutoLinking.some(
-						(excludeDir) => {
-							return (
-								path.startsWith(excludeDir + "/") ||
-								path === excludeDir
-							);
-						},
-					);
-				})
-				.map((file) => {
-					// Remove the .md extension
-					const path = file.path.replace(/\.md$/, "");
-					const metadata =
-						this.app.metadataCache.getFileCache(file)?.frontmatter;
-					const restrictNamespace =
-						metadata?.["automatic-linker-restrict-namespace"] ===
-							true ||
-						metadata?.["automatic-linker-limited-namespace"] ===
-							true;
-
-					// if this property exists, prevent this file from being linked from other files
-					const preventLinking =
-						metadata?.["automatic-linker-prevent-linking"] === true;
-
-					const aliases = (() => {
-						if (this.settings.considerAliases) {
-							const frontmatter =
-								this.app.metadataCache.getFileCache(
-									file,
-								)?.frontmatter;
-							const aliases =
-								parseFrontMatterAliases(frontmatter);
-							return aliases;
-						} else {
-							return null;
-						}
-					})();
-					return {
-						path,
-						aliases,
-						restrictNamespace,
-						preventLinking,
-					};
-				});
-			// Sort filenames in descending order (longer paths first)
-			allFiles.sort((a, b) => b.path.length - a.path.length);
-
-			if (this.settings.debug) {
-				console.log(
-					"Automatic Linker: allFiles for Trie building: ",
-					allFiles,
-				);
-			}
-
-			// Build candidateMap and Trie using the helper function.
-			const { candidateMap, trie } = buildCandidateTrie(
-				allFiles,
-				this.settings.baseDir,
-				this.settings.ignoreCase ?? false,
-			);
-			this.candidateMap = candidateMap;
-			this.trie = trie;
-
-			if (this.settings.showNotice) {
-				new Notice(
-					`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
-				);
-			}
-		};
-
 		// Load file data and build the Trie when the layout is ready.
 		this.app.workspace.onLayoutReady(() => {
-			refreshFileDataAndTrie();
+			this.refreshFileDataAndTrie();
 			if (this.settings.debug) {
 				console.log("Automatic Linker: Built all markdown files.");
 				new Notice("Automatic Linker: Built all markdown files.");
 			}
 
 			this.registerEvent(
-				this.app.vault.on("delete", () => refreshFileDataAndTrie()),
+				this.app.vault.on("delete", () =>
+					this.refreshFileDataAndTrie(),
+				),
 			);
 			this.registerEvent(
-				this.app.vault.on("create", () => refreshFileDataAndTrie()),
+				this.app.vault.on("create", () =>
+					this.refreshFileDataAndTrie(),
+				),
 			);
 			this.registerEvent(
-				this.app.vault.on("rename", () => refreshFileDataAndTrie()),
+				this.app.vault.on("rename", () =>
+					this.refreshFileDataAndTrie(),
+				),
 			);
 		});
 
@@ -342,7 +345,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			name: "rebuild all files",
 			editorCallback: async () => {
 				try {
-					refreshFileDataAndTrie();
+					this.refreshFileDataAndTrie();
 					if (this.settings.debug) {
 						console.log(
 							"Automatic Linker: Built all markdown files.",
