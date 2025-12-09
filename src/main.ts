@@ -151,6 +151,16 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		updateEditor(oldText, newText, editor);
 	}
 
+	async modifyLinksForVault() {
+		this.refreshFileDataAndTrie();
+		const allMarkdownFiles = this.app.vault.getMarkdownFiles();
+		for (const file of allMarkdownFiles) {
+			await this.app.vault.process(file, (fileContent) => {
+				return this.modifyLinks(fileContent, file.path);
+			});
+		}
+	}
+
 	async buildUrlTitleMap() {
 		const activeFile = this.app.workspace.getActiveFile();
 		if (!activeFile) {
@@ -334,6 +344,18 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			editorCallback: async () => {
 				try {
 					await this.modifyLinksForActiveFile();
+				} catch (error) {
+					console.error(error);
+				}
+			},
+		});
+
+		this.addCommand({
+			id: "link-entire-vault",
+			name: "Link entire vault",
+			editorCallback: async () => {
+				try {
+					await this.modifyLinksForVault();
 				} catch (error) {
 					console.error(error);
 				}
