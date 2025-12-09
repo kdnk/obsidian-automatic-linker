@@ -50,24 +50,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		return activeLeaf.editor;
 	}
 
-	async modifyLinks() {
-		const activeFile = this.app.workspace.getActiveFile();
-		if (!activeFile) {
-			return;
-		}
-
-		const metadata =
-			this.app.metadataCache.getFileCache(activeFile)?.frontmatter;
-		const disabled = metadata?.["automatic-linker-disabled"] === true;
-		if (disabled) {
-			return;
-		}
-
-		const editor = this.getEditor();
-		if (!editor) return;
-
-		let fileContent = editor.getValue();
-		const oldText = fileContent;
+	modifyLinks(fileContent: string, filePath: string): string {
 		if (this.settings.formatGitHubURLs) {
 			fileContent = replaceURLs(
 				fileContent,
@@ -121,7 +104,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		const updatedBody = replaceLinks({
 			body: fileContent.slice(contentStart),
 			linkResolverContext: {
-				filePath: activeFile.path.replace(/\.md$/, ""),
+				filePath: filePath.replace(/\.md$/, ""),
 				trie: this.trie,
 				candidateMap: this.candidateMap,
 			},
@@ -143,8 +126,28 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				`Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`,
 			);
 		}
+		return fileContent;
+	}
 
-		const newText = fileContent;
+	async modifyLinksForActiveFile() {
+		const activeFile = this.app.workspace.getActiveFile();
+		if (!activeFile) {
+			return;
+		}
+
+		const metadata =
+			this.app.metadataCache.getFileCache(activeFile)?.frontmatter;
+		const disabled = metadata?.["automatic-linker-disabled"] === true;
+		if (disabled) {
+			return;
+		}
+
+		const editor = this.getEditor();
+		if (!editor) return;
+
+		let fileContent = editor.getValue();
+		const oldText = fileContent;
+		const newText = this.modifyLinks(fileContent, activeFile.path);
 		updateEditor(oldText, newText, editor);
 	}
 
@@ -177,7 +180,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 
 		await this.buildUrlTitleMap();
-		await this.modifyLinks();
+		await this.modifyLinksForActiveFile();
 	}
 
 	async mofifyLinksSelection() {
@@ -327,7 +330,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			name: "Link current file",
 			editorCallback: async () => {
 				try {
-					await this.modifyLinks();
+					await this.modifyLinksForActiveFile();
 				} catch (error) {
 					console.error(error);
 				}
