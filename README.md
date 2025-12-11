@@ -69,6 +69,7 @@ Fine-tune linking behavior to match your workflow:
 - **Exclude Directories**: Prevent auto-linking in specified folders
 - **Preserve Existing Links**: Never reformats already-linked text
 - **Copy Without Links**: Copy note content with wiki links converted back to plain text
+- **Copy Selection Without Links**: Copy selected lines with minimal indentation and wiki links removed (supports path-style links like `[[path/to/file]]`)
 - **Debug Mode**: Detailed logging for troubleshooting
 - **Load Notices**: Optional notifications when files are processed
 
@@ -78,11 +79,12 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 | Command | Description |
 |---------|-------------|
-| **Automatic Linker: Format** | Convert text to links in the current file |
-| **Automatic Linker: Link selected text** | Convert only highlighted text to links |
-| **Automatic Linker: Format entire vault** | Batch process all files in your vault |
-| **Automatic Linker: Copy without links** | Copy current file content with links as plain text |
-| **Automatic Linker: Replace URLs with titles** | Fetch page titles and replace bare URLs |
+| **Automatic Linker: Format file** | Convert text to links in the current file |
+| **Automatic Linker: Format selection** | Convert only selected text to links |
+| **Automatic Linker: Format vault** | Batch process all files in your vault |
+| **Automatic Linker: Copy file without links** | Copy current file content with links as plain text |
+| **Automatic Linker: Copy selection without links** | Copy selected lines with minimal indent and links removed |
+| **Automatic Linker: Rebuild index** | Rebuild the file index for link candidates |
 
 ## Configuration
 
@@ -186,6 +188,32 @@ After:
 Check out [obsidianmd/obsidian-releases#1234](https://github.com/obsidianmd/obsidian-releases/issues/1234)
 ```
 
+### Example 5: Copy Selection Without Links
+
+When you select part of a nested list:
+
+Selection in editor:
+```
+    - Priority about [[PBI]]
+        - High priority for near deadline
+    - Chapter [[PBI]]
+        - Up to 30% [[story point]] in sprint backlog
+```
+
+After running "Copy selection without links", clipboard contains:
+```
+- Priority about PBI
+	- High priority for near deadline
+- Chapter PBI
+	- Up to 30% story point in sprint backlog
+```
+
+Features:
+- Removes minimal indentation from selected lines
+- Converts path-style links: `[[path/to/file]]` → `file`
+- Preserves relative indentation structure
+- Gets full lines even if partially selected
+
 ## Integration with Obsidian Linter
 
 To avoid conflicts when using both plugins:
@@ -264,6 +292,7 @@ src/
 ├── replace-urls/              # URL formatting (GitHub, Jira, Linear)
 ├── replace-url-with-title/    # Bare URL to titled link conversion
 ├── exclude-links/             # Link exclusion logic
+├── remove-minimal-indent/     # Remove minimal indentation from text
 ├── trie.ts                    # Trie data structure for efficient matching
 └── update-editor.ts           # Editor update utilities
 ```

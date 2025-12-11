@@ -340,8 +340,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		// Command: Manually trigger link replacement for the current file.
 		this.addCommand({
-			id: "link-current-file",
-			name: "Link current file",
+			id: "format-file",
+			name: "Format file",
 			editorCallback: async () => {
 				try {
 					await this.modifyLinksForActiveFile();
@@ -352,8 +352,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "link-entire-vault",
-			name: "Link entire vault",
+			id: "format-vault",
+			name: "Format vault",
 			editorCallback: async () => {
 				try {
 					await this.modifyLinksForVault();
@@ -364,8 +364,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "rebuild-all-files",
-			name: "rebuild all files",
+			id: "rebuild-index",
+			name: "Rebuild index",
 			editorCallback: async () => {
 				try {
 					this.refreshFileDataAndTrie();
@@ -384,8 +384,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "link-selection",
-			name: "Link selection",
+			id: "format-selection",
+			name: "Format selection",
 			editorCallback: async () => {
 				try {
 					await this.mofifyLinksSelection();
@@ -396,8 +396,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		});
 
 		this.addCommand({
-			id: "copy-file-content-without-links",
-			name: "Copy file content without links",
+			id: "copy-file-without-links",
+			name: "Copy file without links",
 			editorCallback: async () => {
 				const activeFile = this.app.workspace.getActiveFile();
 				if (!activeFile) {
