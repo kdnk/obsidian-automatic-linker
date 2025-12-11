@@ -11,6 +11,7 @@ import {
 } from "obsidian";
 import { excludeLinks } from "./exclude-links";
 import { PathAndAliases } from "./path-and-aliases.types";
+import { removeMinimalIndent } from "./remove-minimal-indent";
 import { replaceLinks } from "./replace-links/replace-links";
 import { replaceUrlWithTitle } from "./replace-url-with-title";
 import { getTitleFromHtml } from "./replace-url-with-title/utils/get-title-from-html";
@@ -407,6 +408,33 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				const body = fileContent.slice(contentStart);
 				const bodyWithoutLinks = excludeLinks(body);
 				navigator.clipboard.writeText(bodyWithoutLinks);
+			},
+		});
+
+		this.addCommand({
+			id: "copy-selection-without-links",
+			name: "Copy selection without links",
+			editorCallback: async (editor: Editor) => {
+				// Get the start and end positions of the selection
+				const from = editor.getCursor("from");
+				const to = editor.getCursor("to");
+
+				// Get the full lines that contain the selection
+				const selectedText = editor.getRange(
+					{ line: from.line, ch: 0 },
+					{ line: to.line, ch: editor.getLine(to.line).length },
+				);
+
+				if (!selectedText) {
+					return;
+				}
+
+				// Remove minimal indent
+				const textWithMinimalIndent = removeMinimalIndent(selectedText);
+				// Remove wikilinks
+				const textWithoutLinks = excludeLinks(textWithMinimalIndent);
+
+				await navigator.clipboard.writeText(textWithoutLinks);
 			},
 		});
 
