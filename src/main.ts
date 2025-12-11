@@ -441,7 +441,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						"obsidian-linter:lint-file",
 					);
 				}
-
 			}
 		};
 	}
