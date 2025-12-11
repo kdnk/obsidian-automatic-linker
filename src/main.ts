@@ -427,7 +427,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				await sleep(this.settings.formatDelayMs ?? 100);
 				await this.formatOnSave();
 
-				// Run Obsidian Linter after formatting if enabled
+				if (this.settings.runPrettierAfterFormatting) {
+					await sleep(this.settings.formatDelayMs ?? 100);
+					//@ts-expect-error
+					await this.app?.commands?.executeCommandById(
+						"prettier-format:format-file",
+					);
+				}
 				if (this.settings.runLinterAfterFormatting) {
 					await sleep(this.settings.formatDelayMs ?? 100);
 					//@ts-expect-error
@@ -436,13 +442,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 					);
 				}
 
-				if (this.settings.runPrettierAfterFormatting) {
-					await sleep(this.settings.formatDelayMs ?? 100);
-					//@ts-expect-error
-					await this.app?.commands?.executeCommandById(
-						"prettier-format:format-file",
-					);
-				}
 			}
 		};
 	}
