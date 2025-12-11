@@ -41,8 +41,13 @@ export const excludeLinks = (text: string) => {
 		} else {
 			// Replace links in non-code segments, handling aliases
 			return segment.content.replace(regex, (match, link, alias) => {
-				// If there's an alias, use it, otherwise use the link text
-				return alias || link;
+				// If there's an alias, use it
+				if (alias) {
+					return alias;
+				}
+				// Extract the last part after the last '/' (basename)
+				const parts = link.split("/");
+				return parts[parts.length - 1] || link;
 			});
 		}
 	});

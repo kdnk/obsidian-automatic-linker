@@ -46,4 +46,24 @@ describe("exclude links", () => {
 		const result = excludeLinks("[[hello|world]]");
 		expect(result).toBe("world");
 	});
+
+	it("extracts basename from path-style links", () => {
+		const result = excludeLinks("[[xxx/yyy/zzz]]");
+		expect(result).toBe("zzz");
+	});
+
+	it("extracts basename from two-level path links", () => {
+		const result = excludeLinks("[[folder/file]]");
+		expect(result).toBe("file");
+	});
+
+	it("uses alias for path-style links when provided", () => {
+		const result = excludeLinks("[[xxx/yyy/zzz|alias]]");
+		expect(result).toBe("alias");
+	});
+
+	it("handles multiple path-style links", () => {
+		const result = excludeLinks("[[path/to/file1]] and [[another/path/to/file2]]");
+		expect(result).toBe("file1 and file2");
+	});
 });
