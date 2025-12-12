@@ -24,7 +24,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result1).toBe("meeting-notes");
 
@@ -36,7 +36,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result2).toBe("[[project]]");
 	});
@@ -63,7 +63,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result1).toBe("daily");
 
@@ -74,7 +74,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result2).toBe("old-note");
 
@@ -86,7 +86,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result3).toBe("[[active-note]]");
 	});
@@ -112,7 +112,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result1).toBe("weekly");
 
@@ -124,7 +124,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result2).toBe("[[regular]]");
 	});
@@ -150,7 +150,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result1).toBe("[[meeting]]");
 
@@ -161,7 +161,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result2).toBe("[[project]]");
 	});
@@ -187,7 +187,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, baseDir: "pages" },
+			settings: { baseDir: "pages" },
 		});
 		expect(result1).toBe("Templates/daily");
 
@@ -199,7 +199,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, baseDir: "pages" },
+			settings: { baseDir: "pages" },
 		});
 		expect(result2).toBe("[[work]]");
 	});

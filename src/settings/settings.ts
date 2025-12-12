@@ -92,25 +92,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
-		// Setting for minimum character count.
-		// If the text is below this number of characters, links will not be replaced.
-		new Setting(containerEl)
-			.setName("Minimum character count")
-			.setDesc(
-				"If the content is below this character count, the links will not be replaced.",
-			)
-			.addText((text) => {
-				text.setPlaceholder("e.g. 4")
-					.setValue(this.plugin.settings.minCharCount.toString())
-					.onChange(async (value) => {
-						const parsedValue = parseInt(value);
-						if (!isNaN(parsedValue)) {
-							this.plugin.settings.minCharCount = parsedValue;
-							await this.plugin.saveData(this.plugin.settings);
-						}
-					});
-			});
-
 		// Toggle for considering aliases.
 		new Setting(containerEl)
 			.setName("Consider aliases")

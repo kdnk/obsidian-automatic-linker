@@ -110,7 +110,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				candidateMap: this.candidateMap,
 			},
 			settings: {
-				minCharCount: this.settings.minCharCount,
 				namespaceResolution: this.settings.namespaceResolution,
 				baseDir: this.settings.baseDir,
 				ignoreDateFormats: this.settings.ignoreDateFormats,
@@ -222,7 +221,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				candidateMap: this.candidateMap,
 			},
 			settings: {
-				minCharCount: this.settings.minCharCount,
 				namespaceResolution: this.settings.namespaceResolution,
 				baseDir: this.settings.baseDir,
 				ignoreDateFormats: this.settings.ignoreDateFormats,

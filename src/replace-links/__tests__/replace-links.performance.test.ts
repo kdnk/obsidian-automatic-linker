@@ -77,7 +77,7 @@ describe("replaceLinks performance tests", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			
 			const endTime = performance.now();
@@ -112,7 +112,7 @@ describe("replaceLinks performance tests", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			
 			const endTime = performance.now();
@@ -147,7 +147,7 @@ describe("replaceLinks performance tests", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			
 			const endTime = performance.now();
@@ -205,7 +205,7 @@ Final paragraph mentions ${linkWords[9]} again.
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			
 			const endTime = performance.now();
@@ -244,7 +244,7 @@ Final paragraph mentions ${linkWords[9]} again.
 					candidateMap,
 				},
 				settings: { 
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "namespace",
 				},
@@ -284,7 +284,7 @@ Final paragraph mentions ${linkWords[9]} again.
 					candidateMap,
 				},
 				settings: { 
-					minCharCount: 0,
+					
 					ignoreCase: true,
 				},
 			});
@@ -319,7 +319,7 @@ Final paragraph mentions ${linkWords[9]} again.
 					candidateMap,
 				},
 				settings: { 
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});
@@ -336,7 +336,7 @@ Final paragraph mentions ${linkWords[9]} again.
 					candidateMap,
 				},
 				settings: { 
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});

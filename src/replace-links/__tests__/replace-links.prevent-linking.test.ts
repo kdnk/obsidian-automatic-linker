@@ -22,7 +22,7 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 
 		// private-note should NOT be linked, but public-note should be linked
@@ -56,7 +56,7 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 
 		// "secret" should NOT be linked, but "open" should be linked
@@ -84,7 +84,7 @@ describe("replaceLinks with prevent-linking", () => {
 			},
 			settings: {
 				baseDir: "pages",
-				minCharCount: 0,
+				
 				namespaceResolution: true,
 			},
 		});
@@ -113,7 +113,7 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 
 		expect(result).toBe("private [[public]] [[another-public]]");
@@ -138,7 +138,7 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 
 		expect(result).toBe("- private-note\n- [[public-note]]");

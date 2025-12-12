@@ -78,7 +78,7 @@ describe("replaceLinks - CJK handling", () => {
 						candidateMap,
 					},
 					settings: {
-						minCharCount: 0,
+						
 						namespaceResolution: true,
 						baseDir: "pages",
 						ignoreDateFormats: true,
@@ -104,7 +104,7 @@ describe("replaceLinks - CJK handling", () => {
 						candidateMap,
 					},
 					settings: {
-						minCharCount: 0,
+						
 						namespaceResolution: true,
 						baseDir: "pages",
 						ignoreDateFormats: true,
@@ -132,7 +132,7 @@ describe("replaceLinks - CJK handling", () => {
 						candidateMap,
 					},
 					settings: {
-						minCharCount: 0,
+						
 						namespaceResolution: true,
 						baseDir: "pages",
 						ignoreDateFormats: true,
@@ -160,7 +160,7 @@ describe("replaceLinks - CJK handling", () => {
 						candidateMap,
 					},
 					settings: {
-						minCharCount: 0,
+						
 						namespaceResolution: true,
 						baseDir: "pages",
 						ignoreDateFormats: true,
@@ -306,7 +306,7 @@ describe("replaceLinks - CJK handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
@@ -333,7 +333,7 @@ describe("replaceLinks - CJK handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
@@ -378,7 +378,7 @@ describe("replaceLinks - CJK handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
@@ -404,7 +404,7 @@ describe("replaceLinks - CJK handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
@@ -430,7 +430,7 @@ describe("replaceLinks - CJK handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},

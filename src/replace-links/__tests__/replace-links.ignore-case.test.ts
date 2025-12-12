@@ -27,7 +27,7 @@ describe("ignore case", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { ignoreCase: true, minCharCount: 0 },
+				settings: { ignoreCase: true, },
 			});
 			expect(result).toBe(expected);
 		}
@@ -57,7 +57,7 @@ describe("ignore case", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { ignoreCase: true, minCharCount: 0 },
+				settings: { ignoreCase: true, },
 			});
 			expect(result).toBe(expected);
 		}
@@ -96,7 +96,7 @@ describe("ignore case", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { ignoreCase: true, minCharCount: 0 },
+				settings: { ignoreCase: true, },
 			});
 			expect(result).toBe(expected);
 		}

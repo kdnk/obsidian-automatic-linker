@@ -19,7 +19,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("[[hello]]");
 		});
@@ -42,8 +42,7 @@ describe("replaceLinks", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
-					namespaceResolution: true,
+										namespaceResolution: true,
 				},
 			});
 			expect(result).toBe("[[tidy first]]");
@@ -64,7 +63,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("- [[hello]]");
 		});
@@ -84,7 +83,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("1. [[hello]]");
 		});
@@ -104,7 +103,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("```\nhello\n```");
 		});
@@ -124,7 +123,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("`hello`");
 		});
@@ -144,7 +143,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("[[hello]]");
 		});
@@ -164,7 +163,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("[hello](world)");
 		});
@@ -184,7 +183,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("[hello]");
 		});
@@ -204,29 +203,8 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
 			});
 			expect(result).toBe("[hello][world]");
-		});
-
-		it("respects minCharCount", () => {
-			const { candidateMap, trie } = buildCandidateTrieForTest({
-				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
-			});
-			const result = replaceLinks({
-				body: "hello",
-				linkResolverContext: {
-					filePath: "journals/2022-01-01",
-					trie,
-					candidateMap,
-				},
-				settings: { minCharCount: 6 },
-			});
-			expect(result).toBe("hello");
 		});
 	});
 
@@ -290,7 +268,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("[[hello]] [[world]]");
 		});
@@ -310,7 +288,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { minCharCount: 0 },
+				settings: { },
 			});
 			expect(result).toBe("[[hello]]\n[[world]]");
 		});

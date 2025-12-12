@@ -20,7 +20,7 @@ describe("basic", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0 },
+			settings: { },
 		});
 		expect(result).toBe("[[hello]]");
 	});
@@ -931,7 +931,7 @@ describe("ignoreDateFormats setting", () => {
 				candidateMap,
 			},
 			settings: {
-				minCharCount: 0,
+				
 				namespaceResolution: true,
 				ignoreDateFormats: true,
 			},
@@ -955,7 +955,7 @@ describe("ignoreDateFormats setting", () => {
 				candidateMap,
 			},
 			settings: {
-				minCharCount: 0,
+				
 				namespaceResolution: true,
 				ignoreDateFormats: false,
 			},
@@ -1083,7 +1083,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, namespaceResolution: true },
+			settings: { namespaceResolution: true },
 		});
 		expect(result).toBe("이 문서는 [[문서]]이다.");
 	});
@@ -1098,7 +1098,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, namespaceResolution: true },
+			settings: { namespaceResolution: true },
 		});
 		expect(result).toBe("- [[ひらがな]][[ひらがな]]");
 	});
@@ -1113,7 +1113,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, namespaceResolution: true },
+			settings: { namespaceResolution: true },
 		});
 		expect(result).toBe("这个[[文档]]很好。");
 	});
@@ -1128,7 +1128,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, namespaceResolution: true },
+			settings: { namespaceResolution: true },
 		});
 		expect(result).toBe("[[tags]]");
 	});
@@ -1143,7 +1143,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, namespaceResolution: true },
+			settings: { namespaceResolution: true },
 		});
 		expect(result).toBe("[[HelloWorld]]");
 	});
@@ -1158,7 +1158,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, namespaceResolution: true },
+			settings: { namespaceResolution: true },
 		});
 		expect(result).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
 	});
@@ -1173,7 +1173,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { minCharCount: 0, namespaceResolution: true },
+			settings: { namespaceResolution: true },
 		});
 		expect(result).toBe("Some text `x` more text");
 	});
@@ -1196,7 +1196,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				body,
 				linkResolverContext: { filePath, trie, candidateMap },
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
@@ -1212,7 +1212,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				body,
 				linkResolverContext: { filePath, trie, candidateMap },
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},

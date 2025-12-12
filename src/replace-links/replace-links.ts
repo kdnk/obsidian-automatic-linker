@@ -8,7 +8,6 @@ export interface LinkResolverContext {
 }
 
 export interface ReplaceLinksSettings {
-	minCharCount?: number;
 	namespaceResolution?: boolean;
 	baseDir?: string;
 	ignoreDateFormats?: boolean;
@@ -746,17 +745,11 @@ export const replaceLinks = ({
 	body,
 	linkResolverContext: { filePath, trie, candidateMap },
 	settings = {
-		minCharCount: 0,
 		namespaceResolution: true,
 		baseDir: undefined,
 		ignoreDateFormats: true,
 	},
 }: ReplaceLinksOptions): string => {
-	// Return the body unchanged if its length is below the minimum character count
-	if (body.length <= (settings.minCharCount ?? 0)) {
-		return body;
-	}
-
 	// Normalize the body text to NFC
 	body = body.normalize("NFC");
 

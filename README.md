@@ -65,7 +65,6 @@ Fine-tune linking behavior to match your workflow:
 
 ### Quality of Life Features
 
-- **Minimum Character Count**: Skip formatting for very short files
 - **Exclude Directories**: Prevent auto-linking in specified folders
 - **Preserve Existing Links**: Never reformats already-linked text
 - **Copy Without Links**: Copy note content with wiki links converted back to plain text
@@ -93,7 +92,6 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 - **Format on Save**: Enable automatic linking when saving files
 - **Format Delay**: Delay in milliseconds before formatting (useful for plugin integration)
 - **Base Directory**: Root directory for namespace handling (e.g., `pages`)
-- **Minimum Character Count**: Skip files below this character count
 
 ### Link Behavior
 
@@ -311,7 +309,6 @@ The plugin uses a Trie data structure for efficient file name matching, making i
 
 **Links aren't being created:**
 - Ensure "Format on Save" is enabled or manually trigger the command
-- Check that the file isn't below minimum character count
 - Verify the file isn't in an excluded directory
 
 **Namespace resolution not working:**

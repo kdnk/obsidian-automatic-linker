@@ -88,7 +88,7 @@ describe("replaceLinks - namespace resolution", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
@@ -115,7 +115,7 @@ describe("replaceLinks - namespace resolution", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},

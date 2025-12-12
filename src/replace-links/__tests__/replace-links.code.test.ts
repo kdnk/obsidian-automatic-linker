@@ -40,24 +40,4 @@ describe("ignore code", () => {
 		});
 		expect(result).toBe("```typescript\nexample\n```");
 	});
-
-	it("skips replacement when content is too short", () => {
-		const { candidateMap, trie } = buildCandidateTrieForTest({
-			files: [{ path: "hello" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
-		});
-		const result = replaceLinks({
-			body: "hello",
-			linkResolverContext: {
-				filePath: "journals/2022-01-01",
-				trie,
-				candidateMap,
-			},
-			settings: { minCharCount: 10 },
-		});
-		expect(result).toBe("hello");
-	});
 });

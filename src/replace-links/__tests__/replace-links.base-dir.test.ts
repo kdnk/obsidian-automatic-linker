@@ -21,7 +21,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 				},
 			});
 			expect(result).toBe("[[xxx]]");
@@ -44,7 +44,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});
@@ -68,7 +68,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: undefined,
-					minCharCount: 0,
+					
 				},
 			});
 			expect(result).toBe("[[pages/xxx|xxx]]");
@@ -91,7 +91,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "",
-					minCharCount: 0,
+					
 				},
 			});
 			expect(result).toBe("[[pages/xxx|xxx]]");
@@ -116,7 +116,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 				},
 			});
 			expect(result).toBe("[[xxx|alias-xxx]]");
@@ -141,7 +141,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 				},
 			});
 			expect(result).toBe("[[foo/bar|alias-bar]]");
@@ -166,7 +166,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});
@@ -193,7 +193,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});
@@ -219,7 +219,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					preventSelfLinking: true,
 				},
 			});
@@ -243,7 +243,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					preventSelfLinking: true,
 					namespaceResolution: true,
 				},
@@ -271,7 +271,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					preventSelfLinking: true,
 					namespaceResolution: true,
 				},
@@ -303,7 +303,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});
@@ -331,7 +331,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});
@@ -359,7 +359,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});
@@ -387,7 +387,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					ignoreCase: true,
 				},
 			});
@@ -414,7 +414,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					ignoreCase: true,
 					namespaceResolution: true,
 				},
@@ -444,7 +444,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 				},
 			});
 			expect(result).toBe("[[other/yyy|yyy]]");
@@ -467,7 +467,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 				},
 			});
 			expect(result).toBe("");
@@ -490,7 +490,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 				},
 			});
@@ -521,7 +521,7 @@ describe("replaceLinks with baseDir", () => {
 				},
 				settings: {
 					baseDir: "pages",
-					minCharCount: 0,
+					
 				},
 			});
 			const endTime = performance.now();

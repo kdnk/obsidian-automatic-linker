@@ -103,7 +103,7 @@ describe("replaceLinks - alias handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
@@ -127,7 +127,7 @@ describe("replaceLinks - alias handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
@@ -151,7 +151,7 @@ describe("replaceLinks - alias handling", () => {
 					candidateMap,
 				},
 				settings: {
-					minCharCount: 0,
+					
 					namespaceResolution: true,
 					baseDir: "pages",
 				},
