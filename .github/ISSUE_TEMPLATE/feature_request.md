@@ -12,13 +12,15 @@ A clear and concise description of what the feature request is.
 
 **Minimal examples**
 
-| Current file path              | xxx/current-file.md    |
+| Title                          | Example                |
 | ------------------------------ | ---------------------- |
+| Current file path              | xxx/current-file.md    |
 | All existing file paths        | aaa/bbb.md, ccc/ddd.md |
 | Current text                   | bbb                    |
-| Formatted Text                 | [[bbb]]                |
+| Actual text after formatting   | [[bbb]]                |
 | Expected text after formatting | [[aaa/bbbb]]           |
 | your config | paste screenshot of your automatic linkers' config |
+
 
 **Additional context**
 Add any other context about the problem here.
