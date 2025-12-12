@@ -20,11 +20,9 @@ A clear and concise description of what the bug is.
 | Current text                   | bbb                    |
 | Formatted Text                 | [[bbb]]                |
 | Expected text after formatting | [[aaa/bbbb]]           |
+| your config | paste screenshot of your automatic linkers' config |
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
-
-**Desktop (please complete the following information):**
+**Versions (please complete the following information):**
 
 - Obsidian Version [e.g. chrome, safari]
 - Automatic Linker's Version [e.g. 22]
