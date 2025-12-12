@@ -169,6 +169,46 @@ describe("replaceLinks", () => {
 			expect(result).toBe("[hello](world)");
 		});
 
+		it("does not replace text in single brackets", () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "hello" }, { path: "world" }],
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
+			});
+			const result = replaceLinks({
+				body: "[hello]",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0 },
+			});
+			expect(result).toBe("[hello]");
+		});
+
+		it("does not replace consecutive single brackets", () => {
+			const { candidateMap, trie } = buildCandidateTrieForTest({
+				files: [{ path: "hello" }, { path: "world" }],
+				settings: {
+					restrictNamespace: false,
+					baseDir: undefined,
+				},
+			});
+			const result = replaceLinks({
+				body: "[hello][world]",
+				linkResolverContext: {
+					filePath: "journals/2022-01-01",
+					trie,
+					candidateMap,
+				},
+				settings: { minCharCount: 0 },
+			});
+			expect(result).toBe("[hello][world]");
+		});
+
 		it("respects minCharCount", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],

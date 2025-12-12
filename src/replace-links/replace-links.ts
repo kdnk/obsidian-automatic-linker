@@ -25,7 +25,7 @@ export interface ReplaceLinksOptions {
 
 // Constants and Regular Expressions
 const REGEX_PATTERNS = {
-	PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s]+)/g,
+	PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
 	DATE_FORMAT: /^\d{4}-\d{2}-\d{2}$/,
 	MONTH_NOTE: /^[0-9]{1,2}$/,
 	CJK: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u,
