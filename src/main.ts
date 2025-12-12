@@ -146,7 +146,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		const editor = this.getEditor();
 		if (!editor) return;
 
-		let fileContent = editor.getValue();
+		const fileContent = editor.getValue();
 		const oldText = fileContent;
 		const newText = this.modifyLinks(fileContent, activeFile.path);
 		updateEditor(oldText, newText, editor);
@@ -342,6 +342,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		this.addCommand({
 			id: "format-file",
 			name: "Format file",
+			icon: "wand-sparkles",
 			editorCallback: async () => {
 				try {
 					await this.modifyLinksForActiveFile();
@@ -354,6 +355,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		this.addCommand({
 			id: "format-vault",
 			name: "Format vault",
+			icon: "drill",
 			editorCallback: async () => {
 				try {
 					await this.modifyLinksForVault();
@@ -366,6 +368,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		this.addCommand({
 			id: "rebuild-index",
 			name: "Rebuild index",
+			icon: "refresh-ccw",
 			editorCallback: async () => {
 				try {
 					this.refreshFileDataAndTrie();

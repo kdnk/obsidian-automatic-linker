@@ -1,4 +1,4 @@
-# Automatic Linker
+# 🪄 Automatic Linker 🔮
 
 Automatically convert plain text file references into Obsidian wiki links as you write. Keep your knowledge graph connected without manual linking.
 
