@@ -8,11 +8,16 @@ import {
 	Plugin,
 	PluginManifest,
 	request,
+	TFile,
 } from "obsidian";
 import { excludeLinks } from "./exclude-links";
 import { PathAndAliases } from "./path-and-aliases.types";
 import { removeMinimalIndent } from "./remove-minimal-indent";
-import { replaceLinks } from "./replace-links/replace-links";
+import {
+	LinkGenerator,
+	LinkGeneratorParams,
+	replaceLinks,
+} from "./replace-links/replace-links";
 import { replaceUrlWithTitle } from "./replace-url-with-title";
 import { getTitleFromHtml } from "./replace-url-with-title/utils/get-title-from-html";
 import { listupAllUrls } from "./replace-url-with-title/utils/list-up-all-urls";
@@ -49,6 +54,43 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		const activeLeaf = this.app.workspace.getActiveViewOfType(MarkdownView);
 		if (!activeLeaf) return null;
 		return activeLeaf.editor;
+	}
+
+	/**
+	 * Creates a LinkGenerator that uses Obsidian's generateMarkdownLink API.
+	 * Falls back to default wikilink format if the file cannot be resolved.
+	 */
+	private createLinkGenerator(sourcePath: string): LinkGenerator {
+		return ({ linkPath, alias, isInTable }: LinkGeneratorParams): string => {
+			// Try to get the TFile for the link path
+			const targetFile = this.app.vault.getAbstractFileByPath(linkPath + ".md");
+
+			if (targetFile instanceof TFile) {
+				// File exists, use Obsidian's generateMarkdownLink API
+				try {
+					const link = this.app.fileManager.generateMarkdownLink(
+						targetFile,
+						sourcePath,
+						"",
+						alias || ""
+					);
+					return link;
+				} catch (error) {
+					// Fall back to default format if API fails
+					console.warn("Failed to generate link using Obsidian API:", error);
+				}
+			}
+
+			// Fallback: use default wikilink format
+			let linkContent = linkPath;
+			if (alias) {
+				linkContent = `${linkPath}|${alias}`;
+			}
+			if (isInTable && linkContent.includes("|")) {
+				linkContent = linkContent.replace(/\|/g, "\\|");
+			}
+			return `[[${linkContent}]]`;
+		};
 	}
 
 	modifyLinks(fileContent: string, filePath: string): string {
@@ -102,6 +144,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		const { contentStart } = getFrontMatterInfo(fileContent);
 		const frontmatter = fileContent.slice(0, contentStart);
+		const linkGenerator = this.createLinkGenerator(filePath);
 		const updatedBody = replaceLinks({
 			body: fileContent.slice(contentStart),
 			linkResolverContext: {
@@ -117,6 +160,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				preventSelfLinking: this.settings.preventSelfLinking,
 				removeAliasInDirs: this.settings.removeAliasInDirs,
 			},
+			linkGenerator,
 		});
 		fileContent = frontmatter + updatedBody;
 
@@ -213,6 +257,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			return;
 		}
 
+		const linkGenerator = this.createLinkGenerator(activeFile.path);
 		const updatedText = replaceLinks({
 			body: selectedText,
 			linkResolverContext: {
@@ -228,6 +273,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				preventSelfLinking: this.settings.preventSelfLinking,
 				removeAliasInDirs: this.settings.removeAliasInDirs,
 			},
+			linkGenerator,
 		});
 		cm.replaceSelection(updatedText);
 	}

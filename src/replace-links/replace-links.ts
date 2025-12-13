@@ -16,10 +16,20 @@ export interface ReplaceLinksSettings {
 	removeAliasInDirs?: string[];
 }
 
+export interface LinkGeneratorParams {
+	linkPath: string;
+	sourcePath: string;
+	alias?: string;
+	isInTable?: boolean;
+}
+
+export type LinkGenerator = (params: LinkGeneratorParams) => string;
+
 export interface ReplaceLinksOptions {
 	body: string;
 	linkResolverContext: LinkResolverContext;
 	settings?: ReplaceLinksSettings;
+	linkGenerator?: LinkGenerator;
 }
 
 // Constants and Regular Expressions
@@ -191,7 +201,7 @@ const createLinkContent = (
 	candidateData: CandidateData,
 	originalMatchedText: string,
 	settings: ReplaceLinksSettings = {},
-): string => {
+): { linkPath: string; alias?: string } => {
 	const { linkPath, alias, hasAlias } = extractLinkParts(candidateData.canonical);
 	const normalizedPath = normalizeCanonicalPath(linkPath, settings.baseDir);
 
@@ -201,17 +211,17 @@ const createLinkContent = (
 	if (hasAlias) {
 		// If alias removal is enabled for this directory, return path without alias
 		if (removeAlias) {
-			return normalizedPath;
+			return { linkPath: normalizedPath };
 		}
 		// Use originalMatchedText to preserve case when ignoreCase is enabled
 		const displayAlias = settings.ignoreCase ? originalMatchedText : alias;
-		return `${normalizedPath}|${displayAlias}`;
+		return { linkPath: normalizedPath, alias: displayAlias };
 	}
 
 	if (normalizedPath.includes("/")) {
 		// If alias removal is enabled for this directory, return path without alias
 		if (removeAlias) {
-			return normalizedPath;
+			return { linkPath: normalizedPath };
 		}
 
 		// For paths with slashes, use the last segment as the display text
@@ -230,21 +240,21 @@ const createLinkContent = (
 			displayText = originalMatchedText;
 		}
 
-		return `${normalizedPath}|${displayText}`;
+		return { linkPath: normalizedPath, alias: displayText };
 	}
 
 	// No explicit alias, no '/' in normalizedPath
 	if (settings.ignoreCase) {
 		if (originalMatchedText.toLowerCase() === normalizedPath.toLowerCase()) {
-			return originalMatchedText;
+			return { linkPath: originalMatchedText };
 		} else {
-			return `${normalizedPath}|${originalMatchedText}`;
+			return { linkPath: normalizedPath, alias: originalMatchedText };
 		}
 	} else {
 		if (originalMatchedText !== normalizedPath) {
-			return `${normalizedPath}|${originalMatchedText}`;
+			return { linkPath: normalizedPath, alias: originalMatchedText };
 		} else {
-			return normalizedPath;
+			return { linkPath: normalizedPath };
 		}
 	}
 };
@@ -256,6 +266,25 @@ const formatFinalLink = (
 	if (isInTable && linkContent.includes("|")) {
 		linkContent = linkContent.replace(/\|/g, "\\|");
 	}
+	return `[[${linkContent}]]`;
+};
+
+// Default link generator that creates standard Obsidian wikilinks
+export const defaultLinkGenerator: LinkGenerator = ({
+	linkPath,
+	alias,
+	isInTable = false,
+}: LinkGeneratorParams): string => {
+	let linkContent = linkPath;
+
+	if (alias) {
+		linkContent = `${linkPath}|${alias}`;
+	}
+
+	if (isInTable && linkContent.includes("|")) {
+		linkContent = linkContent.replace(/\|/g, "\\|");
+	}
+
 	return `[[${linkContent}]]`;
 };
 
@@ -306,7 +335,8 @@ const processCjkText = (
 	trie: TrieNode,
 	candidateMap: Map<string, CandidateData>,
 	currentNamespace: string,
-	filePath: string, // Add filePath parameter
+	filePath: string,
+	linkGenerator: LinkGenerator,
 	settings: ReplaceLinksSettings = {},
 ): string => {
 	// For CJK texts that might contain non-CJK terms like "taro-san", ensure we use a consistent approach
@@ -318,6 +348,7 @@ const processCjkText = (
 		buildFallbackIndex(candidateMap, settings.ignoreCase),
 		filePath,
 		currentNamespace,
+		linkGenerator,
 		settings,
 	);
 };
@@ -329,6 +360,7 @@ const processFallbackSearch = (
 	fallbackIndex: Map<string, Array<[string, CandidateData]>>,
 	filePath: string,
 	currentNamespace: string,
+	linkGenerator: LinkGenerator,
 	settings: ReplaceLinksSettings
 ): { result: string; newIndex: number } | null => {
 	// Early boundary check - if start isn't a word boundary, skip
@@ -349,12 +381,12 @@ const processFallbackSearch = (
 
 	let potentialMatch = '';
 	let searchWord = '';
-	
+
 	for (let length = 1; length <= maxSearchLength; length++) {
 		const endIndex = startIndex + length;
 		const currentChar = text[startIndex + length - 1];
 		potentialMatch += currentChar;
-		searchWord = settings.ignoreCase 
+		searchWord = settings.ignoreCase
 			? searchWord + currentChar.toLowerCase()
 			: potentialMatch;
 
@@ -419,9 +451,14 @@ const processFallbackSearch = (
 	}
 
 	// Create the link
-	const linkContent = createLinkContent(bestCandidateData, longestMatch.word, settings);
+	const { linkPath, alias } = createLinkContent(bestCandidateData, longestMatch.word, settings);
 	const isInTable = isIndexInsideMarkdownTable(text, startIndex);
-	const finalLink = formatFinalLink(linkContent, isInTable);
+	const finalLink = linkGenerator({
+		linkPath,
+		sourcePath: filePath,
+		alias,
+		isInTable,
+	});
 
 	return {
 		result: finalLink,
@@ -436,6 +473,7 @@ const handleKoreanSpecialCases = (
 	candidate: string,
 	candidateData: CandidateData,
 	filePath: string,
+	linkGenerator: LinkGenerator,
 	settings: ReplaceLinksSettings = {},
 ): { result: string; newIndex: number } | null => {
 	const remaining = text.slice(i + candidate.length);
@@ -451,8 +489,13 @@ const handleKoreanSpecialCases = (
 			};
 		}
 
-		const linkContent = createLinkContent(candidateData, candidate, settings);
-		const finalLink = formatFinalLink(linkContent, false);
+		const { linkPath, alias } = createLinkContent(candidateData, candidate, settings);
+		const finalLink = linkGenerator({
+			linkPath,
+			sourcePath: filePath,
+			alias,
+			isInTable: false,
+		});
 
 		return {
 			result: finalLink + suffixMatch[0],
@@ -562,6 +605,7 @@ const processStandardText = (
 	fallbackIndex: Map<string, Array<[string, CandidateData]>>,
 	filePath: string,
 	currentNamespace: string,
+	linkGenerator: LinkGenerator,
 	settings: ReplaceLinksSettings = {},
 ): string => {
 	let result = "";
@@ -656,6 +700,7 @@ const processStandardText = (
 						candidate,
 						candidateData,
 						filePath,
+						linkGenerator,
 						settings,
 					);
 					if (koreanResult) {
@@ -710,9 +755,14 @@ const processStandardText = (
 				}
 
 				// Create the link
-				const linkContent = createLinkContent(candidateData, originalMatchedText, settings);
+				const { linkPath, alias } = createLinkContent(candidateData, originalMatchedText, settings);
 				const isInTable = isIndexInsideMarkdownTable(text, i);
-				const finalLink = formatFinalLink(linkContent, isInTable);
+				const finalLink = linkGenerator({
+					linkPath,
+					sourcePath: filePath,
+					alias,
+					isInTable,
+				});
 				result += finalLink;
 
 				i += candidate.length;
@@ -723,7 +773,7 @@ const processStandardText = (
 		// Fallback: multi-word lookup using fallback index
 		if (settings.namespaceResolution) {
 			const fallbackResult = processFallbackSearch(
-				text, i, fallbackIndex, filePath, currentNamespace, settings
+				text, i, fallbackIndex, filePath, currentNamespace, linkGenerator, settings
 			);
 			if (fallbackResult) {
 				result += fallbackResult.result;
@@ -749,6 +799,7 @@ export const replaceLinks = ({
 		baseDir: undefined,
 		ignoreDateFormats: true,
 	},
+	linkGenerator = defaultLinkGenerator,
 }: ReplaceLinksOptions): string => {
 	// Normalize the body text to NFC
 	body = body.normalize("NFC");
@@ -776,6 +827,7 @@ export const replaceLinks = ({
 				candidateMap,
 				currentNamespace,
 				filePath,
+				linkGenerator,
 				settings,
 			);
 		} else {
@@ -786,6 +838,7 @@ export const replaceLinks = ({
 				fallbackIndex,
 				filePath,
 				currentNamespace,
+				linkGenerator,
 				settings,
 			);
 		}
