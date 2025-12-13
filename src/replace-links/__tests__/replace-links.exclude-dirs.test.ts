@@ -4,15 +4,16 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 	it("excludes files from specified directories", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "Templates/meeting-notes" },
 				{ path: "project" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 			excludeDirs: ["Templates"],
 		});
 
@@ -24,7 +25,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result1).toBe("meeting-notes");
 
@@ -36,22 +37,23 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result2).toBe("[[project]]");
 	});
 
 	it("excludes multiple directories", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "Templates/daily" },
 				{ path: "Archive/old-note" },
 				{ path: "active-note" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 			excludeDirs: ["Templates", "Archive"],
 		});
 
@@ -63,7 +65,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result1).toBe("daily");
 
@@ -74,7 +76,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result2).toBe("old-note");
 
@@ -86,21 +88,22 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result3).toBe("[[active-note]]");
 	});
 
 	it("excludes nested directories", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "Templates/Meetings/weekly" },
 				{ path: "regular" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 			excludeDirs: ["Templates"],
 		});
 
@@ -112,7 +115,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result1).toBe("weekly");
 
@@ -124,21 +127,22 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result2).toBe("[[regular]]");
 	});
 
 	it("works with empty exclude list", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "meeting" },
 				{ path: "project" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 			excludeDirs: [],
 		});
 
@@ -150,7 +154,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result1).toBe("[[meeting]]");
 
@@ -161,21 +165,22 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result2).toBe("[[project]]");
 	});
 
 	it("works with baseDir and excludeDirs together", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: "pages",
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "pages/Templates/daily" },
 				{ path: "pages/work" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: "pages",
-			},
+			settings,
 			excludeDirs: ["pages/Templates"],
 		});
 
@@ -187,7 +192,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { baseDir: "pages" },
+			settings,
 		});
 		expect(result1).toBe("Templates/daily");
 
@@ -199,7 +204,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { baseDir: "pages" },
+			settings,
 		});
 		expect(result2).toBe("[[work]]");
 	});

@@ -5,12 +5,13 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("replaceLinks - alias handling", () => {
 	describe("basic alias", () => {
 		it("replaces alias", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "HelloWorld", aliases: ["HW"] }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "HW",
@@ -19,17 +20,19 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("[[HelloWorld|HW]]");
 		});
 
 		it("prefers exact match over alias", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "HelloWorld" }, { path: "HW" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "HW",
@@ -38,6 +41,7 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("[[HW]]");
 		});
@@ -45,12 +49,13 @@ describe("replaceLinks - alias handling", () => {
 
 	describe("namespaced alias", () => {
 		it("replaces namespaced alias", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/HelloWorld", aliases: ["HW"] }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "HW",
@@ -59,17 +64,19 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("[[pages/HelloWorld|HW]]");
 		});
 
 		it("replaces multiple occurrences of alias and normal candidate (with baseDir)", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: "pages",
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "HelloWorld", aliases: ["Hello"] }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "Hello HelloWorld",
@@ -78,9 +85,7 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("[[HelloWorld|Hello]] [[HelloWorld]]");
 		});
@@ -88,12 +93,14 @@ describe("replaceLinks - alias handling", () => {
 
 	describe("alias with restrictNamespace", () => {
 		it("respects restrictNamespace for alias", () => {
+			const settings = {
+				restrictNamespace: true,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
-				settings: {
-					restrictNamespace: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "HW",
@@ -102,22 +109,20 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 
 		it("replace alias when restrictNamespace is false", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "HW",
@@ -126,22 +131,20 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 
 		it("does not replace alias when namespace does not match", () => {
+			const settings = {
+				restrictNamespace: true,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
-				settings: {
-					restrictNamespace: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "HW",
@@ -150,11 +153,7 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("HW");
 		});
@@ -162,12 +161,13 @@ describe("replaceLinks - alias handling", () => {
 
 	describe("alias and baseDir", () => {
 		it("should replace alias with baseDir", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: "pages",
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "HW",
@@ -176,25 +176,21 @@ describe("replaceLinks - alias handling", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 	});
 
 	it("Aliases with ignoreCase: false", () => {
-		const ignoreCase = false;
-		const baseDir = "pages";
-
+		const settings = {
+			restrictNamespace: false,
+			baseDir: "pages",
+			ignoreCase: false,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/ティーチング", aliases: ["Teaching"] }],
-			settings: {
-				restrictNamespace: false,
-				baseDir,
-				ignoreCase,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "Teaching teaching",
@@ -203,25 +199,20 @@ describe("replaceLinks - alias handling", () => {
 				trie,
 				candidateMap,
 			},
-			settings: {
-				baseDir,
-				ignoreCase,
-			},
+			settings,
 		});
 		expect(result).toBe("[[ティーチング|Teaching]] teaching");
 	});
 
 	it("Aliases with ignoreCase: true", () => {
-		const ignoreCase = true;
-		const baseDir = "pages";
-
+		const settings = {
+			restrictNamespace: false,
+			baseDir: "pages",
+			ignoreCase: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/ティーチング", aliases: ["Teaching"] }],
-			settings: {
-				restrictNamespace: false,
-				baseDir,
-				ignoreCase,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "Teaching teaching",
@@ -230,10 +221,7 @@ describe("replaceLinks - alias handling", () => {
 				trie,
 				candidateMap,
 			},
-			settings: {
-				baseDir,
-				ignoreCase,
-			},
+			settings,
 		});
 		expect(result).toBe(
 			"[[ティーチング|Teaching]] [[ティーチング|teaching]]",

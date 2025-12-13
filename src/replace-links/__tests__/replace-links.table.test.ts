@@ -4,12 +4,14 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("table", () => {
 	it("escape pipe inside table", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			namespaceResolution: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "ns/note1" }, { path: "ns/note2" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: `
@@ -23,9 +25,7 @@ describe("table", () => {
 				trie,
 				candidateMap,
 			},
-			settings: {
-				namespaceResolution: true,
-			},
+			settings,
 		});
 		expect(result).toBe(`
 | Test Item                         | |

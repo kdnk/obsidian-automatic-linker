@@ -4,12 +4,13 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("ignore code", () => {
 	it("inline code", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "example" }, { path: "code" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "`code` example",
@@ -18,17 +19,19 @@ describe("ignore code", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("`code` [[example]]");
 	});
 
 	it("code block", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "example" }, { path: "typescript" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "```typescript\nexample\n```",
@@ -37,6 +40,7 @@ describe("ignore code", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("```typescript\nexample\n```");
 	});

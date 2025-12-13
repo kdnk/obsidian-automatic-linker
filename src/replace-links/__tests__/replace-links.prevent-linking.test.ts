@@ -4,15 +4,16 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks with prevent-linking", () => {
 	it("does not link to files with preventLinking: true", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "private-note", preventLinking: true },
 				{ path: "public-note", preventLinking: false },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 
 		const result = replaceLinks({
@@ -22,7 +23,7 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 
 		// private-note should NOT be linked, but public-note should be linked
@@ -30,6 +31,10 @@ describe("replaceLinks with prevent-linking", () => {
 	});
 
 	it("does not link to files with preventLinking: true even with aliases", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{
@@ -43,10 +48,7 @@ describe("replaceLinks with prevent-linking", () => {
 					preventLinking: false,
 				},
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 
 		const result = replaceLinks({
@@ -56,7 +58,7 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 
 		// "secret" should NOT be linked, but "open" should be linked
@@ -64,15 +66,17 @@ describe("replaceLinks with prevent-linking", () => {
 	});
 
 	it("does not link to files with preventLinking: true in namespace context", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: "pages",
+			namespaceResolution: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "pages/private-doc", preventLinking: true },
 				{ path: "pages/public-doc", preventLinking: false },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: "pages",
-			},
+			settings,
 		});
 
 		const result = replaceLinks({
@@ -82,11 +86,7 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: {
-				baseDir: "pages",
-				
-				namespaceResolution: true,
-			},
+			settings,
 		});
 
 		// private-doc should NOT be linked, but public-doc should be linked
@@ -94,16 +94,17 @@ describe("replaceLinks with prevent-linking", () => {
 	});
 
 	it("handles preventLinking with mixed content", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "private", preventLinking: true },
 				{ path: "public", preventLinking: false },
 				{ path: "another-public" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 
 		const result = replaceLinks({
@@ -113,22 +114,23 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 
 		expect(result).toBe("private [[public]] [[another-public]]");
 	});
 
 	it("does not link to preventLinking files in bullet points", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "private-note", preventLinking: true },
 				{ path: "public-note", preventLinking: false },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 
 		const result = replaceLinks({
@@ -138,7 +140,7 @@ describe("replaceLinks with prevent-linking", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 
 		expect(result).toBe("- private-note\n- [[public-note]]");

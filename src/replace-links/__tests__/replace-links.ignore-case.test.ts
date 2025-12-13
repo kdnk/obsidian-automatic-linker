@@ -4,13 +4,14 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("ignore case", () => {
 	it("respects case when ignoreCase is enabled", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			ignoreCase: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-				ignoreCase: true,
-			},
+			settings,
 		});
 
 		const tests = [
@@ -27,20 +28,21 @@ describe("ignore case", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { ignoreCase: true, },
+				settings,
 			});
 			expect(result).toBe(expected);
 		}
 	});
 
 	it("handles spaces with ignoreCase enabled", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			ignoreCase: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "tidy first" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-				ignoreCase: true,
-			},
+			settings,
 		});
 
 		const tests = [
@@ -57,20 +59,21 @@ describe("ignore case", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { ignoreCase: true, },
+				settings,
 			});
 			expect(result).toBe(expected);
 		}
 	});
 
 	it("handles namespaces with ignoreCase enabled", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			ignoreCase: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "books/clean code" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-				ignoreCase: true,
-			},
+			settings,
 		});
 
 		const tests = [
@@ -96,7 +99,7 @@ describe("ignore case", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { ignoreCase: true, },
+				settings,
 			});
 			expect(result).toBe(expected);
 		}

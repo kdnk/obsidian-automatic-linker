@@ -5,16 +5,17 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("ignore url", () => {
 	it("one url", () => {
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "example" },
 					{ path: "http" },
 					{ path: "https" },
 				],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "- https://example.com",
@@ -23,16 +24,18 @@ describe("ignore url", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("- https://example.com");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "st" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "- https://x.com/xxxx/status/12345?t=25S02Tda",
@@ -41,16 +44,18 @@ describe("ignore url", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("- https://x.com/xxxx/status/12345?t=25S02Tda");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "http" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "Hello https://claude.ai/chat/xxx",
@@ -59,16 +64,18 @@ describe("ignore url", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("Hello https://claude.ai/chat/xxx");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "http" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "こんにちは https://claude.ai/chat/xxx",
@@ -77,12 +84,17 @@ describe("ignore url", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("こんにちは https://claude.ai/chat/xxx");
 		}
 	});
 
 	it("multiple urls", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example" },
@@ -90,10 +102,7 @@ describe("ignore url", () => {
 				{ path: "https" },
 				{ path: "http" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "- https://example.com https://example1.com",
@@ -102,11 +111,16 @@ describe("ignore url", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("- https://example.com https://example1.com");
 	});
 
 	it("multiple urls with links", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example1" },
@@ -115,10 +129,7 @@ describe("ignore url", () => {
 				{ path: "https" },
 				{ path: "http" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "- https://example.com https://example1.com link",
@@ -127,6 +138,7 @@ describe("ignore url", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe(
 			"- https://example.com https://example1.com [[link]]",
@@ -136,6 +148,10 @@ describe("ignore url", () => {
 
 describe("ignore markdown url", () => {
 	it("one url", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example" },
@@ -143,10 +159,7 @@ describe("ignore markdown url", () => {
 				{ path: "https" },
 				{ path: "http" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "- [title](https://example.com)",
@@ -155,11 +168,16 @@ describe("ignore markdown url", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("- [title](https://example.com)");
 	});
 
 	it("multiple urls", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example1" },
@@ -169,10 +187,7 @@ describe("ignore markdown url", () => {
 				{ path: "https" },
 				{ path: "http" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "- [title1](https://example1.com) [title2](https://example2.com)",
@@ -181,6 +196,7 @@ describe("ignore markdown url", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe(
 			"- [title1](https://example1.com) [title2](https://example2.com)",
@@ -188,6 +204,10 @@ describe("ignore markdown url", () => {
 	});
 
 	it("multiple urls with links", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "example1" },
@@ -198,10 +218,7 @@ describe("ignore markdown url", () => {
 				{ path: "http" },
 				{ path: "link" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "- [title1](https://example1.com) [title2](https://example2.com) link",
@@ -210,6 +227,7 @@ describe("ignore markdown url", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe(
 			"- [title1](https://example1.com) [title2](https://example2.com) [[link]]",

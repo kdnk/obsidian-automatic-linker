@@ -5,12 +5,14 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("replaceLinks - prevent self-linking", () => {
 	describe("when preventSelfLinking is true", () => {
 		it("should not link text to its own file", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				preventSelfLinking: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "VPN" }, { path: "Welcome" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			// In VPN.md file, "VPN" should not be linked
@@ -21,20 +23,20 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					preventSelfLinking: true,
-				},
+				settings,
 			});
 			expect(result).toBe("This is a note about VPN");
 		});
 
 		it("should link text in other files", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				preventSelfLinking: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "VPN" }, { path: "Welcome" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			// In Welcome.md file, "VPN" should be linked
@@ -45,20 +47,20 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					preventSelfLinking: true,
-				},
+				settings,
 			});
 			expect(result).toBe("Here is my [[VPN]] Note");
 		});
 
 		it("should handle files with namespaces", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				preventSelfLinking: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "docs/VPN" }, { path: "docs/Welcome" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			// In docs/VPN.md file, "VPN" should not be linked
@@ -69,20 +71,20 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					preventSelfLinking: true,
-				},
+				settings,
 			});
 			expect(result).toBe("This is about VPN");
 		});
 
 		it("should handle files with baseDir", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: "pages",
+				preventSelfLinking: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/VPN" }, { path: "pages/Welcome" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: "pages",
-				},
+				settings,
 			});
 
 			// In pages/VPN.md file, "VPN" should not be linked
@@ -93,21 +95,20 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					preventSelfLinking: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("This is about VPN");
 		});
 
 		it("should handle multiple occurrences in the same file", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				preventSelfLinking: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "VPN" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const result = replaceLinks({
@@ -117,9 +118,7 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					preventSelfLinking: true,
-				},
+				settings,
 			});
 			expect(result).toBe("VPN is important. Always use VPN when connecting.");
 		});
@@ -127,12 +126,14 @@ describe("replaceLinks - prevent self-linking", () => {
 
 	describe("when preventSelfLinking is false", () => {
 		it("should link text to its own file (default behavior)", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				preventSelfLinking: false,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "VPN" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const result = replaceLinks({
@@ -142,20 +143,19 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					preventSelfLinking: false,
-				},
+				settings,
 			});
 			expect(result).toBe("This is about [[VPN]]");
 		});
 
 		it("should link text to its own file when setting is undefined", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "VPN" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const result = replaceLinks({
@@ -165,7 +165,7 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {},
+				settings,
 			});
 			expect(result).toBe("This is about [[VPN]]");
 		});
@@ -173,13 +173,15 @@ describe("replaceLinks - prevent self-linking", () => {
 
 	describe("edge cases", () => {
 		it("should work with case-insensitive matching", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				ignoreCase: true,
+				preventSelfLinking: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "VPN" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-					ignoreCase: true,
-				},
+				settings,
 			});
 
 			const result = replaceLinks({
@@ -189,21 +191,20 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					preventSelfLinking: true,
-					ignoreCase: true,
-				},
+				settings,
 			});
 			expect(result).toBe("This is about vpn");
 		});
 
 		it("should only prevent self-links, not other links", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				preventSelfLinking: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "VPN" }, { path: "SSH" }, { path: "Networking" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const result = replaceLinks({
@@ -213,9 +214,7 @@ describe("replaceLinks - prevent self-linking", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					preventSelfLinking: true,
-				},
+				settings,
 			});
 			expect(result).toBe("VPN and [[SSH]] are both important for [[Networking]]");
 		});

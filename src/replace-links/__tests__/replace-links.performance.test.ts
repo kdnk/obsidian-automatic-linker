@@ -56,20 +56,21 @@ describe("replaceLinks performance tests", () => {
 
 	describe("small dataset performance", () => {
 		it("should process 100 files and 1000 words efficiently", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const files = generateFiles(100);
 			const linkWords = files.slice(0, 10).map(f => f.path.split("/").pop()!);
 			const body = generateBody(1000, linkWords);
-			
+
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files,
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const startTime = performance.now();
-			
+
 			const result = replaceLinks({
 				body,
 				linkResolverContext: {
@@ -77,12 +78,12 @@ describe("replaceLinks performance tests", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
-			
+
 			const endTime = performance.now();
 			const duration = endTime - startTime;
-			
+
 			expect(result).toBeTruthy();
 			expect(duration).toBeLessThan(100); // Should complete in less than 100ms
 			console.log(`Small dataset processed in ${duration.toFixed(2)}ms`);
@@ -91,20 +92,21 @@ describe("replaceLinks performance tests", () => {
 
 	describe("medium dataset performance", () => {
 		it("should process 500 files and 5000 words efficiently", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const files = generateFiles(500);
 			const linkWords = files.slice(0, 50).map(f => f.path.split("/").pop()!);
 			const body = generateBody(5000, linkWords);
-			
+
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files,
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const startTime = performance.now();
-			
+
 			const result = replaceLinks({
 				body,
 				linkResolverContext: {
@@ -112,12 +114,12 @@ describe("replaceLinks performance tests", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
-			
+
 			const endTime = performance.now();
 			const duration = endTime - startTime;
-			
+
 			expect(result).toBeTruthy();
 			expect(duration).toBeLessThan(500); // Should complete in less than 500ms
 			console.log(`Medium dataset processed in ${duration.toFixed(2)}ms`);
@@ -126,20 +128,21 @@ describe("replaceLinks performance tests", () => {
 
 	describe("large dataset performance", () => {
 		it("should process 1000 files and 10000 words efficiently", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const files = generateFiles(1000);
 			const linkWords = files.slice(0, 100).map(f => f.path.split("/").pop()!);
 			const body = generateBody(10000, linkWords);
-			
+
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files,
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const startTime = performance.now();
-			
+
 			const result = replaceLinks({
 				body,
 				linkResolverContext: {
@@ -147,12 +150,12 @@ describe("replaceLinks performance tests", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
-			
+
 			const endTime = performance.now();
 			const duration = endTime - startTime;
-			
+
 			expect(result).toBeTruthy();
 			expect(duration).toBeLessThan(1000); // Should complete in less than 1000ms
 			console.log(`Large dataset processed in ${duration.toFixed(2)}ms`);
@@ -161,9 +164,13 @@ describe("replaceLinks performance tests", () => {
 
 	describe("real-world document performance", () => {
 		it("should process document with code blocks and links efficiently", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const files = generateFiles(200);
 			const linkWords = files.slice(0, 20).map(f => f.path.split("/").pop()!);
-			
+
 			const body = `
 # Document Title
 
@@ -187,17 +194,14 @@ ${generateLargeBody(10)}
 
 Final paragraph mentions ${linkWords[9]} again.
 			`.trim();
-			
+
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files,
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const startTime = performance.now();
-			
+
 			const result = replaceLinks({
 				body,
 				linkResolverContext: {
@@ -205,12 +209,12 @@ Final paragraph mentions ${linkWords[9]} again.
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
-			
+
 			const endTime = performance.now();
 			const duration = endTime - startTime;
-			
+
 			expect(result).toBeTruthy();
 			expect(result).toContain("[[file0]]");
 			expect(result).toContain("[[file1]]");
@@ -222,20 +226,22 @@ Final paragraph mentions ${linkWords[9]} again.
 
 	describe("namespace resolution performance", () => {
 		it("should process namespace resolution efficiently", () => {
+			const settings = {
+				restrictNamespace: true,
+				baseDir: "namespace",
+				namespaceResolution: true,
+			};
 			const files = generateFiles(300);
 			const linkWords = files.slice(0, 30).map(f => f.path.split("/").pop()!);
 			const body = generateBody(3000, linkWords);
-			
+
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files,
-				settings: {
-					restrictNamespace: true,
-					baseDir: "namespace",
-				},
+				settings,
 			});
 
 			const startTime = performance.now();
-			
+
 			const result = replaceLinks({
 				body,
 				linkResolverContext: {
@@ -243,16 +249,12 @@ Final paragraph mentions ${linkWords[9]} again.
 					trie,
 					candidateMap,
 				},
-				settings: { 
-					
-					namespaceResolution: true,
-					baseDir: "namespace",
-				},
+				settings,
 			});
-			
+
 			const endTime = performance.now();
 			const duration = endTime - startTime;
-			
+
 			expect(result).toBeTruthy();
 			expect(duration).toBeLessThan(300); // Should complete in less than 300ms
 			console.log(`Namespace resolution processed in ${duration.toFixed(2)}ms`);
@@ -261,21 +263,22 @@ Final paragraph mentions ${linkWords[9]} again.
 
 	describe("ignore case performance", () => {
 		it("should process case-insensitive matching efficiently", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				ignoreCase: true,
+			};
 			const files = generateFiles(200);
 			const linkWords = files.slice(0, 20).map(f => f.path.split("/").pop()!);
 			const body = generateBody(2000, linkWords.map(w => w.toUpperCase()));
-			
+
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files,
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-					ignoreCase: true,
-				},
+				settings,
 			});
 
 			const startTime = performance.now();
-			
+
 			const result = replaceLinks({
 				body,
 				linkResolverContext: {
@@ -283,15 +286,12 @@ Final paragraph mentions ${linkWords[9]} again.
 					trie,
 					candidateMap,
 				},
-				settings: { 
-					
-					ignoreCase: true,
-				},
+				settings,
 			});
-			
+
 			const endTime = performance.now();
 			const duration = endTime - startTime;
-			
+
 			expect(result).toBeTruthy();
 			expect(duration).toBeLessThan(250); // Should complete in less than 250ms
 			console.log(`Case-insensitive matching processed in ${duration.toFixed(2)}ms`);
@@ -300,13 +300,15 @@ Final paragraph mentions ${linkWords[9]} again.
 
 	describe("memory usage optimization", () => {
 		it("should handle fallback index caching efficiently", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				namespaceResolution: true,
+			};
 			const files = generateFiles(500);
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files,
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			// First call should build cache
@@ -318,10 +320,7 @@ Final paragraph mentions ${linkWords[9]} again.
 					trie,
 					candidateMap,
 				},
-				settings: { 
-					
-					namespaceResolution: true,
-				},
+				settings,
 			});
 			const endTime1 = performance.now();
 			const duration1 = endTime1 - startTime1;
@@ -335,17 +334,14 @@ Final paragraph mentions ${linkWords[9]} again.
 					trie,
 					candidateMap,
 				},
-				settings: { 
-					
-					namespaceResolution: true,
-				},
+				settings,
 			});
 			const endTime2 = performance.now();
 			const duration2 = endTime2 - startTime2;
 
 			console.log(`First call (cache build): ${duration1.toFixed(2)}ms`);
 			console.log(`Second call (cache hit): ${duration2.toFixed(2)}ms`);
-			
+
 			// Second call should be faster or similar (cache benefit)
 			expect(duration2).toBeLessThanOrEqual(duration1 * 1.2); // Allow 20% variance
 		});

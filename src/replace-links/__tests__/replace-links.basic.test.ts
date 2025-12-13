@@ -5,12 +5,13 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("replaceLinks", () => {
 	describe("basic", () => {
 		it("replaces links", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "hello",
@@ -19,18 +20,20 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("[[hello]]");
 		});
 
 		it("replaces links with space", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/tidy first" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			console.log(candidateMap);
 			const result = replaceLinks({
@@ -40,21 +43,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					baseDir: "pages",
-										namespaceResolution: true,
-				},
+				settings,
 			});
 			expect(result).toBe("[[tidy first]]");
 		});
 
 		it("replaces links with bullet", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "- hello",
@@ -63,18 +64,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("- [[hello]]");
 		});
 
 		it("replaces links with number", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "1. hello",
@@ -83,18 +85,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("1. [[hello]]");
 		});
 
 		it("does not replace links in code blocks", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "```\nhello\n```",
@@ -103,18 +106,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("```\nhello\n```");
 		});
 
 		it("does not replace links in inline code", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "`hello`",
@@ -123,18 +127,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("`hello`");
 		});
 
 		it("does not replace existing wikilinks", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "[[hello]]",
@@ -143,18 +148,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("[[hello]]");
 		});
 
 		it("does not replace existing markdown links", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "[hello](world)",
@@ -163,18 +169,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("[hello](world)");
 		});
 
 		it("does not replace text in single brackets", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "[hello]",
@@ -183,18 +190,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("[hello]");
 		});
 
 		it("does not replace consecutive single brackets", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "[hello][world]",
@@ -203,6 +211,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("[hello][world]");
 		});
@@ -210,12 +219,13 @@ describe("replaceLinks", () => {
 
 	describe("with space", () => {
 		it("space without namespace", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "automatic linker" }, { path: "automatic" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "automatic linker",
@@ -224,19 +234,21 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("[[automatic linker]]");
 		});
 		it("space with namespace", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "obsidian/automatic linker" },
 					{ path: "obsidian" },
 				],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "obsidian/automatic linker",
@@ -245,6 +257,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe(
 				"[[obsidian/automatic linker|automatic linker]]",
@@ -254,12 +267,13 @@ describe("replaceLinks", () => {
 
 	describe("multiple links", () => {
 		it("replaces multiple links in the same line", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "hello world",
@@ -268,18 +282,19 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("[[hello]] [[world]]");
 		});
 
 		it("replaces multiple links in different lines", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "hello\nworld",
@@ -288,7 +303,7 @@ describe("replaceLinks", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { },
+				settings,
 			});
 			expect(result).toBe("[[hello]]\n[[world]]");
 		});

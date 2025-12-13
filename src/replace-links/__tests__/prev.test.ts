@@ -6,12 +6,13 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("basic", () => {
 	it("replaces links", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "hello",
@@ -20,18 +21,19 @@ describe("basic", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { },
+			settings,
 		});
 		expect(result).toBe("[[hello]]");
 	});
 
 	it("replaces links with bullet", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "hello" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "- hello",
@@ -40,18 +42,20 @@ describe("basic", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("- [[hello]]");
 	});
 
 	it("replaces links with other texts", () => {
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "world hello",
@@ -60,16 +64,18 @@ describe("basic", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("world [[hello]]");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "hello world",
@@ -78,6 +84,7 @@ describe("basic", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("[[hello]] world");
 		}
@@ -85,12 +92,13 @@ describe("basic", () => {
 
 	it("replaces links with other texts and bullet", () => {
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "- world hello",
@@ -99,16 +107,18 @@ describe("basic", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("- world [[hello]]");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "- hello world",
@@ -117,6 +127,7 @@ describe("basic", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("- [[hello]] world");
 		}
@@ -124,12 +135,13 @@ describe("basic", () => {
 
 	it("replaces multiple links", () => {
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "hello world",
@@ -138,16 +150,18 @@ describe("basic", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("[[hello]] [[world]]");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "\nhello\nworld\n",
@@ -156,16 +170,18 @@ describe("basic", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("\n[[hello]]\n[[world]]\n");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "\nhello\nworld aaaaa\n",
@@ -174,16 +190,18 @@ describe("basic", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("\n[[hello]]\n[[world]] aaaaa\n");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "hello" }, { path: "world" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "\n aaaaa hello\nworld bbbbb\n",
@@ -192,6 +210,7 @@ describe("basic", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("\n aaaaa [[hello]]\n[[world]] bbbbb\n");
 		}
@@ -200,12 +219,13 @@ describe("basic", () => {
 
 describe("complex fileNames", () => {
 	it("unmatched namespace", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "namespace",
@@ -214,17 +234,19 @@ describe("complex fileNames", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("namespace");
 	});
 
 	it("single namespace", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "namespace/tag1",
@@ -233,21 +255,23 @@ describe("complex fileNames", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("[[namespace/tag1|tag1]]");
 	});
 
 	it("multiple namespaces", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "namespace/tag1" },
 				{ path: "namespace/tag2" },
 				{ path: "namespace" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "namespace/tag1 namespace/tag2",
@@ -256,6 +280,7 @@ describe("complex fileNames", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("[[namespace/tag1|tag1]] [[namespace/tag2|tag2]]");
 	});
@@ -263,12 +288,13 @@ describe("complex fileNames", () => {
 
 describe("containing CJK", () => {
 	it("unmatched namespace", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/タグ" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "namespace",
@@ -277,21 +303,23 @@ describe("containing CJK", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("namespace");
 	});
 
 	it("multiple namespaces", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "namespace/tag1" },
 				{ path: "namespace/tag2" },
 				{ path: "namespace/タグ3" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "namespace/tag1 namespace/tag2 namespace/タグ3",
@@ -300,6 +328,7 @@ describe("containing CJK", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe(
 			"[[namespace/tag1|tag1]] [[namespace/tag2|tag2]] [[namespace/タグ3|タグ3]]",
@@ -309,12 +338,13 @@ describe("containing CJK", () => {
 
 describe("starting CJK", () => {
 	it("unmatched namespace", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespace/タグ" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "名前空間",
@@ -323,21 +353,23 @@ describe("starting CJK", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("名前空間");
 	});
 
 	it("single namespace", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "名前空間/tag1" },
 				{ path: "名前空間/tag2" },
 				{ path: "名前空間/タグ3" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "名前空間/tag1",
@@ -346,21 +378,23 @@ describe("starting CJK", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("[[名前空間/tag1|tag1]]");
 	});
 
 	it("multiple namespaces", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "名前空間/tag1" },
 				{ path: "名前空間/tag2" },
 				{ path: "名前空間/タグ3" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "名前空間/tag1 名前空間/tag2 名前空間/タグ3",
@@ -369,6 +403,7 @@ describe("starting CJK", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe(
 			"[[名前空間/tag1|tag1]] [[名前空間/tag2|tag2]] [[名前空間/タグ3|タグ3]]",
@@ -376,12 +411,13 @@ describe("starting CJK", () => {
 	});
 
 	it("multiple CJK words", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "漢字" }, { path: "ひらがな" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "- 漢字　ひらがな",
@@ -390,17 +426,19 @@ describe("starting CJK", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("- [[漢字]]　[[ひらがな]]");
 	});
 
 	it("multiple same CJK words", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "ひらがな" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "- ひらがなとひらがな",
@@ -409,6 +447,7 @@ describe("starting CJK", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("- [[ひらがな]]と[[ひらがな]]");
 	});
@@ -417,12 +456,13 @@ describe("starting CJK", () => {
 describe("CJK - Korean", () => {
 	it("converts Korean words to links", () => {
 		// 韓国語の候補ファイル
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "한글" }, { path: "테스트" }, { path: "예시" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "한글 테스트 예시",
@@ -431,17 +471,19 @@ describe("CJK - Korean", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("[[한글]] [[테스트]] [[예시]]");
 	});
 
 	it("converts Korean words within sentence", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "문서" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "이 문서는 문서이다.",
@@ -450,6 +492,7 @@ describe("CJK - Korean", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("이 문서는 [[문서]]이다.");
 	});
@@ -457,12 +500,13 @@ describe("CJK - Korean", () => {
 
 describe("CJK - Chinese", () => {
 	it("converts Chinese words to links", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "汉字" }, { path: "测试" }, { path: "示例" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "汉字 测试 示例",
@@ -471,17 +515,19 @@ describe("CJK - Chinese", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("[[汉字]] [[测试]] [[示例]]");
 	});
 
 	it("converts Chinese words within sentence", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "文档" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "这个文档很好。",
@@ -490,6 +536,7 @@ describe("CJK - Chinese", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("这个[[文档]]很好。");
 	});
@@ -497,12 +544,13 @@ describe("CJK - Chinese", () => {
 
 describe("base character (pages)", () => {
 	it("unmatched namespace", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: "pages",
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/tags" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: "pages",
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "tags",
@@ -511,19 +559,20 @@ describe("base character (pages)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { baseDir: "pages" },
+			settings,
 		});
 		expect(result).toBe("[[tags]]");
 	});
 });
 
 it("multiple links in the same line", () => {
+	const settings = {
+		restrictNamespace: false,
+		baseDir: undefined,
+	};
 	const { candidateMap, trie } = buildCandidateTrieForTest({
 		files: [{ path: "pages/tags" }, { path: "サウナ" }, { path: "tags" }],
-		settings: {
-			restrictNamespace: false,
-			baseDir: undefined,
-		},
+		settings,
 	});
 	const result = replaceLinks({
 		body: "サウナ tags pages/tags",
@@ -532,21 +581,23 @@ it("multiple links in the same line", () => {
 			trie,
 			candidateMap,
 		},
+		settings,
 	});
 	expect(result).toBe("[[サウナ]] [[tags]] [[pages/tags|tags]]");
 });
 
 describe("nested links", () => {
 	it("", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "アジャイルリーダーコンピテンシーマップ" },
 				{ path: "リーダー" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "アジャイルリーダーコンピテンシーマップ",
@@ -555,20 +606,22 @@ describe("nested links", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 	});
 
 	it("existing links", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "アジャイルリーダーコンピテンシーマップ" },
 				{ path: "リーダー" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "[[アジャイルリーダーコンピテンシーマップ]]",
@@ -577,6 +630,7 @@ describe("nested links", () => {
 				trie,
 				candidateMap,
 			},
+			settings,
 		});
 		expect(result).toBe("[[アジャイルリーダーコンピテンシーマップ]]");
 	});
@@ -584,12 +638,13 @@ describe("nested links", () => {
 
 describe("aliases", () => {
 	it("replaces alias with canonical form using file path and alias", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: "pages",
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "pages/HelloWorld", aliases: ["Hello", "HW"] }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: "pages",
-			},
+			settings,
 		});
 		const result1 = replaceLinks({
 			body: "Hello",
@@ -598,7 +653,7 @@ describe("aliases", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { baseDir: "pages" },
+			settings,
 		});
 		expect(result1).toBe("[[HelloWorld|Hello]]");
 
@@ -609,7 +664,7 @@ describe("aliases", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { baseDir: "pages" },
+			settings,
 		});
 		expect(result2).toBe("[[HelloWorld]]");
 	});
@@ -622,6 +677,9 @@ describe("aliases", () => {
 				restrictNamespace: false,
 			},
 		];
+		const settings = {
+			baseDir: "pages",
+		};
 		const { candidateMap, trie } = buildCandidateTrie(files, "pages");
 		const result = replaceLinks({
 			body: "Hello HelloWorld",
@@ -630,9 +688,7 @@ describe("aliases", () => {
 				trie,
 				candidateMap,
 			},
-			settings: {
-				baseDir: "pages",
-			},
+			settings,
 		});
 		expect(result).toBe("[[HelloWorld|Hello]] [[HelloWorld]]");
 	});
@@ -640,12 +696,14 @@ describe("aliases", () => {
 
 describe("namespace resolution", () => {
 	it("replaces candidate with namespace when full candidate is provided", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			namespaceResolution: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "namespaces/link" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "namespaces/link",
@@ -654,18 +712,20 @@ describe("namespace resolution", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("[[namespaces/link|link]]");
 	});
 
 	it("replaces candidate without namespace correctly", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			namespaceResolution: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "link" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "link",
@@ -674,18 +734,20 @@ describe("namespace resolution", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("[[link]]");
 	});
 
 	it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			namespaceResolution: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025/02/08" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "2025-02-08",
@@ -694,7 +756,7 @@ describe("namespace resolution", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("2025-02-08");
 	});
@@ -703,16 +765,18 @@ describe("namespace resolution", () => {
 describe("namespace resolution nearlest file path", () => {
 	it("closest siblings namespace should be used", () => {
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace/a/b/c/d/link" },
 					{ path: "namespace/a/b/c/d/e/f/link" },
 					{ path: "namespace/a/b/c/link" },
 				],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 
 			const result = replaceLinks({
@@ -722,21 +786,23 @@ describe("namespace resolution nearlest file path", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { namespaceResolution: true },
+				settings,
 			});
 			expect(result).toBe("[[namespace/a/b/c/link|link]]");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace/a/b/c/link" },
 					{ path: "namespace/a/b/c/d/link" },
 					{ path: "namespace/a/b/c/d/e/f/link" },
 				],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "link",
@@ -745,11 +811,16 @@ describe("namespace resolution nearlest file path", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { namespaceResolution: true },
+				settings,
 			});
 			expect(result).toBe("[[namespace/a/b/c/d/link|link]]");
 		}
 		{
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace/xxx/link" },
@@ -758,10 +829,7 @@ describe("namespace resolution nearlest file path", () => {
 					{ path: "another-namespace/a/b/c/d/link" },
 					{ path: "another-namespace/a/b/c/d/e/f/link" },
 				],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "link",
@@ -770,13 +838,18 @@ describe("namespace resolution nearlest file path", () => {
 					trie,
 					candidateMap,
 				},
-				settings: { namespaceResolution: true },
+				settings,
 			});
 			expect(result).toBe("[[namespace/xxx/link|link]]");
 		}
 	});
 
 	it("closest children namespace should be used", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			namespaceResolution: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "namespace1/subnamespace/link" },
@@ -786,10 +859,7 @@ describe("namespace resolution nearlest file path", () => {
 				{ path: "namespace/a/b/c/d/link" },
 				{ path: "namespace/a/b/c/d/e/f/link" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "link",
@@ -798,12 +868,17 @@ describe("namespace resolution nearlest file path", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("[[namespace/a/b/c/link|link]]");
 	});
 
 	it("find closest path if the current path is in base dir and the candidate is not", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: "base",
+			namespaceResolution: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
 				{ path: "namespace1/aaaaaaaaaaaaaaaaaaaaaaaaa/link" },
@@ -820,10 +895,7 @@ describe("namespace resolution nearlest file path", () => {
 				{ path: "base/a/b/c/d/link" },
 				{ path: "base/a/b/c/d/e/f/link" },
 			],
-			settings: {
-				restrictNamespace: false,
-				baseDir: "base",
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "link link2",
@@ -832,13 +904,18 @@ describe("namespace resolution nearlest file path", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true, baseDir: "base" },
+			settings,
 		});
 		// longset path should be used
 		expect(result).toBe(
 			"[[looooooooooooooooooooooooooooooooooooooong/link|link]] [[namespace1/link2|link2]]",
 		);
 
+		const settings2 = {
+			restrictNamespace: false,
+			baseDir: "base",
+			namespaceResolution: false,
+		};
 		const result2 = replaceLinks({
 			body: "link link2",
 			linkResolverContext: {
@@ -846,13 +923,17 @@ describe("namespace resolution nearlest file path", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: false, baseDir: "base" },
+			settings: settings2,
 		});
 		expect(result2).toBe("link link2");
 	});
 });
 
 it("ignore month notes", () => {
+	const settings = {
+		restrictNamespace: false,
+		baseDir: undefined,
+	};
 	const { candidateMap, trie } = buildCandidateTrieForTest({
 		files: [
 			{ path: "01" },
@@ -898,10 +979,7 @@ it("ignore month notes", () => {
 			{ path: "namespace/8" },
 			{ path: "namespace/9" },
 		],
-		settings: {
-			restrictNamespace: false,
-			baseDir: undefined,
-		},
+		settings,
 	});
 	const result = replaceLinks({
 		body: "01 1 12 namespace/01",
@@ -910,18 +988,22 @@ it("ignore month notes", () => {
 			trie,
 			candidateMap,
 		},
+		settings,
 	});
 	expect(result).toBe("01 1 12 [[namespace/01|01]]");
 });
 
 describe("ignoreDateFormats setting", () => {
 	it("should not replace date format when ignoreDateFormats is true", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			namespaceResolution: true,
+			ignoreDateFormats: true,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025-02-10" }, { path: "journals/2025-02-10" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "2025-02-10",
@@ -930,22 +1012,21 @@ describe("ignoreDateFormats setting", () => {
 				trie,
 				candidateMap,
 			},
-			settings: {
-				
-				namespaceResolution: true,
-				ignoreDateFormats: true,
-			},
+			settings,
 		});
 		expect(result).toBe("2025-02-10");
 	});
 
 	it("should replace date format when ignoreDateFormats is false", () => {
+		const settings = {
+			restrictNamespace: false,
+			baseDir: undefined,
+			namespaceResolution: true,
+			ignoreDateFormats: false,
+		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [{ path: "2025-02-10" }],
-			settings: {
-				restrictNamespace: false,
-				baseDir: undefined,
-			},
+			settings,
 		});
 		const result = replaceLinks({
 			body: "2025-02-10",
@@ -954,11 +1035,7 @@ describe("ignoreDateFormats setting", () => {
 				trie,
 				candidateMap,
 			},
-			settings: {
-				
-				namespaceResolution: true,
-				ignoreDateFormats: false,
-			},
+			settings,
 		});
 		expect(result).toBe("[[2025-02-10]]");
 	});
@@ -1074,6 +1151,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 	]);
 
 	it("CJK - Korean > converts Korean words within sentence", () => {
+		const settings = { namespaceResolution: true };
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "이 문서는 문서이다.";
 		const result = replaceLinks({
@@ -1083,12 +1161,13 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("이 문서는 [[문서]]이다.");
 	});
 
 	it("starting CJK > multiple same CJK words", () => {
+		const settings = { namespaceResolution: true };
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "- ひらがなひらがな";
 		const result = replaceLinks({
@@ -1098,12 +1177,13 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("- [[ひらがな]][[ひらがな]]");
 	});
 
 	it("CJK - Chinese > converts Chinese words within sentence", () => {
+		const settings = { namespaceResolution: true };
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "这个文档很好。";
 		const result = replaceLinks({
@@ -1113,12 +1193,13 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("这个[[文档]]很好。");
 	});
 
 	it("base character (pages) > unmatched namespace", () => {
+		const settings = { namespaceResolution: true };
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "tags";
 		const result = replaceLinks({
@@ -1128,12 +1209,13 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("[[tags]]");
 	});
 
 	it("aliases > replaces alias with canonical form using file path and alias", () => {
+		const settings = { namespaceResolution: true };
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "HelloWorld";
 		const result = replaceLinks({
@@ -1143,12 +1225,13 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("[[HelloWorld]]");
 	});
 
 	it("aliases > replaces multiple occurrences of alias and normal candidate", () => {
+		const settings = { namespaceResolution: true };
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "Hello HelloWorld";
 		const result = replaceLinks({
@@ -1158,12 +1241,13 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("[[pages/HelloWorld|Hello]] [[HelloWorld]]");
 	});
 
 	it("replaceLinks > should not replace when inside a protected segment", () => {
+		const settings = { namespaceResolution: true };
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 		const body = "Some text `x` more text";
 		const result = replaceLinks({
@@ -1173,7 +1257,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 				trie,
 				candidateMap,
 			},
-			settings: { namespaceResolution: true },
+			settings,
 		});
 		expect(result).toBe("Some text `x` more text");
 	});
@@ -1190,32 +1274,32 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 
 		it("should replace candidate with restrictNamespace when effective namespace matches", () => {
 			// Current file is in "pages/set/...", so effective namespace is "set"
+			const settings = {
+				namespaceResolution: true,
+				baseDir: "pages",
+			};
 			const body = "a";
 			const filePath = "pages/set/current";
 			const result = replaceLinks({
 				body,
 				linkResolverContext: { filePath, trie, candidateMap },
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("[[set/a|a]]");
 		});
 
 		it("should not replace candidate with restrictNamespace when effective namespace does not match", () => {
 			// Current file is in "pages/other/...", so effective namespace is "other"
+			const settings = {
+				namespaceResolution: true,
+				baseDir: "pages",
+			};
 			const body = "a";
 			const filePath = "pages/other/current";
 			const result = replaceLinks({
 				body,
 				linkResolverContext: { filePath, trie, candidateMap },
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			// Since effective namespace does not match ("set" vs "other"), no replacement occurs.
 			expect(result).toBe("a");

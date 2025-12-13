@@ -5,15 +5,17 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("replaceLinks - restrict namespace", () => {
 	describe("automatic-linker-restrict-namespace with baseDir", () => {
 		it("should respect restrictNamespace with baseDir", () => {
+			const settings = {
+				restrictNamespace: true,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set/tag", aliases: [] },
 					{ path: "pages/other/current" },
 				],
-				settings: {
-					restrictNamespace: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "tag",
@@ -22,25 +24,23 @@ describe("replaceLinks - restrict namespace", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("[[set/tag|tag]]");
 		});
 
 		it("should not replace when namespace does not match with baseDir", () => {
+			const settings = {
+				restrictNamespace: true,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set/tag" },
 					{ path: "pages/other/current" },
 				],
-				settings: {
-				restrictNamespace: true,
-				baseDir: "pages",
-				}
+				settings,
 			});
 			const result = replaceLinks({
 				body: "tag",
@@ -49,26 +49,24 @@ describe("replaceLinks - restrict namespace", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("tag");
 		});
 
 		it("should handle multiple namespaces with restrictNamespace", () => {
+			const settings = {
+				restrictNamespace: true,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set1/tag1" },
 					{ path: "pages/set2/tag2" },
 					{ path: "pages/other/current" },
 				],
-				settings: {
-					restrictNamespace: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "tag1 tag2",
@@ -77,11 +75,7 @@ describe("replaceLinks - restrict namespace", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("[[set1/tag1|tag1]] tag2");
 		});

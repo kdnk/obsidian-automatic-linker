@@ -5,12 +5,13 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("replaceLinks - namespace resolution", () => {
 	describe("complex fileNames", () => {
 		it("unmatched namespace", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "namespace",
@@ -19,17 +20,19 @@ describe("replaceLinks - namespace resolution", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("namespace");
 		});
 
 		it("single namespace", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "namespace/tag1" }, { path: "namespace/tag2" }],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "namespace/tag1",
@@ -38,21 +41,23 @@ describe("replaceLinks - namespace resolution", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe("[[namespace/tag1|tag1]]");
 		});
 
 		it("multiple namespaces", () => {
+			const settings = {
+				restrictNamespace: false,
+				baseDir: undefined,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "namespace/tag1" },
 					{ path: "namespace/tag2" },
 					{ path: "namespace" },
 				],
-				settings: {
-					restrictNamespace: false,
-					baseDir: undefined,
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "namespace/tag1 namespace/tag2",
@@ -61,6 +66,7 @@ describe("replaceLinks - namespace resolution", () => {
 					trie,
 					candidateMap,
 				},
+				settings,
 			});
 			expect(result).toBe(
 				"[[namespace/tag1|tag1]] [[namespace/tag2|tag2]]",
@@ -70,15 +76,17 @@ describe("replaceLinks - namespace resolution", () => {
 
 	describe("automatic-linker-restrict-namespace and base dir", () => {
 		it("should replace candidate with restrictNamespace when effective namespace matches", () => {
+			const settings = {
+				restrictNamespace: true,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set/a" },
 					{ path: "pages/other/current" },
 				],
-				settings: {
-					restrictNamespace: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "a",
@@ -87,25 +95,23 @@ describe("replaceLinks - namespace resolution", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("[[set/a|a]]");
 		});
 
 		it("should not replace candidate with restrictNamespace when effective namespace does not match", () => {
+			const settings = {
+				restrictNamespace: true,
+				baseDir: "pages",
+				namespaceResolution: true,
+			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [
 					{ path: "pages/set/a" },
 					{ path: "pages/other/current" },
 				],
-				settings: {
-					restrictNamespace: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			const result = replaceLinks({
 				body: "a",
@@ -114,11 +120,7 @@ describe("replaceLinks - namespace resolution", () => {
 					trie,
 					candidateMap,
 				},
-				settings: {
-					
-					namespaceResolution: true,
-					baseDir: "pages",
-				},
+				settings,
 			});
 			expect(result).toBe("a");
 		});
