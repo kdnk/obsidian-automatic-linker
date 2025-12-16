@@ -29,6 +29,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 					});
 			});
 
+		// Toggle for respecting Obsidian's "Folder to create new notes in" setting
+		new Setting(containerEl)
+			.setName("Respect 'Folder to create new notes in' setting")
+			.setDesc(
+				"When enabled, the plugin will use Obsidian's 'Folder to create new notes in' setting as the base directory for omitting folder prefixes in links.",
+			)
+			.addToggle((toggle) => {
+				toggle
+					.setValue(this.plugin.settings.respectNewFileFolderPath)
+					.onChange(async (value) => {
+						this.plugin.settings.respectNewFileFolderPath = value;
+						await this.plugin.saveData(this.plugin.settings);
+					});
+			});
+
 		// Toggle for running linter after formatting
 		new Setting(containerEl)
 			.setName("Run Obsidian Linter after formatting")
@@ -74,21 +89,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
 							this.plugin.settings.formatDelayMs = parsedValue;
 							await this.plugin.saveData(this.plugin.settings);
 						}
-					});
-			});
-
-		// Setting for base directories.
-		new Setting(containerEl)
-			.setName("Base directory")
-			.setDesc(
-				"Enter the directory to be treated as the base directory. For example, 'pages' will allow links to be formatted without the 'pages/' prefix. If you want to achieve more complex behavior, consider using Obsidian Linter Plugin.",
-			)
-			.addText((text) => {
-				text.setPlaceholder("e.g. pages\n")
-					.setValue(this.plugin.settings.baseDir)
-					.onChange(async (value) => {
-						this.plugin.settings.baseDir = value;
-						await this.plugin.saveData(this.plugin.settings);
 					});
 			});
 

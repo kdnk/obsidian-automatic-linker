@@ -61,9 +61,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	 * Falls back to default wikilink format if the file cannot be resolved.
 	 */
 	private createLinkGenerator(sourcePath: string): LinkGenerator {
-		return ({ linkPath, alias, isInTable }: LinkGeneratorParams): string => {
+		return ({
+			linkPath,
+			alias,
+			isInTable,
+		}: LinkGeneratorParams): string => {
 			// Try to get the TFile for the link path
-			const targetFile = this.app.vault.getAbstractFileByPath(linkPath + ".md");
+			const targetFile = this.app.vault.getAbstractFileByPath(
+				linkPath + ".md",
+			);
 
 			if (targetFile instanceof TFile) {
 				// File exists, use Obsidian's generateMarkdownLink API
@@ -72,12 +78,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
 						targetFile,
 						sourcePath,
 						"",
-						alias || ""
+						alias || "",
 					);
 					return link;
 				} catch (error) {
 					// Fall back to default format if API fails
-					console.warn("Failed to generate link using Obsidian API:", error);
+					console.warn(
+						"Failed to generate link using Obsidian API:",
+						error,
+					);
 				}
 			}
 
@@ -145,6 +154,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		const { contentStart } = getFrontMatterInfo(fileContent);
 		const frontmatter = fileContent.slice(0, contentStart);
 		const linkGenerator = this.createLinkGenerator(filePath);
+		const baseDir = this.settings.respectNewFileFolderPath
+			? this.app.vault.getConfig("newFileFolderPath")
+			: undefined;
 		const updatedBody = replaceLinks({
 			body: fileContent.slice(contentStart),
 			linkResolverContext: {
@@ -154,7 +166,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 			settings: {
 				namespaceResolution: this.settings.namespaceResolution,
-				baseDir: this.settings.baseDir,
+				baseDir,
 				ignoreDateFormats: this.settings.ignoreDateFormats,
 				ignoreCase: this.settings.ignoreCase,
 				preventSelfLinking: this.settings.preventSelfLinking,
@@ -258,6 +270,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 
 		const linkGenerator = this.createLinkGenerator(activeFile.path);
+		const baseDir = this.settings.respectNewFileFolderPath
+			? this.app.vault.getConfig("newFileFolderPath")
+			: undefined;
 		const updatedText = replaceLinks({
 			body: selectedText,
 			linkResolverContext: {
@@ -267,7 +282,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			},
 			settings: {
 				namespaceResolution: this.settings.namespaceResolution,
-				baseDir: this.settings.baseDir,
+				baseDir,
 				ignoreDateFormats: this.settings.ignoreDateFormats,
 				ignoreCase: this.settings.ignoreCase,
 				preventSelfLinking: this.settings.preventSelfLinking,
@@ -337,9 +352,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 
 		// Build candidateMap and Trie using the helper function.
+		const baseDir = this.settings.respectNewFileFolderPath
+			? this.app.vault.getConfig("newFileFolderPath")
+			: undefined;
 		const { candidateMap, trie } = buildCandidateTrie(
 			allFiles,
-			this.settings.baseDir,
+			baseDir,
 			this.settings.ignoreCase ?? false,
 		);
 		this.candidateMap = candidateMap;
@@ -487,7 +505,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		// Optionally, override the default save command to run modifyLinks (throttled).
 		const saveCommandDefinition =
-			// @ts-expect-error
+			// @ts-ignore
 			this.app?.commands?.commands?.["editor:save-file"];
 		const saveCallback = saveCommandDefinition?.checkCallback;
 		if (typeof saveCallback === "function") {
@@ -523,7 +541,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	async onunload() {
 		// Restore original save command callback
 		const saveCommandDefinition =
-			// @ts-expect-error
+			// @ts-ignore
 			this.app?.commands?.commands?.["editor:save-file"];
 		if (saveCommandDefinition && this.originalSaveCallback) {
 			saveCommandDefinition.checkCallback = this.originalSaveCallback;
