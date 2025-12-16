@@ -20,8 +20,7 @@ export function updateEditor(
 
 		if (type == DiffMatchPatch.DIFF_INSERT) {
 			// use codemirror dispatch in order to bypass the filter on transactions that causes editor.replaceRange not to not work in Live Preview
-			//@ts-expect-error
-			editor.cm.dispatch({
+			editor?.cm?.dispatch({
 				changes: [
 					{
 						from: editor.posToOffset(endOfDocument(curText)),
@@ -38,8 +37,7 @@ export function updateEditor(
 			const end = endOfDocument(tempText);
 
 			// use codemirror dispatch in order to bypass the filter on transactions that causes editor.replaceRange not to not work in Live Preview
-			//@ts-expect-error
-			editor.cm.dispatch({
+			editor?.cm?.dispatch({
 				changes: [
 					{
 						from: editor.posToOffset(start),
