@@ -240,13 +240,24 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		}
 	}
 
-	async formatOnSave() {
-		if (!this.settings.formatOnSave) {
-			return;
-		}
-
+	async formatThenRunPrettierAndLinter() {
 		await this.buildUrlTitleMap();
 		await this.modifyLinksForActiveFile();
+
+		if (this.settings.runPrettierAfterFormatting) {
+			await sleep(this.settings.formatDelayMs ?? 100);
+			//@ts-expect-error
+			await this.app?.commands?.executeCommandById(
+				"prettier-format:format-file",
+			);
+		}
+		if (this.settings.runLinterAfterFormatting) {
+			await sleep(this.settings.formatDelayMs ?? 100);
+			//@ts-expect-error
+			await this.app?.commands?.executeCommandById(
+				"obsidian-linter:lint-file",
+			);
+		}
 	}
 
 	async mofifyLinksSelection() {
@@ -407,7 +418,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			icon: "wand-sparkles",
 			editorCallback: async () => {
 				try {
-					await this.modifyLinksForActiveFile();
+					await this.formatThenRunPrettierAndLinter();
 				} catch (error) {
 					console.error(error);
 				}
@@ -517,23 +528,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			if (checking) {
 				return saveCallback?.(checking);
 			} else {
+				if (!this.settings.formatOnSave) {
+					return;
+				}
 				await sleep(this.settings.formatDelayMs ?? 100);
-				await this.formatOnSave();
-
-				if (this.settings.runPrettierAfterFormatting) {
-					await sleep(this.settings.formatDelayMs ?? 100);
-					//@ts-expect-error
-					await this.app?.commands?.executeCommandById(
-						"prettier-format:format-file",
-					);
-				}
-				if (this.settings.runLinterAfterFormatting) {
-					await sleep(this.settings.formatDelayMs ?? 100);
-					//@ts-expect-error
-					await this.app?.commands?.executeCommandById(
-						"obsidian-linter:lint-file",
-					);
-				}
+				await this.formatThenRunPrettierAndLinter();
 			}
 		};
 	}
