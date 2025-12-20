@@ -11,6 +11,11 @@ import {
 	TFile,
 } from "obsidian";
 import { excludeLinks } from "./exclude-links";
+import {
+	isLinkingOff,
+	isLinkingExcluded,
+	isNamespaceScoped,
+} from "./frontmatter-utils";
 import { PathAndAliases } from "./path-and-aliases.types";
 import { removeMinimalIndent } from "./remove-minimal-indent";
 import {
@@ -45,6 +50,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 	// Preserved callback for the original save command
 	private originalSaveCallback: (checking: boolean) => boolean | void;
 	private urlTitleMap: Map<string, string> = new Map();
+	// Cache of frontmatter values that affect the Trie
+	private frontmatterCache: Map<string, string> = new Map();
 
 	constructor(app: App, pluginManifest: PluginManifest) {
 		super(app, pluginManifest);
@@ -193,10 +200,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		const metadata =
 			this.app.metadataCache.getFileCache(activeFile)?.frontmatter;
-		const off =
-			metadata?.["automatic-linker-disabled"] === true ||
-			metadata?.["automatic-linker-off"] === true;
-		if (off) {
+		if (isLinkingOff(metadata)) {
 			return;
 		}
 
@@ -326,16 +330,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				const path = file.path.replace(/\.md$/, "");
 				const metadata =
 					this.app.metadataCache.getFileCache(file)?.frontmatter;
-				const scoped =
-					metadata?.["automatic-linker-restrict-namespace"] ===
-						true ||
-					metadata?.["automatic-linker-limited-namespace"] === true ||
-					metadata?.["automatic-linker-scoped"] === true;
-
+				const scoped = isNamespaceScoped(metadata);
 				// if this property exists, prevent this file from being linked from other files
-				const exclude =
-					metadata?.["automatic-linker-prevent-linking"] === true ||
-					metadata?.["automatic-linker-exclude"] === true;
+				const exclude = isLinkingExcluded(metadata);
 
 				const aliases = (() => {
 					if (this.settings.considerAliases) {
@@ -378,6 +375,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		this.candidateMap = candidateMap;
 		this.trie = trie;
 
+		// Clear frontmatter cache when Trie is rebuilt
+		this.frontmatterCache.clear();
+
 		if (this.settings.showNotice) {
 			new Notice(
 				`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
@@ -387,6 +387,36 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			console.log(
 				`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
 			);
+		}
+	}
+
+	private refreshFileDataAndTrieOnFrontmatterChange(file: TFile) {
+		const metadata =
+			this.app.metadataCache.getFileCache(file)?.frontmatter;
+
+		// Extract frontmatter fields that affect the Trie
+		const relevantFields = {
+			aliases: metadata?.aliases
+				? JSON.stringify(metadata.aliases)
+				: undefined,
+			scoped: isNamespaceScoped(metadata),
+			exclude: isLinkingExcluded(metadata),
+		};
+
+		// Create a hash of the relevant fields
+		const currentHash = JSON.stringify(relevantFields);
+		const cachedHash = this.frontmatterCache.get(file.path);
+
+		// If the hash has changed, refresh the Trie
+		if (currentHash !== cachedHash) {
+			this.frontmatterCache.set(file.path, currentHash);
+			this.refreshFileDataAndTrie();
+
+			if (this.settings.debug) {
+				console.log(
+					`Automatic Linker: Refreshing Trie due to frontmatter change in ${file.path}`,
+				);
+			}
 		}
 	}
 
@@ -413,6 +443,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			this.registerEvent(
 				this.app.vault.on("rename", () =>
 					this.refreshFileDataAndTrie(),
+				),
+			);
+			this.registerEvent(
+				this.app.metadataCache.on("changed", (file) =>
+					this.refreshFileDataAndTrieOnFrontmatterChange(file),
 				),
 			);
 		});
