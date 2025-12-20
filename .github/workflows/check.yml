@@ -1,4 +1,4 @@
-name: Vitest
+name: Check TSC, Lint, and Test
 
 on:
   push:
