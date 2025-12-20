@@ -1,395 +1,395 @@
-import { App, PluginSettingTab, Setting } from "obsidian";
-import AutomaticLinkerPlugin from "../main";
+import { App, PluginSettingTab, Setting } from "obsidian"
+import AutomaticLinkerPlugin from "../main"
 
 export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
-	plugin: AutomaticLinkerPlugin;
-	constructor(app: App, plugin: AutomaticLinkerPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
+    plugin: AutomaticLinkerPlugin
+    constructor(app: App, plugin: AutomaticLinkerPlugin) {
+        super(app, plugin)
+        this.plugin = plugin
+    }
 
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
+    display(): void {
+        const { containerEl } = this
+        containerEl.empty()
 
-		new Setting(containerEl).setName("General").setHeading();
+        new Setting(containerEl).setName("General").setHeading()
 
-		// Toggle for "Format on Save" setting.
-		new Setting(containerEl)
-			.setName("Format on save")
-			.setDesc(
-				"When enabled, the file will be automatically formatted (links replaced) when saving.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.formatOnSave)
-					.onChange(async (value) => {
-						this.plugin.settings.formatOnSave = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for "Format on Save" setting.
+        new Setting(containerEl)
+            .setName("Format on save")
+            .setDesc(
+                "When enabled, the file will be automatically formatted (links replaced) when saving.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.formatOnSave)
+                    .onChange(async (value) => {
+                        this.plugin.settings.formatOnSave = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Toggle for respecting Obsidian's "Folder to create new notes in" setting
-		new Setting(containerEl)
-			.setName("Respect 'Folder to create new notes in' setting")
-			.setDesc(
-				"When enabled, the plugin will use Obsidian's 'Folder to create new notes in' setting as the base directory for omitting folder prefixes in links.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.respectNewFileFolderPath)
-					.onChange(async (value) => {
-						this.plugin.settings.respectNewFileFolderPath = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for respecting Obsidian's "Folder to create new notes in" setting
+        new Setting(containerEl)
+            .setName("Respect 'Folder to create new notes in' setting")
+            .setDesc(
+                "When enabled, the plugin will use Obsidian's 'Folder to create new notes in' setting as the base directory for omitting folder prefixes in links.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.respectNewFileFolderPath)
+                    .onChange(async (value) => {
+                        this.plugin.settings.respectNewFileFolderPath = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Toggle for running linter after formatting
-		new Setting(containerEl)
-			.setName("Run Obsidian Linter after formatting")
-			.setDesc(
-				"When enabled, Obsidian Linter will be executed after Automatic Linker formatting. This requires the Obsidian Linter plugin to be installed.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.runLinterAfterFormatting)
-					.onChange(async (value) => {
-						this.plugin.settings.runLinterAfterFormatting = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for running linter after formatting
+        new Setting(containerEl)
+            .setName("Run Obsidian Linter after formatting")
+            .setDesc(
+                "When enabled, Obsidian Linter will be executed after Automatic Linker formatting. This requires the Obsidian Linter plugin to be installed.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.runLinterAfterFormatting)
+                    .onChange(async (value) => {
+                        this.plugin.settings.runLinterAfterFormatting = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Toggle for running prettier after formatting
-		new Setting(containerEl)
-			.setName("Run Prettier after formatting")
-			.setDesc(
-				"When enabled, Prettier will be executed after Automatic Linker formatting. This requires prettier-format plugin to be installed. https://github.com/dylanarmstrong/obsidian-prettier-plugin",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.runPrettierAfterFormatting)
-					.onChange(async (value) => {
-						this.plugin.settings.runPrettierAfterFormatting = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for running prettier after formatting
+        new Setting(containerEl)
+            .setName("Run Prettier after formatting")
+            .setDesc(
+                "When enabled, Prettier will be executed after Automatic Linker formatting. This requires prettier-format plugin to be installed. https://github.com/dylanarmstrong/obsidian-prettier-plugin",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.runPrettierAfterFormatting)
+                    .onChange(async (value) => {
+                        this.plugin.settings.runPrettierAfterFormatting = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Setting for linter delay
-		new Setting(containerEl)
-			.setName("Format delay (ms)")
-			.setDesc(
-				"Delay in milliseconds before formatting. Increase this value if the linter/prettier runs before the file is fully saved.",
-			)
-			.addText((text) => {
-				text.setPlaceholder("e.g. 100")
-					.setValue(this.plugin.settings.formatDelayMs.toString())
-					.onChange(async (value) => {
-						const parsedValue = parseInt(value);
-						if (!isNaN(parsedValue) && parsedValue >= 0) {
-							this.plugin.settings.formatDelayMs = parsedValue;
-							await this.plugin.saveData(this.plugin.settings);
-						}
-					});
-			});
+        // Setting for linter delay
+        new Setting(containerEl)
+            .setName("Format delay (ms)")
+            .setDesc(
+                "Delay in milliseconds before formatting. Increase this value if the linter/prettier runs before the file is fully saved.",
+            )
+            .addText((text) => {
+                text.setPlaceholder("e.g. 100")
+                    .setValue(this.plugin.settings.formatDelayMs.toString())
+                    .onChange(async (value) => {
+                        const parsedValue = parseInt(value)
+                        if (!isNaN(parsedValue) && parsedValue >= 0) {
+                            this.plugin.settings.formatDelayMs = parsedValue
+                            await this.plugin.saveData(this.plugin.settings)
+                        }
+                    })
+            })
 
-		// Toggle for considering aliases.
-		new Setting(containerEl)
-			.setName("Consider aliases")
-			.setDesc(
-				"When enabled, aliases will be taken into account when processing links. Note: A restart is required for changes to take effect.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.considerAliases)
-					.onChange(async (value) => {
-						this.plugin.settings.considerAliases = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for considering aliases.
+        new Setting(containerEl)
+            .setName("Consider aliases")
+            .setDesc(
+                "When enabled, aliases will be taken into account when processing links. Note: A restart is required for changes to take effect.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.considerAliases)
+                    .onChange(async (value) => {
+                        this.plugin.settings.considerAliases = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Toggle for automatic namespace resolution.
-		new Setting(containerEl)
-			.setName("Automatic namespace resolution")
-			.setDesc(
-				"When enabled, the plugin will automatically resolve namespaces for shorthand links. If multiple candidates share the same shorthand, the candidate with the most common path segments relative to the current file will be selected.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.namespaceResolution)
-					.onChange(async (value) => {
-						this.plugin.settings.namespaceResolution = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for automatic namespace resolution.
+        new Setting(containerEl)
+            .setName("Automatic namespace resolution")
+            .setDesc(
+                "When enabled, the plugin will automatically resolve namespaces for shorthand links. If multiple candidates share the same shorthand, the candidate with the most common path segments relative to the current file will be selected.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.namespaceResolution)
+                    .onChange(async (value) => {
+                        this.plugin.settings.namespaceResolution = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Toggle for ignoring date formats.
-		new Setting(containerEl)
-			.setName("Ignore date formats")
-			.setDesc(
-				"When enabled, links that match date formats (e.g. 2025-02-10) will be ignored. This helps maintain compatibility with Obsidian Tasks.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.ignoreDateFormats)
-					.onChange(async (value) => {
-						this.plugin.settings.ignoreDateFormats = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for ignoring date formats.
+        new Setting(containerEl)
+            .setName("Ignore date formats")
+            .setDesc(
+                "When enabled, links that match date formats (e.g. 2025-02-10) will be ignored. This helps maintain compatibility with Obsidian Tasks.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.ignoreDateFormats)
+                    .onChange(async (value) => {
+                        this.plugin.settings.ignoreDateFormats = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Toggle for ignoring case in link matching
-		new Setting(containerEl)
-			.setName("Ignore case")
-			.setDesc(
-				"When enabled, link matching will be case-insensitive. The original case of the text will be preserved in the link.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.ignoreCase)
-					.onChange(async (value) => {
-						this.plugin.settings.ignoreCase = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for ignoring case in link matching
+        new Setting(containerEl)
+            .setName("Ignore case")
+            .setDesc(
+                "When enabled, link matching will be case-insensitive. The original case of the text will be preserved in the link.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.ignoreCase)
+                    .onChange(async (value) => {
+                        this.plugin.settings.ignoreCase = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Toggle for preventing self-linking
-		new Setting(containerEl)
-			.setName("Prevent self-linking")
-			.setDesc(
-				"When enabled, text will not be linked to its own file. For example, the word 'VPN' inside VPN.md will not be converted to a link.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.preventSelfLinking)
-					.onChange(async (value) => {
-						this.plugin.settings.preventSelfLinking = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for preventing self-linking
+        new Setting(containerEl)
+            .setName("Prevent self-linking")
+            .setDesc(
+                "When enabled, text will not be linked to its own file. For example, the word 'VPN' inside VPN.md will not be converted to a link.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.preventSelfLinking)
+                    .onChange(async (value) => {
+                        this.plugin.settings.preventSelfLinking = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Add excluding dirs that you wish to exclude from the automatic linking
-		new Setting(containerEl)
-			.setName("Exclude directories from automatic linking")
-			.setDesc(
-				"Directories to be excluded from automatic linking, one per line (e.g. 'Templates')",
-			)
-			.addTextArea((text) => {
-				text.setPlaceholder("Templates\nArchive")
-					.setValue(
-						this.plugin.settings.excludeDirsFromAutoLinking.join(
-							"\n",
-						),
-					)
-					.onChange(async (value) => {
-						// Split by newlines and filter out empty lines
-						const dirs = value
-							.split("\n")
-							.map((dir) => dir.trim())
-							.filter(Boolean);
-						this.plugin.settings.excludeDirsFromAutoLinking = dirs;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Add excluding dirs that you wish to exclude from the automatic linking
+        new Setting(containerEl)
+            .setName("Exclude directories from automatic linking")
+            .setDesc(
+                "Directories to be excluded from automatic linking, one per line (e.g. 'Templates')",
+            )
+            .addTextArea((text) => {
+                text.setPlaceholder("Templates\nArchive")
+                    .setValue(
+                        this.plugin.settings.excludeDirsFromAutoLinking.join(
+                            "\n",
+                        ),
+                    )
+                    .onChange(async (value) => {
+                        // Split by newlines and filter out empty lines
+                        const dirs = value
+                            .split("\n")
+                            .map(dir => dir.trim())
+                            .filter(Boolean)
+                        this.plugin.settings.excludeDirsFromAutoLinking = dirs
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Remove aliases for links in specified directories
-		new Setting(containerEl)
-			.setName("Remove aliases in directories")
-			.setDesc(
-				"Directories where link aliases should be removed, one per line (e.g. 'dir' will convert [[dir/xxx|yyy]] to [[dir/xxx]]). This affects both auto-generated aliases and frontmatter aliases.",
-			)
-			.addTextArea((text) => {
-				text.setPlaceholder("dir1\ndir2/subdir")
-					.setValue(this.plugin.settings.removeAliasInDirs.join("\n"))
-					.onChange(async (value) => {
-						// Split by newlines and filter out empty lines
-						const dirs = value
-							.split("\n")
-							.map((dir) => dir.trim())
-							.filter(Boolean);
-						this.plugin.settings.removeAliasInDirs = dirs;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Remove aliases for links in specified directories
+        new Setting(containerEl)
+            .setName("Remove aliases in directories")
+            .setDesc(
+                "Directories where link aliases should be removed, one per line (e.g. 'dir' will convert [[dir/xxx|yyy]] to [[dir/xxx]]). This affects both auto-generated aliases and frontmatter aliases.",
+            )
+            .addTextArea((text) => {
+                text.setPlaceholder("dir1\ndir2/subdir")
+                    .setValue(this.plugin.settings.removeAliasInDirs.join("\n"))
+                    .onChange(async (value) => {
+                        // Split by newlines and filter out empty lines
+                        const dirs = value
+                            .split("\n")
+                            .map(dir => dir.trim())
+                            .filter(Boolean)
+                        this.plugin.settings.removeAliasInDirs = dirs
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		new Setting(containerEl)
-			.setName("URL Replacement with Title")
-			.setHeading();
+        new Setting(containerEl)
+            .setName("URL Replacement with Title")
+            .setHeading()
 
-		// Toggle for replacing URLs with titles
-		new Setting(containerEl)
-			.setName("Replace URL with title")
-			.setDesc(
-				"When enabled, raw URLs will be replaced with [Page Title](URL). Requires fetching the URL content.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.replaceUrlWithTitle)
-					.onChange(async (value) => {
-						this.plugin.settings.replaceUrlWithTitle = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for replacing URLs with titles
+        new Setting(containerEl)
+            .setName("Replace URL with title")
+            .setDesc(
+                "When enabled, raw URLs will be replaced with [Page Title](URL). Requires fetching the URL content.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.replaceUrlWithTitle)
+                    .onChange(async (value) => {
+                        this.plugin.settings.replaceUrlWithTitle = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		new Setting(containerEl)
-			.setName("Igonre domains")
-			.setDesc(
-				"Ignore domains for replacing URLs with titles, one per line (e.g. x.com)",
-			)
-			.addTextArea((text) => {
-				text.setPlaceholder("")
-					.setValue(
-						this.plugin.settings.replaceUrlWithTitleIgnoreDomains.join(
-							"\n",
-						),
-					)
-					.onChange(async (value) => {
-						// Split by newlines and filter out empty lines
-						const urls = value
-							.split("\n")
-							.map((url) => url.trim())
-							.filter(Boolean);
-						this.plugin.settings.replaceUrlWithTitleIgnoreDomains =
-							urls;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-				// Make the text area taller
-				text.inputEl.rows = 4;
-				text.inputEl.cols = 50;
-			});
+        new Setting(containerEl)
+            .setName("Igonre domains")
+            .setDesc(
+                "Ignore domains for replacing URLs with titles, one per line (e.g. x.com)",
+            )
+            .addTextArea((text) => {
+                text.setPlaceholder("")
+                    .setValue(
+                        this.plugin.settings.replaceUrlWithTitleIgnoreDomains.join(
+                            "\n",
+                        ),
+                    )
+                    .onChange(async (value) => {
+                        // Split by newlines and filter out empty lines
+                        const urls = value
+                            .split("\n")
+                            .map(url => url.trim())
+                            .filter(Boolean)
+                        this.plugin.settings.replaceUrlWithTitleIgnoreDomains
+                            = urls
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+                // Make the text area taller
+                text.inputEl.rows = 4
+                text.inputEl.cols = 50
+            })
 
-		new Setting(containerEl)
-			.setName("URL Formatting for GitHub")
-			.setHeading();
+        new Setting(containerEl)
+            .setName("URL Formatting for GitHub")
+            .setHeading()
 
-		// Toggle for formatting GitHub URLs on save
-		new Setting(containerEl)
-			.setName("Format GitHub URLs on save")
-			.setDesc(
-				"When enabled, GitHub URLs will be formatted when saving the file.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.formatGitHubURLs)
-					.onChange(async (value) => {
-						this.plugin.settings.formatGitHubURLs = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for formatting GitHub URLs on save
+        new Setting(containerEl)
+            .setName("Format GitHub URLs on save")
+            .setDesc(
+                "When enabled, GitHub URLs will be formatted when saving the file.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.formatGitHubURLs)
+                    .onChange(async (value) => {
+                        this.plugin.settings.formatGitHubURLs = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Add GitHub Enterprise URLs setting
-		new Setting(containerEl)
-			.setName("GitHub Enterprise URLs")
-			.setDesc(
-				"Add your GitHub Enterprise URLs, one per line (e.g. github.enterprise.com)",
-			)
-			.addTextArea((text) => {
-				text.setPlaceholder("github.enterprise.com\ngithub.company.com")
-					.setValue(
-						this.plugin.settings.githubEnterpriseURLs.join("\n"),
-					)
-					.onChange(async (value) => {
-						// Split by newlines and filter out empty lines
-						const urls = value
-							.split("\n")
-							.map((url) => url.trim())
-							.filter(Boolean);
-						this.plugin.settings.githubEnterpriseURLs = urls;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-				// Make the text area taller
-				text.inputEl.rows = 4;
-				text.inputEl.cols = 50;
-			});
+        // Add GitHub Enterprise URLs setting
+        new Setting(containerEl)
+            .setName("GitHub Enterprise URLs")
+            .setDesc(
+                "Add your GitHub Enterprise URLs, one per line (e.g. github.enterprise.com)",
+            )
+            .addTextArea((text) => {
+                text.setPlaceholder("github.enterprise.com\ngithub.company.com")
+                    .setValue(
+                        this.plugin.settings.githubEnterpriseURLs.join("\n"),
+                    )
+                    .onChange(async (value) => {
+                        // Split by newlines and filter out empty lines
+                        const urls = value
+                            .split("\n")
+                            .map(url => url.trim())
+                            .filter(Boolean)
+                        this.plugin.settings.githubEnterpriseURLs = urls
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+                // Make the text area taller
+                text.inputEl.rows = 4
+                text.inputEl.cols = 50
+            })
 
-		new Setting(containerEl)
-			.setName("URL Formatting for Jira")
-			.setHeading();
+        new Setting(containerEl)
+            .setName("URL Formatting for Jira")
+            .setHeading()
 
-		// Toggle for formatting JIRA URLs on save
-		new Setting(containerEl)
-			.setName("Format JIRA URLs on save")
-			.setDesc(
-				"When enabled, JIRA URLs will be formatted when saving the file.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.formatJiraURLs)
-					.onChange(async (value) => {
-						this.plugin.settings.formatJiraURLs = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for formatting JIRA URLs on save
+        new Setting(containerEl)
+            .setName("Format JIRA URLs on save")
+            .setDesc(
+                "When enabled, JIRA URLs will be formatted when saving the file.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.formatJiraURLs)
+                    .onChange(async (value) => {
+                        this.plugin.settings.formatJiraURLs = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Add JIRA URLs setting
-		new Setting(containerEl)
-			.setName("JIRA URLs")
-			.setDesc(
-				"Add your JIRA URLs, one per line (e.g. jira.enterprise.com)",
-			)
-			.addTextArea((text) => {
-				text.setPlaceholder("jira.enterprise.com\njira.company.com")
-					.setValue(this.plugin.settings.jiraURLs.join("\n"))
-					.onChange(async (value) => {
-						// Split by newlines and filter out empty lines
-						const urls = value
-							.split("\n")
-							.map((url) => url.trim())
-							.filter(Boolean);
-						this.plugin.settings.jiraURLs = urls;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-				// Make the text area taller
-				text.inputEl.rows = 4;
-				text.inputEl.cols = 50;
-			});
+        // Add JIRA URLs setting
+        new Setting(containerEl)
+            .setName("JIRA URLs")
+            .setDesc(
+                "Add your JIRA URLs, one per line (e.g. jira.enterprise.com)",
+            )
+            .addTextArea((text) => {
+                text.setPlaceholder("jira.enterprise.com\njira.company.com")
+                    .setValue(this.plugin.settings.jiraURLs.join("\n"))
+                    .onChange(async (value) => {
+                        // Split by newlines and filter out empty lines
+                        const urls = value
+                            .split("\n")
+                            .map(url => url.trim())
+                            .filter(Boolean)
+                        this.plugin.settings.jiraURLs = urls
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+                // Make the text area taller
+                text.inputEl.rows = 4
+                text.inputEl.cols = 50
+            })
 
-		new Setting(containerEl)
-			.setName("URL Formatting for Linear")
-			.setHeading();
+        new Setting(containerEl)
+            .setName("URL Formatting for Linear")
+            .setHeading()
 
-		// Toggle for formatting Linear URLs on save
-		new Setting(containerEl)
-			.setName("Format Linear URLs on save")
-			.setDesc(
-				"When enabled, Linear URLs will be formatted when saving the file.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.formatLinearURLs)
-					.onChange(async (value) => {
-						this.plugin.settings.formatLinearURLs = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for formatting Linear URLs on save
+        new Setting(containerEl)
+            .setName("Format Linear URLs on save")
+            .setDesc(
+                "When enabled, Linear URLs will be formatted when saving the file.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.formatLinearURLs)
+                    .onChange(async (value) => {
+                        this.plugin.settings.formatLinearURLs = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		new Setting(containerEl).setName("Debug").setHeading();
+        new Setting(containerEl).setName("Debug").setHeading()
 
-		// Toggle for showing the load notice.
-		new Setting(containerEl)
-			.setName("Show load notice")
-			.setDesc("Display a notice when markdown files are loaded.")
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.showNotice)
-					.onChange(async (value) => {
-						this.plugin.settings.showNotice = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
+        // Toggle for showing the load notice.
+        new Setting(containerEl)
+            .setName("Show load notice")
+            .setDesc("Display a notice when markdown files are loaded.")
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.showNotice)
+                    .onChange(async (value) => {
+                        this.plugin.settings.showNotice = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
 
-		// Toggle for debug logging
-		new Setting(containerEl)
-			.setName("Debug mode")
-			.setDesc(
-				"When enabled, debug information will be logged to the console.",
-			)
-			.addToggle((toggle) => {
-				toggle
-					.setValue(this.plugin.settings.debug)
-					.onChange(async (value) => {
-						this.plugin.settings.debug = value;
-						await this.plugin.saveData(this.plugin.settings);
-					});
-			});
-	}
+        // Toggle for debug logging
+        new Setting(containerEl)
+            .setName("Debug mode")
+            .setDesc(
+                "When enabled, debug information will be logged to the console.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.debug)
+                    .onChange(async (value) => {
+                        this.plugin.settings.debug = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
+    }
 }
