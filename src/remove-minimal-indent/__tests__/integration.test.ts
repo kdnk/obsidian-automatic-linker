@@ -50,7 +50,7 @@ describe("copy selection integration test", () => {
         const result = excludeLinks(withoutIndent)
         const expected = `
 - hello
-    - hello world`
+- hello world`
         expect(result).toBe(expected)
     })
 })
