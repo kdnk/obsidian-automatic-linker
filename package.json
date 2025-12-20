@@ -18,6 +18,7 @@
 	"author": "",
 	"license": "Appache-2.0",
 	"devDependencies": {
+		"@eslint/js": "^9.39.2",
 		"@stylistic/eslint-plugin": "^5.6.1",
 		"@types/diff-match-patch": "^1.0.36",
 		"@types/node": "^22.12.0",
