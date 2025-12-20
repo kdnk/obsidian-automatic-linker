@@ -34,21 +34,18 @@ export interface ReplaceLinksOptions {
 
 // Constants and Regular Expressions
 const REGEX_PATTERNS = {
-    PROTECTED:
-		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
+    PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
     DATE_FORMAT: /^\d{4}-\d{2}-\d{2}$/,
     MONTH_NOTE: /^[0-9]{1,2}$/,
     CJK: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u,
-    CJK_CANDIDATE:
-		/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u,
+    CJK_CANDIDATE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u,
     KOREAN: /^[\p{Script=Hangul}]+$/u,
     JAPANESE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u,
     URL: /^(https?:\/\/[^\s]+)/,
     PROTECTED_LINK: /^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/,
     KOREAN_SUFFIX: /^(이다\.?)/,
     KOREAN_PARTICLES: /^(는|은)/,
-    JAPANESE_PARTICLES:
-		/^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
+    JAPANESE_PARTICLES: /^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
     TABLE_SEPARATOR: /^[|:\s-]+$/,
     WORD_BOUNDARY: /[\p{L}\p{N}_/-]/u,
     WHITESPACE: /[\t\n\r ]/,

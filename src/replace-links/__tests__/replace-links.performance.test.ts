@@ -179,8 +179,8 @@ This is a test document with ${linkWords[0]} and ${linkWords[1]}.
 
 \`\`\`javascript
 function test() {
-	// This should not be processed: ${linkWords[2]}
-	return "${linkWords[3]}";
+    // This should not be processed: ${linkWords[2]}
+    return "${linkWords[3]}";
 }
 \`\`\`
 
@@ -194,7 +194,7 @@ Here are some more references to ${linkWords[4]} and ${linkWords[5]}.
 ${generateLargeBody(10)}
 
 Final paragraph mentions ${linkWords[9]} again.
-			`.trim()
+            `.trim()
 
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files,

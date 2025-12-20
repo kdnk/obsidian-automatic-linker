@@ -64,9 +64,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
     }
 
     /**
-	 * Creates a LinkGenerator that uses Obsidian's generateMarkdownLink API.
-	 * Falls back to default wikilink format if the file cannot be resolved.
-	 */
+     * Creates a LinkGenerator that uses Obsidian's generateMarkdownLink API.
+     * Falls back to default wikilink format if the file cannot be resolved.
+     */
     private createLinkGenerator(sourcePath: string): LinkGenerator {
         return ({
             linkPath,

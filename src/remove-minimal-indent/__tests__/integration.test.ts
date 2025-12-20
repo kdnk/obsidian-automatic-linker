@@ -44,13 +44,13 @@ describe("copy selection integration test", () => {
 
     it("", () => {
         const text = `
-		- hello
+            - hello
             - hello [[world]]`
         const withoutIndent = removeMinimalIndent(text)
         const result = excludeLinks(withoutIndent)
         const expected = `
 - hello
-	- hello world`
+    - hello world`
         expect(result).toBe(expected)
     })
 })
