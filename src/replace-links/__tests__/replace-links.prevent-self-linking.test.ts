@@ -6,7 +6,7 @@ describe("replaceLinks - prevent self-linking", () => {
 	describe("when preventSelfLinking is true", () => {
 		it("should not link text to its own file", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				preventSelfLinking: true,
 			};
@@ -30,7 +30,7 @@ describe("replaceLinks - prevent self-linking", () => {
 
 		it("should link text in other files", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				preventSelfLinking: true,
 			};
@@ -54,7 +54,7 @@ describe("replaceLinks - prevent self-linking", () => {
 
 		it("should handle files with namespaces", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				preventSelfLinking: true,
 			};
@@ -78,7 +78,7 @@ describe("replaceLinks - prevent self-linking", () => {
 
 		it("should handle files with baseDir", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 				preventSelfLinking: true,
 			};
@@ -102,7 +102,7 @@ describe("replaceLinks - prevent self-linking", () => {
 
 		it("should handle multiple occurrences in the same file", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				preventSelfLinking: true,
 			};
@@ -127,7 +127,7 @@ describe("replaceLinks - prevent self-linking", () => {
 	describe("when preventSelfLinking is false", () => {
 		it("should link text to its own file (default behavior)", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				preventSelfLinking: false,
 			};
@@ -150,7 +150,7 @@ describe("replaceLinks - prevent self-linking", () => {
 
 		it("should link text to its own file when setting is undefined", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -174,7 +174,7 @@ describe("replaceLinks - prevent self-linking", () => {
 	describe("edge cases", () => {
 		it("should work with case-insensitive matching", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				ignoreCase: true,
 				preventSelfLinking: true,
@@ -198,7 +198,7 @@ describe("replaceLinks - prevent self-linking", () => {
 
 		it("should only prevent self-links, not other links", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				preventSelfLinking: true,
 			};

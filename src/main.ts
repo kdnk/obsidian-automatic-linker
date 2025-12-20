@@ -193,8 +193,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
 		const metadata =
 			this.app.metadataCache.getFileCache(activeFile)?.frontmatter;
-		const disabled = metadata?.["automatic-linker-disabled"] === true;
-		if (disabled) {
+		const off =
+			metadata?.["automatic-linker-disabled"] === true ||
+			metadata?.["automatic-linker-off"] === true;
+		if (off) {
 			return;
 		}
 
@@ -324,14 +326,16 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				const path = file.path.replace(/\.md$/, "");
 				const metadata =
 					this.app.metadataCache.getFileCache(file)?.frontmatter;
-				const restrictNamespace =
+				const scoped =
 					metadata?.["automatic-linker-restrict-namespace"] ===
 						true ||
-					metadata?.["automatic-linker-limited-namespace"] === true;
+					metadata?.["automatic-linker-limited-namespace"] === true ||
+					metadata?.["automatic-linker-scoped"] === true;
 
 				// if this property exists, prevent this file from being linked from other files
-				const preventLinking =
-					metadata?.["automatic-linker-prevent-linking"] === true;
+				const exclude =
+					metadata?.["automatic-linker-prevent-linking"] === true ||
+					metadata?.["automatic-linker-exclude"] === true;
 
 				const aliases = (() => {
 					if (this.settings.considerAliases) {
@@ -348,8 +352,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				return {
 					path,
 					aliases,
-					restrictNamespace,
-					preventLinking,
+					scoped,
+					exclude,
 				};
 			});
 		// Sort filenames in descending order (longer paths first)

@@ -57,7 +57,7 @@ describe("replaceLinks performance tests", () => {
 	describe("small dataset performance", () => {
 		it("should process 100 files and 1000 words efficiently", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const files = generateFiles(100);
@@ -93,7 +93,7 @@ describe("replaceLinks performance tests", () => {
 	describe("medium dataset performance", () => {
 		it("should process 500 files and 5000 words efficiently", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const files = generateFiles(500);
@@ -129,7 +129,7 @@ describe("replaceLinks performance tests", () => {
 	describe("large dataset performance", () => {
 		it("should process 1000 files and 10000 words efficiently", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const files = generateFiles(1000);
@@ -165,7 +165,7 @@ describe("replaceLinks performance tests", () => {
 	describe("real-world document performance", () => {
 		it("should process document with code blocks and links efficiently", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const files = generateFiles(200);
@@ -227,7 +227,7 @@ Final paragraph mentions ${linkWords[9]} again.
 	describe("namespace resolution performance", () => {
 		it("should process namespace resolution efficiently", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "namespace",
 				namespaceResolution: true,
 			};
@@ -264,7 +264,7 @@ Final paragraph mentions ${linkWords[9]} again.
 	describe("ignore case performance", () => {
 		it("should process case-insensitive matching efficiently", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				ignoreCase: true,
 			};
@@ -301,7 +301,7 @@ Final paragraph mentions ${linkWords[9]} again.
 	describe("memory usage optimization", () => {
 		it("should handle fallback index caching efficiently", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 			};

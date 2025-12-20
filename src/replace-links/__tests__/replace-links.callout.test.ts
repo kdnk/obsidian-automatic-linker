@@ -15,7 +15,7 @@ describe("replaceLinks - callout handling", () => {
 			{ path: "tip" },
 		],
 		settings: {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		},
 	});

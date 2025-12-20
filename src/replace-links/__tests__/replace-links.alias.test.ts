@@ -6,7 +6,7 @@ describe("replaceLinks - alias handling", () => {
 	describe("basic alias", () => {
 		it("replaces alias", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -27,7 +27,7 @@ describe("replaceLinks - alias handling", () => {
 
 		it("prefers exact match over alias", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -50,7 +50,7 @@ describe("replaceLinks - alias handling", () => {
 	describe("namespaced alias", () => {
 		it("replaces namespaced alias", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -71,7 +71,7 @@ describe("replaceLinks - alias handling", () => {
 
 		it("replaces multiple occurrences of alias and normal candidate (with baseDir)", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -91,10 +91,10 @@ describe("replaceLinks - alias handling", () => {
 		});
 	});
 
-	describe("alias with restrictNamespace", () => {
-		it("respects restrictNamespace for alias", () => {
+	describe("alias with scoped", () => {
+		it("respects scoped for alias", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -114,9 +114,9 @@ describe("replaceLinks - alias handling", () => {
 			expect(result).toBe("[[set/HelloWorld|HW]]");
 		});
 
-		it("replace alias when restrictNamespace is false", () => {
+		it("replace alias when scoped is false", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -138,7 +138,7 @@ describe("replaceLinks - alias handling", () => {
 
 		it("does not replace alias when namespace does not match", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -162,7 +162,7 @@ describe("replaceLinks - alias handling", () => {
 	describe("alias and baseDir", () => {
 		it("should replace alias with baseDir", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -184,7 +184,7 @@ describe("replaceLinks - alias handling", () => {
 
 	it("Aliases with ignoreCase: false", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: "pages",
 			ignoreCase: false,
 		};
@@ -206,7 +206,7 @@ describe("replaceLinks - alias handling", () => {
 
 	it("Aliases with ignoreCase: true", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: "pages",
 			ignoreCase: true,
 		};

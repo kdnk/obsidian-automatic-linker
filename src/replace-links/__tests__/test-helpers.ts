@@ -1,14 +1,14 @@
 import { PathAndAliases } from "../../path-and-aliases.types";
-import { buildCandidateTrie, getEffectiveNamespace } from "../../trie";
+import { buildCandidateTrie } from "../../trie";
 
 export const buildCandidateTrieForTest = ({
 	files,
-	settings: { restrictNamespace, baseDir, ignoreCase },
+	settings: { scoped, baseDir, ignoreCase },
 	excludeDirs = [],
 }: {
-	files: { path: string; aliases?: string[]; preventLinking?: boolean }[];
+	files: { path: string; aliases?: string[]; exclude?: boolean }[];
 	settings: {
-		restrictNamespace: boolean;
+		scoped: boolean;
 		baseDir: string | undefined;
 		ignoreCase?: boolean;
 	};
@@ -27,12 +27,11 @@ export const buildCandidateTrieForTest = ({
 	const sortedFiles: PathAndAliases[] = filteredFiles
 		.slice()
 		.sort((a, b) => b.path.length - a.path.length)
-		.map(({ path, aliases, preventLinking }) => ({
+		.map(({ path, aliases, exclude }) => ({
 			path,
 			aliases: aliases || null,
-			restrictNamespace,
-			preventLinking,
-			namespace: getEffectiveNamespace(path, baseDir),
+			scoped,
+			exclude,
 		}));
 
 	const { candidateMap, trie } = buildCandidateTrie(

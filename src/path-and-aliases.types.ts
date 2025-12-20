@@ -1,6 +1,6 @@
 export type PathAndAliases = {
 	path: string;
 	aliases: string[] | null;
-	restrictNamespace: boolean;
-	preventLinking?: boolean;
+	scoped: boolean;
+	exclude?: boolean;
 };

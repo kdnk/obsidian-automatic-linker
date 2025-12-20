@@ -7,7 +7,7 @@ describe("replaceLinks - CJK handling", () => {
 		it("complex word boundary", () => {
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 				};
 				const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -27,7 +27,7 @@ describe("replaceLinks - CJK handling", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 				};
 				const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -47,7 +47,7 @@ describe("replaceLinks - CJK handling", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 				};
 				const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -69,7 +69,7 @@ describe("replaceLinks - CJK handling", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 					ignoreCase: true,
 					namespaceResolution: true,
@@ -92,7 +92,7 @@ describe("replaceLinks - CJK handling", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 					ignoreCase: true,
 					namespaceResolution: true,
@@ -117,7 +117,7 @@ describe("replaceLinks - CJK handling", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 					ignoreCase: true,
 					namespaceResolution: true,
@@ -142,7 +142,7 @@ describe("replaceLinks - CJK handling", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 					ignoreCase: false,
 					namespaceResolution: true,
@@ -168,7 +168,7 @@ describe("replaceLinks - CJK handling", () => {
 		});
 		it("unmatched namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -189,7 +189,7 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("multiple namespaces", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -218,7 +218,7 @@ describe("replaceLinks - CJK handling", () => {
 	describe("starting CJK", () => {
 		it("unmatched namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -239,7 +239,7 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("single namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -264,7 +264,7 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("multiple namespaces", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -290,10 +290,10 @@ describe("replaceLinks - CJK handling", () => {
 		});
 	});
 
-	describe("automatic-linker-restrict-namespace with CJK", () => {
-		it("should respect restrictNamespace for CJK with baseDir", () => {
+	describe("automatic-linker-scoped with CJK", () => {
+		it("should respect scoped for CJK with baseDir", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -318,7 +318,7 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("should not replace CJK when namespace does not match with baseDir", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -344,7 +344,7 @@ describe("replaceLinks - CJK handling", () => {
 
 	it("multiple same CJK words", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -366,7 +366,7 @@ describe("replaceLinks - CJK handling", () => {
 	describe("CJK with namespaces", () => {
 		it("should convert CJK text with namespace prefix", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -390,7 +390,7 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("should convert CJK text with namespace and alias", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -414,7 +414,7 @@ describe("replaceLinks - CJK handling", () => {
 
 		it("should convert CJK text with namespace and spaces", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};

@@ -3,10 +3,10 @@ import { replaceLinks } from "../replace-links";
 import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks - restrict namespace", () => {
-	describe("automatic-linker-restrict-namespace with baseDir", () => {
-		it("should respect restrictNamespace with baseDir", () => {
+	describe("automatic-linker-scoped with baseDir", () => {
+		it("should respect scoped with baseDir", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -31,7 +31,7 @@ describe("replaceLinks - restrict namespace", () => {
 
 		it("should not replace when namespace does not match with baseDir", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -54,9 +54,9 @@ describe("replaceLinks - restrict namespace", () => {
 			expect(result).toBe("tag");
 		});
 
-		it("should handle multiple namespaces with restrictNamespace", () => {
+		it("should handle multiple namespaces with scoped", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};

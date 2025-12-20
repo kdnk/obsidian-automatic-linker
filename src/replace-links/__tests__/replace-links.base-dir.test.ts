@@ -8,7 +8,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/xxx" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -31,7 +31,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/foo/bar" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -55,7 +55,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/xxx" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 				},
 			});
@@ -78,7 +78,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/xxx" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "",
 				},
 			});
@@ -103,7 +103,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/xxx", aliases: ["alias-xxx"] }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -128,7 +128,7 @@ describe("replaceLinks with baseDir", () => {
 					{ path: "pages/foo/bar", aliases: ["alias-bar"] },
 				],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -153,7 +153,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/foo/bar" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -180,7 +180,7 @@ describe("replaceLinks with baseDir", () => {
 					{ path: "pages/bar/baz" },
 				],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -206,7 +206,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/xxx" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -230,7 +230,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/foo/bar" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -258,7 +258,7 @@ describe("replaceLinks with baseDir", () => {
 					{ path: "pages/foo/xxx" },
 				],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -290,7 +290,7 @@ describe("replaceLinks with baseDir", () => {
 					{ path: "pages/foo/xxx" },
 				],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -318,7 +318,7 @@ describe("replaceLinks with baseDir", () => {
 					{ path: "pages/bar/yyy" },
 				],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -346,7 +346,7 @@ describe("replaceLinks with baseDir", () => {
 					{ path: "pages/target" },
 				],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -373,7 +373,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/XXX" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 					ignoreCase: true,
 				},
@@ -400,7 +400,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/Foo/Bar" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 					ignoreCase: true,
 				},
@@ -431,7 +431,7 @@ describe("replaceLinks with baseDir", () => {
 					{ path: "other/yyy" },
 				],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -454,7 +454,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/xxx" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -477,7 +477,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files: [{ path: "pages/multi word file" }],
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});
@@ -506,7 +506,7 @@ describe("replaceLinks with baseDir", () => {
 			const { candidateMap, trie } = buildCandidateTrieForTest({
 				files,
 				settings: {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: "pages",
 				},
 			});

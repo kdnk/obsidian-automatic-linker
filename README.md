@@ -39,7 +39,7 @@ Organize large vaults with sophisticated namespace handling:
 
 - **Base Directory**: Define a base directory (e.g., `pages/`) where the prefix is omitted from links
 - **Namespace Resolution**: Automatically resolve shorthand links to their full namespaced paths
-- **Namespace Restriction**: Use `automatic-linker-restrict-namespace: true` in frontmatter to restrict linking to files within the same namespace
+- **Namespace Restriction**: Use `automatic-linker-scoped: true` in frontmatter to restrict linking to files within the same namespace
 - **Closest Match Selection**: When multiple candidates exist, the plugin selects the file closest to your current note
 
 ### URL Formatting
@@ -57,7 +57,7 @@ Transform raw URLs into readable Markdown links automatically:
 Fine-tune linking behavior to match your workflow:
 
 - **Alias Support**: Reference files by any of their frontmatter aliases
-- **Prevent Linking**: Add `automatic-linker-prevent-linking: true` to frontmatter to exclude files from auto-linking
+- **Prevent Linking**: Add `automatic-linker-exclude: true` to frontmatter to exclude files from auto-linking
 - **Prevent Self-Linking**: Avoid creating links from a file to itself
 - **Remove Aliases**: Automatically strip aliases in specified directories
 - **Month Note Handling**: Ignore single/double digit references (1, 01, 12) unless namespaced
@@ -164,7 +164,7 @@ It becomes: `[[frameworks/React]] uses [[languages/TypeScript]]`
 File `pages/team-a/internal.md` has frontmatter:
 ```yaml
 ---
-automatic-linker-restrict-namespace: true
+automatic-linker-scoped: true
 ---
 ```
 
@@ -228,11 +228,14 @@ Add these to individual note frontmatter:
 
 ```yaml
 ---
-# Prevent this file from being automatically linked
-automatic-linker-prevent-linking: true
+# Disable automatic linking in this file
+automatic-linker-off: true
+
+# Exclude this file from being automatically linked from other files
+automatic-linker-exclude: true
 
 # Restrict linking to same namespace only
-automatic-linker-restrict-namespace: true
+automatic-linker-scoped: true
 
 # Define aliases for this file (standard Obsidian feature)
 aliases: [shortname, alternative-name]

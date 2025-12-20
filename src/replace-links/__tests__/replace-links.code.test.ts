@@ -5,7 +5,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("ignore code", () => {
 	it("inline code", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -26,7 +26,7 @@ describe("ignore code", () => {
 
 	it("code block", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({

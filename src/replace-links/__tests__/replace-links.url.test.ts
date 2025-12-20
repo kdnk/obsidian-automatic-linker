@@ -6,7 +6,7 @@ describe("ignore url", () => {
 	it("one url", () => {
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -30,7 +30,7 @@ describe("ignore url", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -50,7 +50,7 @@ describe("ignore url", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -70,7 +70,7 @@ describe("ignore url", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -92,7 +92,7 @@ describe("ignore url", () => {
 
 	it("multiple urls", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -118,7 +118,7 @@ describe("ignore url", () => {
 
 	it("multiple urls with links", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -149,7 +149,7 @@ describe("ignore url", () => {
 describe("ignore markdown url", () => {
 	it("one url", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -175,7 +175,7 @@ describe("ignore markdown url", () => {
 
 	it("multiple urls", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -205,7 +205,7 @@ describe("ignore markdown url", () => {
 
 	it("multiple urls with links", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({

@@ -6,7 +6,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 	describe("basic alias removal", () => {
 		it("removes alias for links in specified directory", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 				removeAliasInDirs: ["dir"],
@@ -29,7 +29,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 
 		it("keeps alias for links not in specified directory", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 				removeAliasInDirs: ["dir"],
@@ -52,7 +52,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 
 		it("removes alias for links in subdirectories", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 				removeAliasInDirs: ["dir"],
@@ -77,7 +77,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 	describe("multiple directories", () => {
 		it("removes alias for links in any specified directory", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 				removeAliasInDirs: ["dir1", "dir2"],
@@ -106,7 +106,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 	describe("with baseDir", () => {
 		it("removes alias based on normalized path with baseDir", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 				namespaceResolution: true,
 				removeAliasInDirs: ["dir"],
@@ -129,7 +129,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 
 		it("keeps alias when path starts with baseDir but not with specified dir", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 				namespaceResolution: true,
 				removeAliasInDirs: ["dir"],
@@ -154,7 +154,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 	describe("with frontmatter aliases", () => {
 		it("removes alias from frontmatter alias in specified directory", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				removeAliasInDirs: ["dir"],
 			};
@@ -176,7 +176,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 
 		it("keeps alias from frontmatter alias not in specified directory", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				removeAliasInDirs: ["dir"],
 			};
@@ -200,7 +200,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 	describe("edge cases", () => {
 		it("handles empty removeAliasInDirs array", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 				removeAliasInDirs: [],
@@ -223,7 +223,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 
 		it("handles undefined removeAliasInDirs", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 			};
@@ -245,7 +245,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 
 		it("handles links without alias in specified directory", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				removeAliasInDirs: ["dir"],
 			};
@@ -267,7 +267,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 
 		it("works with ignoreCase option", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				ignoreCase: true,
 				removeAliasInDirs: ["Dir"],
@@ -292,7 +292,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 	describe("in markdown tables", () => {
 		it("removes alias in markdown tables", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 				removeAliasInDirs: ["dir"],
@@ -319,7 +319,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
 			// Create array of 100 directories
 			const manyDirs = Array.from({ length: 100 }, (_, i) => `dir${i}`);
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 				removeAliasInDirs: manyDirs,

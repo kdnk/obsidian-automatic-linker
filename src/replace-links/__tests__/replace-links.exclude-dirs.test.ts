@@ -5,7 +5,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 	it("excludes files from specified directories", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -44,7 +44,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 
 	it("excludes multiple directories", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -95,7 +95,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 
 	it("excludes nested directories", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -134,7 +134,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 
 	it("works with empty exclude list", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -172,7 +172,7 @@ describe("replaceLinks - excludeDirsFromAutoLinking", () => {
 
 	it("works with baseDir and excludeDirs together", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: "pages",
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({

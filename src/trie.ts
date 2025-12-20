@@ -65,7 +65,7 @@ export const buildTrie = (words: string[], ignoreCase = false): TrieNode => {
 // CandidateData holds the canonical replacement string as well as namespace‐設定
 export interface CandidateData {
 	canonical: string;
-	restrictNamespace: boolean;
+	scoped: boolean;
 	namespace: string;
 }
 
@@ -74,14 +74,14 @@ export const buildCandidateTrie = (
 	baseDir: string | undefined,
 	ignoreCase = false,
 ) => {
-	// Filter out files with preventLinking: true
-	const linkableFiles = allFiles.filter((f) => !f.preventLinking);
+	// Filter out files with exclude: true
+	const linkableFiles = allFiles.filter((f) => !f.exclude);
 
 	// Process candidate strings from file paths.
 	type Candidate = {
 		full: string;
 		short: string | null;
-		restrictNamespace: boolean;
+		scoped: boolean;
 		// Effective namespace computed relative to baseDir.
 		namespace: string;
 	};
@@ -92,7 +92,7 @@ export const buildCandidateTrie = (
 		const candidate: Candidate = {
 			full: f.path,
 			short: null,
-			restrictNamespace: f.restrictNamespace,
+			scoped: f.scoped,
 			namespace: getEffectiveNamespace(f.path, baseDir),
 		};
 		if (basePrefix && f.path.startsWith(basePrefix)) {
@@ -105,11 +105,11 @@ export const buildCandidateTrie = (
 	const candidateMap = new Map<string, CandidateData>();
 
 	// Register normal candidates.
-	for (const { full, short, restrictNamespace, namespace } of candidates) {
+	for (const { full, short, scoped, namespace } of candidates) {
 		// Register the full path and its case-insensitive variant if needed
 		candidateMap.set(full, {
 			canonical: full,
-			restrictNamespace,
+			scoped,
 			namespace,
 		});
 
@@ -127,13 +127,13 @@ export const buildCandidateTrie = (
 				// Register both the original case and lowercase versions
 				candidateMap.set(lastSegment, {
 					canonical: full,
-					restrictNamespace,
+					scoped,
 					namespace,
 				});
 				if (ignoreCase) {
 					candidateMap.set(lastSegment.toLowerCase(), {
 						canonical: full,
-						restrictNamespace,
+						scoped,
 						namespace,
 					});
 				}
@@ -144,7 +144,7 @@ export const buildCandidateTrie = (
 		if (short) {
 			candidateMap.set(short, {
 				canonical: full,
-				restrictNamespace,
+				scoped,
 				namespace,
 			});
 		}
@@ -165,7 +165,7 @@ export const buildCandidateTrie = (
 				if (!candidateMap.has(alias)) {
 					candidateMap.set(alias, {
 						canonical: canonicalForAlias,
-						restrictNamespace: file.restrictNamespace,
+						scoped: file.scoped,
 						namespace: getEffectiveNamespace(file.path, baseDir),
 					});
 				}
@@ -173,7 +173,7 @@ export const buildCandidateTrie = (
 				if (ignoreCase && !candidateMap.has(alias.toLowerCase())) {
 					candidateMap.set(alias.toLowerCase(), {
 						canonical: canonicalForAlias,
-						restrictNamespace: file.restrictNamespace,
+						scoped: file.scoped,
 						namespace: getEffectiveNamespace(file.path, baseDir),
 					});
 				}
@@ -229,12 +229,12 @@ if (import.meta.vitest) {
 			const allFiles: PathAndAliases[] = [
 				{
 					path: "pages/docs/readme",
-					restrictNamespace: false,
+					scoped: false,
 					aliases: ["intro"],
 				},
 				{
 					path: "pages/home/index",
-					restrictNamespace: false,
+					scoped: false,
 					aliases: [],
 				},
 			];

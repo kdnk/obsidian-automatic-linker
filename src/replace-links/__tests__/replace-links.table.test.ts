@@ -5,7 +5,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("table", () => {
 	it("escape pipe inside table", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			namespaceResolution: true,
 		};

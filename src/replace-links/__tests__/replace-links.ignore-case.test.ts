@@ -5,7 +5,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("ignore case", () => {
 	it("respects case when ignoreCase is enabled", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			ignoreCase: true,
 		};
@@ -36,7 +36,7 @@ describe("ignore case", () => {
 
 	it("handles spaces with ignoreCase enabled", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			ignoreCase: true,
 		};
@@ -67,7 +67,7 @@ describe("ignore case", () => {
 
 	it("handles namespaces with ignoreCase enabled", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			ignoreCase: true,
 		};

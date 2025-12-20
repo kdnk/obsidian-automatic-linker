@@ -422,7 +422,7 @@ const processFallbackSearch = (
 
 	// Filter candidates based on namespace restrictions
 	const filteredCandidates = longestMatch.candidateList.filter(
-		([, data]) => !(data.restrictNamespace && data.namespace !== currentNamespace)
+		([, data]) => !(data.scoped && data.namespace !== currentNamespace)
 	);
 
 	let bestCandidateData: CandidateData | null = null;
@@ -746,7 +746,7 @@ const processStandardText = (
 				// Skip if namespace restriction applies
 				if (
 					settings.namespaceResolution &&
-					candidateData.restrictNamespace &&
+					candidateData.scoped &&
 					candidateData.namespace !== currentNamespace
 				) {
 					result += candidate;

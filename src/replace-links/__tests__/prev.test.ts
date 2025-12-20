@@ -7,7 +7,7 @@ import { buildCandidateTrieForTest } from "./test-helpers";
 describe("basic", () => {
 	it("replaces links", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -28,7 +28,7 @@ describe("basic", () => {
 
 	it("replaces links with bullet", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -50,7 +50,7 @@ describe("basic", () => {
 	it("replaces links with other texts", () => {
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -70,7 +70,7 @@ describe("basic", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -93,7 +93,7 @@ describe("basic", () => {
 	it("replaces links with other texts and bullet", () => {
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -113,7 +113,7 @@ describe("basic", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -136,7 +136,7 @@ describe("basic", () => {
 	it("replaces multiple links", () => {
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -156,7 +156,7 @@ describe("basic", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -176,7 +176,7 @@ describe("basic", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -196,7 +196,7 @@ describe("basic", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -220,7 +220,7 @@ describe("basic", () => {
 describe("complex fileNames", () => {
 	it("unmatched namespace", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -241,7 +241,7 @@ describe("complex fileNames", () => {
 
 	it("single namespace", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -262,7 +262,7 @@ describe("complex fileNames", () => {
 
 	it("multiple namespaces", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -289,7 +289,7 @@ describe("complex fileNames", () => {
 describe("containing CJK", () => {
 	it("unmatched namespace", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -310,7 +310,7 @@ describe("containing CJK", () => {
 
 	it("multiple namespaces", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -339,7 +339,7 @@ describe("containing CJK", () => {
 describe("starting CJK", () => {
 	it("unmatched namespace", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -360,7 +360,7 @@ describe("starting CJK", () => {
 
 	it("single namespace", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -385,7 +385,7 @@ describe("starting CJK", () => {
 
 	it("multiple namespaces", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -412,7 +412,7 @@ describe("starting CJK", () => {
 
 	it("multiple CJK words", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -433,7 +433,7 @@ describe("starting CJK", () => {
 
 	it("multiple same CJK words", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -457,7 +457,7 @@ describe("CJK - Korean", () => {
 	it("converts Korean words to links", () => {
 		// 韓国語の候補ファイル
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -478,7 +478,7 @@ describe("CJK - Korean", () => {
 
 	it("converts Korean words within sentence", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -501,7 +501,7 @@ describe("CJK - Korean", () => {
 describe("CJK - Chinese", () => {
 	it("converts Chinese words to links", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -522,7 +522,7 @@ describe("CJK - Chinese", () => {
 
 	it("converts Chinese words within sentence", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -545,7 +545,7 @@ describe("CJK - Chinese", () => {
 describe("base character (pages)", () => {
 	it("unmatched namespace", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: "pages",
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -567,7 +567,7 @@ describe("base character (pages)", () => {
 
 it("multiple links in the same line", () => {
 	const settings = {
-		restrictNamespace: false,
+		scoped: false,
 		baseDir: undefined,
 	};
 	const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -589,7 +589,7 @@ it("multiple links in the same line", () => {
 describe("nested links", () => {
 	it("", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -613,7 +613,7 @@ describe("nested links", () => {
 
 	it("existing links", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -639,7 +639,7 @@ describe("nested links", () => {
 describe("aliases", () => {
 	it("replaces alias with canonical form using file path and alias", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: "pages",
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -674,7 +674,7 @@ describe("aliases", () => {
 			{
 				path: "pages/HelloWorld",
 				aliases: ["Hello"],
-				restrictNamespace: false,
+				scoped: false,
 			},
 		];
 		const settings = {
@@ -697,7 +697,7 @@ describe("aliases", () => {
 describe("namespace resolution", () => {
 	it("replaces candidate with namespace when full candidate is provided", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			namespaceResolution: true,
 		};
@@ -719,7 +719,7 @@ describe("namespace resolution", () => {
 
 	it("replaces candidate without namespace correctly", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			namespaceResolution: true,
 		};
@@ -741,7 +741,7 @@ describe("namespace resolution", () => {
 
 	it("should not replace YYY-MM-DD formatted text when it doesn't match the candidate's shorthand", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			namespaceResolution: true,
 		};
@@ -766,7 +766,7 @@ describe("namespace resolution nearlest file path", () => {
 	it("closest siblings namespace should be used", () => {
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 			};
@@ -792,7 +792,7 @@ describe("namespace resolution nearlest file path", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 			};
@@ -817,7 +817,7 @@ describe("namespace resolution nearlest file path", () => {
 		}
 		{
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 			};
@@ -846,7 +846,7 @@ describe("namespace resolution nearlest file path", () => {
 
 	it("closest children namespace should be used", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			namespaceResolution: true,
 		};
@@ -875,7 +875,7 @@ describe("namespace resolution nearlest file path", () => {
 
 	it("find closest path if the current path is in base dir and the candidate is not", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: "base",
 			namespaceResolution: true,
 		};
@@ -912,7 +912,7 @@ describe("namespace resolution nearlest file path", () => {
 		);
 
 		const settings2 = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: "base",
 			namespaceResolution: false,
 		};
@@ -931,7 +931,7 @@ describe("namespace resolution nearlest file path", () => {
 
 it("ignore month notes", () => {
 	const settings = {
-		restrictNamespace: false,
+		scoped: false,
 		baseDir: undefined,
 	};
 	const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -996,7 +996,7 @@ it("ignore month notes", () => {
 describe("ignoreDateFormats setting", () => {
 	it("should not replace date format when ignoreDateFormats is true", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			namespaceResolution: true,
 			ignoreDateFormats: true,
@@ -1019,7 +1019,7 @@ describe("ignoreDateFormats setting", () => {
 
 	it("should replace date format when ignoreDateFormats is false", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 			namespaceResolution: true,
 			ignoreDateFormats: false,
@@ -1047,7 +1047,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"x",
 			{
 				canonical: "namespace/x",
-				restrictNamespace: true,
+				scoped: true,
 				namespace: "namespace",
 			},
 		],
@@ -1055,7 +1055,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"z",
 			{
 				canonical: "namespace/y/z",
-				restrictNamespace: true,
+				scoped: true,
 				namespace: "namespace",
 			},
 		],
@@ -1063,7 +1063,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"root",
 			{
 				canonical: "root-note",
-				restrictNamespace: true,
+				scoped: true,
 				namespace: "",
 			},
 		],
@@ -1072,7 +1072,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"free",
 			{
 				canonical: "free-note",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "other",
 			},
 		],
@@ -1082,7 +1082,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"pages/HelloWorld",
 			{
 				canonical: "pages/HelloWorld",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "pages",
 			},
 		],
@@ -1091,7 +1091,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"Hello",
 			{
 				canonical: "pages/HelloWorld|Hello",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "pages",
 			},
 		],
@@ -1100,7 +1100,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"HelloWorld",
 			{
 				canonical: "HelloWorld",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "pages",
 			},
 		],
@@ -1109,7 +1109,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"pages/tags",
 			{
 				canonical: "pages/tags",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "pages",
 			},
 		],
@@ -1117,7 +1117,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"tags",
 			{
 				canonical: "tags",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "pages",
 			},
 		],
@@ -1126,7 +1126,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"문서",
 			{
 				canonical: "문서",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "namespace",
 			},
 		],
@@ -1135,7 +1135,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"ひらがな",
 			{
 				canonical: "ひらがな",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "namespace",
 			},
 		],
@@ -1144,7 +1144,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			"文档",
 			{
 				canonical: "文档",
-				restrictNamespace: false,
+				scoped: false,
 				namespace: "namespace",
 			},
 		],
@@ -1262,17 +1262,17 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 		expect(result).toBe("Some text `x` more text");
 	});
 
-	describe("automatic-linker-restrict-namespace and base dir", () => {
+	describe("automatic-linker-scoped and base dir", () => {
 		// Add candidate "a" corresponding to a file at "pages/set/a"
-		// with restrictNamespace enabled and an effective namespace of "set".
+		// with scoped enabled and an effective namespace of "set".
 		candidateMap.set("a", {
 			canonical: "set/a",
-			restrictNamespace: true,
+			scoped: true,
 			namespace: "set",
 		});
 		const trie = buildTrie(Array.from(candidateMap.keys()));
 
-		it("should replace candidate with restrictNamespace when effective namespace matches", () => {
+		it("should replace candidate with scoped when effective namespace matches", () => {
 			// Current file is in "pages/set/...", so effective namespace is "set"
 			const settings = {
 				namespaceResolution: true,
@@ -1288,7 +1288,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
 			expect(result).toBe("[[set/a|a]]");
 		});
 
-		it("should not replace candidate with restrictNamespace when effective namespace does not match", () => {
+		it("should not replace candidate with scoped when effective namespace does not match", () => {
 			// Current file is in "pages/other/...", so effective namespace is "other"
 			const settings = {
 				namespaceResolution: true,

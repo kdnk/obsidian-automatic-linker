@@ -3,15 +3,15 @@ import { replaceLinks } from "../replace-links";
 import { buildCandidateTrieForTest } from "./test-helpers";
 
 describe("replaceLinks with prevent-linking", () => {
-	it("does not link to files with preventLinking: true", () => {
+	it("does not link to files with exclude: true", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
-				{ path: "private-note", preventLinking: true },
-				{ path: "public-note", preventLinking: false },
+				{ path: "private-note", exclude: true },
+				{ path: "public-note", exclude: false },
 			],
 			settings,
 		});
@@ -30,9 +30,9 @@ describe("replaceLinks with prevent-linking", () => {
 		expect(result).toBe("private-note and [[public-note]]");
 	});
 
-	it("does not link to files with preventLinking: true even with aliases", () => {
+	it("does not link to files with exclude: true even with aliases", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -40,12 +40,12 @@ describe("replaceLinks with prevent-linking", () => {
 				{
 					path: "private-note",
 					aliases: ["secret"],
-					preventLinking: true,
+					exclude: true,
 				},
 				{
 					path: "public-note",
 					aliases: ["open"],
-					preventLinking: false,
+					exclude: false,
 				},
 			],
 			settings,
@@ -65,16 +65,16 @@ describe("replaceLinks with prevent-linking", () => {
 		expect(result).toBe("secret and [[public-note|open]]");
 	});
 
-	it("does not link to files with preventLinking: true in namespace context", () => {
+	it("does not link to files with exclude: true in namespace context", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: "pages",
 			namespaceResolution: true,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
-				{ path: "pages/private-doc", preventLinking: true },
-				{ path: "pages/public-doc", preventLinking: false },
+				{ path: "pages/private-doc", exclude: true },
+				{ path: "pages/public-doc", exclude: false },
 			],
 			settings,
 		});
@@ -93,15 +93,15 @@ describe("replaceLinks with prevent-linking", () => {
 		expect(result).toBe("private-doc and [[public-doc]]");
 	});
 
-	it("handles preventLinking with mixed content", () => {
+	it("handles exclude with mixed content", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
-				{ path: "private", preventLinking: true },
-				{ path: "public", preventLinking: false },
+				{ path: "private", exclude: true },
+				{ path: "public", exclude: false },
 				{ path: "another-public" },
 			],
 			settings,
@@ -120,15 +120,15 @@ describe("replaceLinks with prevent-linking", () => {
 		expect(result).toBe("private [[public]] [[another-public]]");
 	});
 
-	it("does not link to preventLinking files in bullet points", () => {
+	it("does not link to exclude files in bullet points", () => {
 		const settings = {
-			restrictNamespace: false,
+			scoped: false,
 			baseDir: undefined,
 		};
 		const { candidateMap, trie } = buildCandidateTrieForTest({
 			files: [
-				{ path: "private-note", preventLinking: true },
-				{ path: "public-note", preventLinking: false },
+				{ path: "private-note", exclude: true },
+				{ path: "public-note", exclude: false },
 			],
 			settings,
 		});

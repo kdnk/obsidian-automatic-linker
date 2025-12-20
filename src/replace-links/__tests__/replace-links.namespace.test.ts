@@ -6,7 +6,7 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("complex fileNames", () => {
 		it("unmatched namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -27,7 +27,7 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("single namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -48,7 +48,7 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("multiple namespaces", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -74,10 +74,10 @@ describe("replaceLinks - namespace resolution", () => {
 		});
 	});
 
-	describe("automatic-linker-restrict-namespace and base dir", () => {
-		it("should replace candidate with restrictNamespace when effective namespace matches", () => {
+	describe("automatic-linker-scoped and base dir", () => {
+		it("should replace candidate with scoped when effective namespace matches", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -100,9 +100,9 @@ describe("replaceLinks - namespace resolution", () => {
 			expect(result).toBe("[[set/a|a]]");
 		});
 
-		it("should not replace candidate with restrictNamespace when effective namespace does not match", () => {
+		it("should not replace candidate with scoped when effective namespace does not match", () => {
 			const settings = {
-				restrictNamespace: true,
+				scoped: true,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};

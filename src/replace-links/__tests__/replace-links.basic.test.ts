@@ -6,7 +6,7 @@ describe("replaceLinks", () => {
 	describe("basic", () => {
 		it("replaces links", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -27,7 +27,7 @@ describe("replaceLinks", () => {
 
 		it("replaces links with space", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "pages",
 				namespaceResolution: true,
 			};
@@ -50,7 +50,7 @@ describe("replaceLinks", () => {
 
 		it("replaces links with bullet", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -71,7 +71,7 @@ describe("replaceLinks", () => {
 
 		it("replaces links with number", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -92,7 +92,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace links in code blocks", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -113,7 +113,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace links in inline code", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -134,7 +134,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace existing wikilinks", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -155,7 +155,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace existing markdown links", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -176,7 +176,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace text in single brackets", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -197,7 +197,7 @@ describe("replaceLinks", () => {
 
 		it("does not replace consecutive single brackets", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -220,7 +220,7 @@ describe("replaceLinks", () => {
 	describe("with space", () => {
 		it("space without namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -240,7 +240,7 @@ describe("replaceLinks", () => {
 		});
 		it("space with namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -268,7 +268,7 @@ describe("replaceLinks", () => {
 	describe("multiple links", () => {
 		it("replaces multiple links in the same line", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -289,7 +289,7 @@ describe("replaceLinks", () => {
 
 		it("replaces multiple links in different lines", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({

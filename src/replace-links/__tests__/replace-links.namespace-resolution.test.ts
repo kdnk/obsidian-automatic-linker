@@ -6,7 +6,7 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("basic namespace resolution", () => {
 		it("unmatched namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -27,7 +27,7 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("single namespace", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -48,7 +48,7 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("multiple namespaces", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 			};
 			const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -78,7 +78,7 @@ describe("replaceLinks - namespace resolution", () => {
 		it("closest siblings namespace should be used", () => {
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 					namespaceResolution: true,
 				};
@@ -104,7 +104,7 @@ describe("replaceLinks - namespace resolution", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 					namespaceResolution: true,
 				};
@@ -129,7 +129,7 @@ describe("replaceLinks - namespace resolution", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 					namespaceResolution: true,
 				};
@@ -158,7 +158,7 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("closest children namespace should be used", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 			};
@@ -187,7 +187,7 @@ describe("replaceLinks - namespace resolution", () => {
 
 		it("find closest path if the current path is in base dir and the candidate is not", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "base",
 				namespaceResolution: true,
 			};
@@ -223,7 +223,7 @@ describe("replaceLinks - namespace resolution", () => {
 			);
 
 			const settings2 = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: "base",
 				namespaceResolution: false,
 			};
@@ -243,7 +243,7 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("namespace resoluton with aliases", () => {
 		it("should resolve without aliases", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 			};
@@ -270,7 +270,7 @@ describe("replaceLinks - namespace resolution", () => {
 		it("should resolve aliases", () => {
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 				};
 				const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -294,7 +294,7 @@ describe("replaceLinks - namespace resolution", () => {
 			}
 			{
 				const settings = {
-					restrictNamespace: false,
+					scoped: false,
 					baseDir: undefined,
 				};
 				const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -323,7 +323,7 @@ describe("replaceLinks - namespace resolution", () => {
 	describe("namespace resoluton with multiple words", () => {
 		it("should properly link multiple words", () => {
 			const settings = {
-				restrictNamespace: false,
+				scoped: false,
 				baseDir: undefined,
 				namespaceResolution: true,
 			};
