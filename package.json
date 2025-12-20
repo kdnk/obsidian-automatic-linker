@@ -9,6 +9,7 @@
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
 		"test": "VITE_CJS_IGNORE_WARNING=true vitest run",
 		"test:watch": "VITE_CJS_IGNORE_WARNING=true vitest",
+		"tsc": "tsc -noEmit -skipLibCheck",
 		"tsc:watch": "tsc -noEmit -skipLibCheck --watch",
 		"lint": "eslint .",
 		"lint:watch": "nodemon --watch src --ext js,ts --exec \"npm run lint\""
