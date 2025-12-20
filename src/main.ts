@@ -74,27 +74,17 @@ export default class AutomaticLinkerPlugin extends Plugin {
             isInTable,
         }: LinkGeneratorParams): string => {
             // Try to get the TFile for the link path
-            const targetFile = this.app.vault.getAbstractFileByPath(
-                linkPath + ".md",
-            )
+            const targetFile = this.app.vault.getAbstractFileByPath(linkPath + ".md")
 
             if (targetFile instanceof TFile) {
                 // File exists, use Obsidian's generateMarkdownLink API
                 try {
-                    const link = this.app.fileManager.generateMarkdownLink(
-                        targetFile,
-                        sourcePath,
-                        "",
-                        alias || "",
-                    )
+                    const link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", alias || "")
                     return link
                 }
                 catch (error) {
                     // Fall back to default format if API fails
-                    console.warn(
-                        "Failed to generate link using Obsidian API:",
-                        error,
-                    )
+                    console.warn("Failed to generate link using Obsidian API:", error)
                 }
             }
 
@@ -112,19 +102,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
     modifyLinks(fileContent: string, filePath: string): string {
         if (this.settings.formatGitHubURLs) {
-            fileContent = replaceURLs(
-                fileContent,
-                this.settings,
-                formatGitHubURL,
-            )
+            fileContent = replaceURLs(fileContent, this.settings, formatGitHubURL)
         }
 
         if (this.settings.formatJiraURLs) {
-            fileContent = replaceURLs(
-                fileContent,
-                this.settings,
-                formatJiraURL,
-            )
+            fileContent = replaceURLs(fileContent, this.settings, formatJiraURL)
         }
 
         if (this.settings.formatLinearURLs) {
@@ -139,10 +121,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             const { contentStart } = getFrontMatterInfo(fileContent)
             const frontmatter = fileContent.slice(0, contentStart)
             const body = fileContent.slice(contentStart)
-            const updatedBody = replaceUrlWithTitle({
-                body,
-                urlTitleMap: this.urlTitleMap,
-            })
+            const updatedBody = replaceUrlWithTitle({ body, urlTitleMap: this.urlTitleMap })
             fileContent = frontmatter + updatedBody
         }
 
@@ -154,17 +133,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
             console.log("this.trie: ", this.trie)
             console.log("this.candidateMap: ", this.candidateMap)
             console.log(new Date().toISOString(), "modifyLinks started")
-            new Notice(
-                `Automatic Linker: ${new Date().toISOString()} modifyLinks started.`,
-            )
+            new Notice(`Automatic Linker: ${new Date().toISOString()} modifyLinks started.`)
         }
 
         const { contentStart } = getFrontMatterInfo(fileContent)
         const frontmatter = fileContent.slice(0, contentStart)
         const linkGenerator = this.createLinkGenerator(filePath)
-        const baseDir = this.settings.respectNewFileFolderPath
-            ? this.app.vault.getConfig("newFileFolderPath")
-            : undefined
+        const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
         const updatedBody = replaceLinks({
             body: fileContent.slice(contentStart),
             linkResolverContext: {
@@ -186,24 +161,18 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
         if (this.settings.debug) {
             console.log(new Date().toISOString(), "modifyLinks finished")
-            new Notice(
-                `Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`,
-            )
+            new Notice(`Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`)
         }
         return fileContent
     }
 
     async modifyLinksForActiveFile() {
         const activeFile = this.app.workspace.getActiveFile()
-        if (!activeFile) {
-            return
-        }
+        if (!activeFile) return
 
         const metadata
             = this.app.metadataCache.getFileCache(activeFile)?.frontmatter
-        if (isLinkingOff(metadata)) {
-            return
-        }
+        if (isLinkingOff(metadata)) return
 
         const editor = this.getEditor()
         if (!editor) return
@@ -226,21 +195,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
     async buildUrlTitleMap() {
         const activeFile = this.app.workspace.getActiveFile()
-        if (!activeFile) {
-            return
-        }
+        if (!activeFile) return
         const fileContent = await this.app.vault.read(activeFile)
         const { contentStart } = getFrontMatterInfo(fileContent)
         const body = fileContent.slice(contentStart)
 
-        const urls = listupAllUrls(
-            body,
-            this.settings.replaceUrlWithTitleIgnoreDomains,
-        )
+        const urls = listupAllUrls(body, this.settings.replaceUrlWithTitleIgnoreDomains)
         for (const url of urls) {
-            if (this.urlTitleMap.has(url)) {
-                continue
-            }
+            if (this.urlTitleMap.has(url)) continue
+
             const response = await request(url)
             const title = getTitleFromHtml(response)
             this.urlTitleMap.set(url, title)
@@ -254,38 +217,26 @@ export default class AutomaticLinkerPlugin extends Plugin {
         if (this.settings.runPrettierAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
             // @ts-expect-error
-            await this.app?.commands?.executeCommandById(
-                "prettier-format:format-file",
-            )
+            await this.app?.commands?.executeCommandById("prettier-format:format-file")
         }
         if (this.settings.runLinterAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
             // @ts-expect-error
-            await this.app?.commands?.executeCommandById(
-                "obsidian-linter:lint-file",
-            )
+            await this.app?.commands?.executeCommandById("obsidian-linter:lint-file")
         }
     }
 
     async mofifyLinksSelection() {
         const activeFile = this.app.workspace.getActiveFile()
-        if (!activeFile) {
-            return
-        }
+        if (!activeFile) return
         const editor = this.app.workspace.activeEditor
-        if (!editor) {
-            return
-        }
+        if (!editor) return
         const cm = editor.editor
-        if (!cm) {
-            return
-        }
+        if (!cm) return
 
         const selectedText = cm.getSelection()
 
-        if (!this.trie || !this.candidateMap) {
-            return
-        }
+        if (!this.trie || !this.candidateMap) return
 
         const linkGenerator = this.createLinkGenerator(activeFile.path)
         const baseDir = this.settings.respectNewFileFolderPath
@@ -329,8 +280,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             .map((file) => {
                 // Remove the .md extension
                 const path = file.path.replace(/\.md$/, "")
-                const metadata
-                    = this.app.metadataCache.getFileCache(file)?.frontmatter
+                const metadata = this.app.metadataCache.getFileCache(file)?.frontmatter
                 const scoped = isNamespaceScoped(metadata)
                 // if this property exists, prevent this file from being linked from other files
                 const exclude = isLinkingExcluded(metadata)
@@ -359,21 +309,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
         allFiles.sort((a, b) => b.path.length - a.path.length)
 
         if (this.settings.debug) {
-            console.log(
-                "Automatic Linker: allFiles for Trie building: ",
-                allFiles,
-            )
+            console.log("Automatic Linker: allFiles for Trie building: ", allFiles)
         }
 
         // Build candidateMap and Trie using the helper function.
-        const baseDir = this.settings.respectNewFileFolderPath
-            ? this.app.vault.getConfig("newFileFolderPath")
-            : undefined
-        const { candidateMap, trie } = buildCandidateTrie(
-            allFiles,
-            baseDir,
-            this.settings.ignoreCase ?? false,
-        )
+        const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
+        const { candidateMap, trie } = buildCandidateTrie(allFiles, baseDir, this.settings.ignoreCase ?? false)
         this.candidateMap = candidateMap
         this.trie = trie
 
@@ -381,14 +322,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
         this.frontmatterCache.clear()
 
         if (this.settings.showNotice) {
-            new Notice(
-                `Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
-            )
+            new Notice(`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`)
         }
         if (this.settings.debug) {
-            console.log(
-                `Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
-            )
+            console.log(`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`)
         }
     }
 
@@ -398,9 +335,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
         // Extract frontmatter fields that affect the Trie
         const relevantFields = {
-            aliases: metadata?.aliases
-                ? JSON.stringify(metadata.aliases)
-                : undefined,
+            aliases: metadata?.aliases ? JSON.stringify(metadata.aliases) : undefined,
             scoped: isNamespaceScoped(metadata),
             exclude: isLinkingExcluded(metadata),
         }
@@ -415,18 +350,14 @@ export default class AutomaticLinkerPlugin extends Plugin {
             this.refreshFileDataAndTrie()
 
             if (this.settings.debug) {
-                console.log(
-                    `Automatic Linker: Refreshing Trie due to frontmatter change in ${file.path}`,
-                )
+                console.log(`Automatic Linker: Refreshing Trie due to frontmatter change in ${file.path}`)
             }
         }
     }
 
     async onload() {
         await this.loadSettings()
-        this.addSettingTab(
-            new AutomaticLinkerPluginSettingsTab(this.app, this),
-        )
+        this.addSettingTab(new AutomaticLinkerPluginSettingsTab(this.app, this))
 
         // Load file data and build the Trie when the layout is ready.
         this.app.workspace.onLayoutReady(() => {
