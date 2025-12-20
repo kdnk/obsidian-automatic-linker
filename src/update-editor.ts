@@ -12,7 +12,7 @@ export function updateEditor(
 	newText: string,
 	editor: Editor,
 ): DiffMatchPatch.Diff[] {
-	const dmp = new DiffMatchPatch.diff_match_patch(); // eslint-disable-line new-cap
+	const dmp = new DiffMatchPatch.diff_match_patch();
 	const changes = dmp.diff_main(oldText, newText);
 	let curText = "";
 	changes.forEach((change) => {

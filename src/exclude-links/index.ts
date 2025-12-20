@@ -40,7 +40,7 @@ export const excludeLinks = (text: string) => {
 			return segment.content;
 		} else {
 			// Replace links in non-code segments, handling aliases
-			return segment.content.replace(regex, (match, link, alias) => {
+			return segment.content.replace(regex, (_match, link, alias) => {
 				// If there's an alias, use it
 				if (alias) {
 					return alias;

@@ -35,7 +35,7 @@ export function formatGitHubURL(
 
 		const cleanURL = getCleanURL(githubURL, urlInfo);
 		return formatToObsidianLink(urlInfo, cleanURL);
-	} catch (e) {
+	} catch (_e) {
 		// If URL is invalid, return original string
 		return url;
 	}
@@ -87,7 +87,7 @@ function formatToObsidianLink(
 ): string {
 	const url = new URL(cleanURL);
 	const isEnterpriseURL = url.hostname !== "github.com";
-	let prefix = isEnterpriseURL ? "ghe" : "github";
+	const prefix = isEnterpriseURL ? "ghe" : "github";
 
 	let wikiLink = `[[${prefix}/${urlInfo.owner}/${urlInfo.repository}`;
 	if (urlInfo.type && urlInfo.id) {

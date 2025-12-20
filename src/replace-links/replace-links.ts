@@ -34,28 +34,34 @@ export interface ReplaceLinksOptions {
 
 // Constants and Regular Expressions
 const REGEX_PATTERNS = {
-	PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
+	PROTECTED:
+		/(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
 	DATE_FORMAT: /^\d{4}-\d{2}-\d{2}$/,
 	MONTH_NOTE: /^[0-9]{1,2}$/,
 	CJK: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u,
-	CJK_CANDIDATE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u,
+	CJK_CANDIDATE:
+		/^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u,
 	KOREAN: /^[\p{Script=Hangul}]+$/u,
 	JAPANESE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u,
 	URL: /^(https?:\/\/[^\s]+)/,
 	PROTECTED_LINK: /^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/,
 	KOREAN_SUFFIX: /^(이다\.?)/,
 	KOREAN_PARTICLES: /^(는|은)/,
-	JAPANESE_PARTICLES: /^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
+	JAPANESE_PARTICLES:
+		/^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
 	TABLE_SEPARATOR: /^[|:\s-]+$/,
 	WORD_BOUNDARY: /[\p{L}\p{N}_/-]/u,
-	WHITESPACE: /[\t\n\r ]/
+	WHITESPACE: /[\t\n\r ]/,
 } as const;
 
 // Text Analysis Utilities
 const isWordBoundary = (char: string | undefined): boolean => {
 	if (char === undefined) return true;
 	if (REGEX_PATTERNS.CJK.test(char)) return true;
-	return !REGEX_PATTERNS.WORD_BOUNDARY.test(char) || REGEX_PATTERNS.WHITESPACE.test(char);
+	return (
+		!REGEX_PATTERNS.WORD_BOUNDARY.test(char) ||
+		REGEX_PATTERNS.WHITESPACE.test(char)
+	);
 };
 
 const isMonthNote = (candidate: string): boolean =>
@@ -63,17 +69,18 @@ const isMonthNote = (candidate: string): boolean =>
 	parseInt(candidate, 10) >= 1 &&
 	parseInt(candidate, 10) <= 12;
 
-const isProtectedLink = (body: string): boolean => 
+const isProtectedLink = (body: string): boolean =>
 	REGEX_PATTERNS.PROTECTED_LINK.test(body);
 
 const isCjkText = (text: string): boolean => REGEX_PATTERNS.CJK.test(text);
 
-const isCjkCandidate = (candidate: string): boolean => 
+const isCjkCandidate = (candidate: string): boolean =>
 	REGEX_PATTERNS.CJK_CANDIDATE.test(candidate);
 
-const isKoreanText = (text: string): boolean => REGEX_PATTERNS.KOREAN.test(text);
+const isKoreanText = (text: string): boolean =>
+	REGEX_PATTERNS.KOREAN.test(text);
 
-const isJapaneseText = (text: string): boolean => 
+const isJapaneseText = (text: string): boolean =>
 	REGEX_PATTERNS.JAPANESE.test(text) && !REGEX_PATTERNS.KOREAN.test(text);
 
 // Cache for fallback index to avoid rebuilding
@@ -168,15 +175,24 @@ const isSelfLink = (
 	const { linkPath } = extractLinkParts(candidateData.canonical);
 
 	// Normalize paths for comparison
-	const normalizedLinkPath = normalizeCanonicalPath(linkPath, settings.baseDir);
-	const normalizedCurrentPath = normalizeCanonicalPath(currentFilePath, settings.baseDir);
+	const normalizedLinkPath = normalizeCanonicalPath(
+		linkPath,
+		settings.baseDir,
+	);
+	const normalizedCurrentPath = normalizeCanonicalPath(
+		currentFilePath,
+		settings.baseDir,
+	);
 
 	// Compare the paths
 	return normalizedLinkPath === normalizedCurrentPath;
 };
 
 // Helper function to check if a path should have its alias removed
-const shouldRemoveAlias = (normalizedPath: string, removeAliasInDirs?: string[]): boolean => {
+const shouldRemoveAlias = (
+	normalizedPath: string,
+	removeAliasInDirs?: string[],
+): boolean => {
 	if (!removeAliasInDirs || removeAliasInDirs.length === 0) {
 		return false;
 	}
@@ -202,11 +218,16 @@ const createLinkContent = (
 	originalMatchedText: string,
 	settings: ReplaceLinksSettings = {},
 ): { linkPath: string; alias?: string } => {
-	const { linkPath, alias, hasAlias } = extractLinkParts(candidateData.canonical);
+	const { linkPath, alias, hasAlias } = extractLinkParts(
+		candidateData.canonical,
+	);
 	const normalizedPath = normalizeCanonicalPath(linkPath, settings.baseDir);
 
 	// Check if alias should be removed for this directory
-	const removeAlias = shouldRemoveAlias(normalizedPath, settings.removeAliasInDirs);
+	const removeAlias = shouldRemoveAlias(
+		normalizedPath,
+		settings.removeAliasInDirs,
+	);
 
 	if (hasAlias) {
 		// If alias removal is enabled for this directory, return path without alias
@@ -225,7 +246,8 @@ const createLinkContent = (
 		}
 
 		// For paths with slashes, use the last segment as the display text
-		const lastSegment = normalizedPath.split("/").pop() || originalMatchedText;
+		const lastSegment =
+			normalizedPath.split("/").pop() || originalMatchedText;
 
 		// If ignoreCase is enabled and originalMatchedText contains a slash,
 		// use the last segment of originalMatchedText to preserve case
@@ -245,7 +267,9 @@ const createLinkContent = (
 
 	// No explicit alias, no '/' in normalizedPath
 	if (settings.ignoreCase) {
-		if (originalMatchedText.toLowerCase() === normalizedPath.toLowerCase()) {
+		if (
+			originalMatchedText.toLowerCase() === normalizedPath.toLowerCase()
+		) {
 			return { linkPath: originalMatchedText };
 		} else {
 			return { linkPath: normalizedPath, alias: originalMatchedText };
@@ -257,16 +281,6 @@ const createLinkContent = (
 			return { linkPath: normalizedPath };
 		}
 	}
-};
-
-const formatFinalLink = (
-	linkContent: string,
-	isInTable: boolean,
-): string => {
-	if (isInTable && linkContent.includes("|")) {
-		linkContent = linkContent.replace(/\|/g, "\\|");
-	}
-	return `[[${linkContent}]]`;
 };
 
 // Default link generator that creates standard Obsidian wikilinks
@@ -289,8 +303,14 @@ export const defaultLinkGenerator: LinkGenerator = ({
 };
 
 // Candidate Validation
-const shouldSkipCandidate = (candidate: string, settings: ReplaceLinksSettings): boolean => {
-	if (settings.ignoreDateFormats && REGEX_PATTERNS.DATE_FORMAT.test(candidate)) {
+const shouldSkipCandidate = (
+	candidate: string,
+	settings: ReplaceLinksSettings,
+): boolean => {
+	if (
+		settings.ignoreDateFormats &&
+		REGEX_PATTERNS.DATE_FORMAT.test(candidate)
+	) {
 		return true;
 	}
 	return isMonthNote(candidate);
@@ -299,27 +319,30 @@ const shouldSkipCandidate = (candidate: string, settings: ReplaceLinksSettings):
 // Markdown Table Detection
 const isMarkdownTableLine = (line: string): boolean => {
 	const trimmedLine = line.trim();
-	if (!trimmedLine || !trimmedLine.includes('|')) {
+	if (!trimmedLine || !trimmedLine.includes("|")) {
 		return false;
 	}
-	
-	if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|') && 
-		REGEX_PATTERNS.TABLE_SEPARATOR.test(trimmedLine)) {
+
+	if (
+		trimmedLine.startsWith("|") &&
+		trimmedLine.endsWith("|") &&
+		REGEX_PATTERNS.TABLE_SEPARATOR.test(trimmedLine)
+	) {
 		return true;
 	}
-	
-	return trimmedLine.startsWith('|') && trimmedLine.endsWith('|');
+
+	return trimmedLine.startsWith("|") && trimmedLine.endsWith("|");
 };
 
 const isIndexInsideMarkdownTable = (text: string, index: number): boolean => {
 	// Find the start of the line containing the index
-	let lineStart = text.lastIndexOf('\n', index - 1) + 1;
-	if (lineStart === 0 && text[0] !== '\n') {
+	let lineStart = text.lastIndexOf("\n", index - 1) + 1;
+	if (lineStart === 0 && text[0] !== "\n") {
 		lineStart = 0;
 	}
 
 	// Find the end of the line containing the index
-	let lineEnd = text.indexOf('\n', index);
+	let lineEnd = text.indexOf("\n", index);
 	if (lineEnd === -1) {
 		lineEnd = text.length;
 	}
@@ -361,7 +384,7 @@ const processFallbackSearch = (
 	filePath: string,
 	currentNamespace: string,
 	linkGenerator: LinkGenerator,
-	settings: ReplaceLinksSettings
+	settings: ReplaceLinksSettings,
 ): { result: string; newIndex: number } | null => {
 	// Early boundary check - if start isn't a word boundary, skip
 	const prevChar = text[startIndex - 1];
@@ -379,8 +402,8 @@ const processFallbackSearch = (
 	// Iterate through potential multi-word sequences starting from startIndex
 	const maxSearchLength = Math.min(text.length - startIndex, 100); // Limit search length for performance
 
-	let potentialMatch = '';
-	let searchWord = '';
+	let potentialMatch = "";
+	let searchWord = "";
 
 	for (let length = 1; length <= maxSearchLength; length++) {
 		const endIndex = startIndex + length;
@@ -422,7 +445,7 @@ const processFallbackSearch = (
 
 	// Filter candidates based on namespace restrictions
 	const filteredCandidates = longestMatch.candidateList.filter(
-		([, data]) => !(data.scoped && data.namespace !== currentNamespace)
+		([, data]) => !(data.scoped && data.namespace !== currentNamespace),
 	);
 
 	let bestCandidateData: CandidateData | null = null;
@@ -446,12 +469,16 @@ const processFallbackSearch = (
 	if (isSelfLink(bestCandidateData, filePath, settings)) {
 		return {
 			result: longestMatch.word,
-			newIndex: startIndex + longestMatch.length
+			newIndex: startIndex + longestMatch.length,
 		};
 	}
 
 	// Create the link
-	const { linkPath, alias } = createLinkContent(bestCandidateData, longestMatch.word, settings);
+	const { linkPath, alias } = createLinkContent(
+		bestCandidateData,
+		longestMatch.word,
+		settings,
+	);
 	const isInTable = isIndexInsideMarkdownTable(text, startIndex);
 	const finalLink = linkGenerator({
 		linkPath,
@@ -462,7 +489,7 @@ const processFallbackSearch = (
 
 	return {
 		result: finalLink,
-		newIndex: startIndex + longestMatch.length
+		newIndex: startIndex + longestMatch.length,
 	};
 };
 
@@ -489,7 +516,11 @@ const handleKoreanSpecialCases = (
 			};
 		}
 
-		const { linkPath, alias } = createLinkContent(candidateData, candidate, settings);
+		const { linkPath, alias } = createLinkContent(
+			candidateData,
+			candidate,
+			settings,
+		);
 		const finalLink = linkGenerator({
 			linkPath,
 			sourcePath: filePath,
@@ -613,7 +644,7 @@ const processStandardText = (
 
 	outer: while (i < text.length) {
 		// Check for URLs first - only if current character could start a URL
-		if (text[i] === 'h' && text.slice(i, i + 4) === 'http') {
+		if (text[i] === "h" && text.slice(i, i + 4) === "http") {
 			const urlMatch = text.slice(i).match(REGEX_PATTERNS.URL);
 			if (urlMatch) {
 				result += urlMatch[0];
@@ -626,13 +657,13 @@ const processStandardText = (
 		let node = trie;
 		let lastCandidate: { candidate: string; length: number } | null = null;
 		let j = i;
-		let candidateBuilder = '';
+		let candidateBuilder = "";
 
 		while (j < text.length) {
 			const ch = text[j];
 			const chLower = settings.ignoreCase ? ch.toLowerCase() : ch;
 			candidateBuilder += ch;
-			
+
 			const child = node.children.get(chLower);
 			if (!child) break;
 
@@ -755,7 +786,11 @@ const processStandardText = (
 				}
 
 				// Create the link
-				const { linkPath, alias } = createLinkContent(candidateData, originalMatchedText, settings);
+				const { linkPath, alias } = createLinkContent(
+					candidateData,
+					originalMatchedText,
+					settings,
+				);
 				const isInTable = isIndexInsideMarkdownTable(text, i);
 				const finalLink = linkGenerator({
 					linkPath,
@@ -773,7 +808,13 @@ const processStandardText = (
 		// Fallback: multi-word lookup using fallback index
 		if (settings.namespaceResolution) {
 			const fallbackResult = processFallbackSearch(
-				text, i, fallbackIndex, filePath, currentNamespace, linkGenerator, settings
+				text,
+				i,
+				fallbackIndex,
+				filePath,
+				currentNamespace,
+				linkGenerator,
+				settings,
 			);
 			if (fallbackResult) {
 				result += fallbackResult.result;
@@ -866,7 +907,9 @@ export const replaceLinks = ({
 	// Reset the regex to start from the beginning
 	REGEX_PATTERNS.PROTECTED.lastIndex = 0;
 
-	while ((match = REGEX_PATTERNS.PROTECTED.exec(bodyWithPlaceholders)) !== null) {
+	while (
+		(match = REGEX_PATTERNS.PROTECTED.exec(bodyWithPlaceholders)) !== null
+	) {
 		const mIndex = match.index;
 		const segment = bodyWithPlaceholders.slice(lastIndex, mIndex);
 		resultBody += processTextSegment(segment);
