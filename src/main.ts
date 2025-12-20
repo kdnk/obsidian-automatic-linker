@@ -383,7 +383,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
 				`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
 			);
 		}
+		if (this.settings.debug) {
+			console.log(
+				`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`,
+			);
+		}
 	}
+
 	async onload() {
 		await this.loadSettings();
 		this.addSettingTab(
@@ -393,10 +399,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 		// Load file data and build the Trie when the layout is ready.
 		this.app.workspace.onLayoutReady(() => {
 			this.refreshFileDataAndTrie();
-			if (this.settings.debug) {
-				console.log("Automatic Linker: Built all markdown files.");
-				new Notice("Automatic Linker: Built all markdown files.");
-			}
 
 			this.registerEvent(
 				this.app.vault.on("delete", () =>
@@ -449,14 +451,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
 			editorCallback: async () => {
 				try {
 					this.refreshFileDataAndTrie();
-					if (this.settings.debug) {
-						console.log(
-							"Automatic Linker: Built all markdown files.",
-						);
-						new Notice(
-							"Automatic Linker: Built all markdown files.",
-						);
-					}
 				} catch (error) {
 					console.error(error);
 				}
