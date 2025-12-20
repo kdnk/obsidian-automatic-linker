@@ -166,12 +166,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
         return fileContent
     }
 
-    async modifyLinksForActiveFile() {
+    modifyLinksForActiveFile() {
         const activeFile = this.app.workspace.getActiveFile()
         if (!activeFile) return
 
-        const metadata
-            = this.app.metadataCache.getFileCache(activeFile)?.frontmatter
+        const metadata = this.app.metadataCache.getFileCache(activeFile)?.frontmatter
         if (isLinkingOff(metadata)) return
 
         const editor = this.getEditor()
@@ -212,7 +211,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
     async formatThenRunPrettierAndLinter() {
         await this.buildUrlTitleMap()
-        await this.modifyLinksForActiveFile()
+        this.modifyLinksForActiveFile()
 
         if (this.settings.runPrettierAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)

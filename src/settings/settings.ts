@@ -41,6 +41,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.respectNewFileFolderPath = value
                         await this.plugin.saveData(this.plugin.settings)
+                        this.plugin.refreshFileDataAndTrie()
                     })
             })
 
@@ -104,6 +105,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.considerAliases = value
                         await this.plugin.saveData(this.plugin.settings)
+                        this.plugin.refreshFileDataAndTrie()
                     })
             })
 
@@ -119,6 +121,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.proximityBasedLinking = value
                         await this.plugin.saveData(this.plugin.settings)
+                        this.plugin.refreshFileDataAndTrie()
                     })
             })
 
@@ -134,6 +137,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.ignoreDateFormats = value
                         await this.plugin.saveData(this.plugin.settings)
+                        this.plugin.refreshFileDataAndTrie()
                     })
             })
 
@@ -149,6 +153,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.ignoreCase = value
                         await this.plugin.saveData(this.plugin.settings)
+                        this.plugin.refreshFileDataAndTrie()
                     })
             })
 
@@ -164,6 +169,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     .onChange(async (value) => {
                         this.plugin.settings.preventSelfLinking = value
                         await this.plugin.saveData(this.plugin.settings)
+                        this.plugin.refreshFileDataAndTrie()
                     })
             })
 
@@ -182,12 +188,10 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     )
                     .onChange(async (value) => {
                         // Split by newlines and filter out empty lines
-                        const dirs = value
-                            .split("\n")
-                            .map(dir => dir.trim())
-                            .filter(Boolean)
+                        const dirs = value.split("\n").map(dir => dir.trim()).filter(Boolean)
                         this.plugin.settings.excludeDirsFromAutoLinking = dirs
                         await this.plugin.saveData(this.plugin.settings)
+                        this.plugin.refreshFileDataAndTrie()
                     })
             })
 
@@ -208,6 +212,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                             .filter(Boolean)
                         this.plugin.settings.removeAliasInDirs = dirs
                         await this.plugin.saveData(this.plugin.settings)
+                        this.plugin.refreshFileDataAndTrie()
                     })
             })
 
@@ -251,6 +256,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                         this.plugin.settings.replaceUrlWithTitleIgnoreDomains
                             = urls
                         await this.plugin.saveData(this.plugin.settings)
+                        await this.plugin.buildUrlTitleMap()
                     })
                 // Make the text area taller
                 text.inputEl.rows = 4
