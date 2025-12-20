@@ -230,7 +230,7 @@ Final paragraph mentions ${linkWords[9]} again.
             const settings = {
                 scoped: true,
                 baseDir: "namespace",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const files = generateFiles(300)
             const linkWords = files.slice(0, 30).map(f => f.path.split("/").pop()!)
@@ -304,7 +304,7 @@ Final paragraph mentions ${linkWords[9]} again.
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const files = generateFiles(500)
             const { candidateMap, trie } = buildCandidateTrieForTest({

@@ -7,7 +7,7 @@ describe("table", () => {
         const settings = {
             scoped: false,
             baseDir: undefined,
-            namespaceResolution: true,
+            proximityBasedLinking: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [{ path: "ns/note1" }, { path: "ns/note2" }],

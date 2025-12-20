@@ -69,7 +69,7 @@ describe("replaceLinks with prevent-linking", () => {
         const settings = {
             scoped: false,
             baseDir: "pages",
-            namespaceResolution: true,
+            proximityBasedLinking: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [

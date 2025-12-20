@@ -3,7 +3,7 @@ export type AutomaticLinkerSettings = {
     showNotice: boolean
     respectNewFileFolderPath: boolean // Respect Obsidian's "Folder to create new notes in" setting as base directory
     considerAliases: boolean // Consider aliases when linking
-    namespaceResolution: boolean // Automatically resolve namespaces for shorthand links
+    proximityBasedLinking: boolean // Automatically resolve namespaces for shorthand links
     ignoreDateFormats: boolean // Ignore date formatted links (e.g. 2025-02-10)
     formatGitHubURLs: boolean // Format GitHub URLs on save
     githubEnterpriseURLs: string[] // List of GitHub Enterprise URLs
@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     showNotice: false,
     respectNewFileFolderPath: false, // Default: do not respect Obsidian's "Folder to create new notes in" setting
     considerAliases: true, // Default: consider aliases
-    namespaceResolution: true, // Default: enable automatic namespace resolution
+    proximityBasedLinking: true, // Default: enable automatic namespace resolution
     ignoreDateFormats: true, // Default: ignore date formats (e.g. 2025-02-10)
     formatGitHubURLs: true, // Default: format GitHub URLs
     githubEnterpriseURLs: [], // Default: empty list

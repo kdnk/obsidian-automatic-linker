@@ -45,7 +45,7 @@ describe("replaceLinks with baseDir", () => {
                 settings: {
                     baseDir: "pages",
 
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             expect(result).toBe("[[foo/bar|bar]]")
@@ -167,7 +167,7 @@ describe("replaceLinks with baseDir", () => {
                 settings: {
                     baseDir: "pages",
 
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             expect(result).toBe("| [[foo/bar\\|bar]] |")
@@ -194,7 +194,7 @@ describe("replaceLinks with baseDir", () => {
                 settings: {
                     baseDir: "pages",
 
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             expect(result).toBe("| [[foo]] | [[bar/baz\\|baz]] |\n|---|---|\n| data | data |")
@@ -245,7 +245,7 @@ describe("replaceLinks with baseDir", () => {
                     baseDir: "pages",
 
                     preventSelfLinking: true,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             expect(result).toBe("foo/bar")
@@ -273,7 +273,7 @@ describe("replaceLinks with baseDir", () => {
                     baseDir: "pages",
 
                     preventSelfLinking: true,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             // When baseDir is set, both "xxx" and "foo/xxx" are normalized and inserted as "xxx" and "foo/xxx"
@@ -304,7 +304,7 @@ describe("replaceLinks with baseDir", () => {
                 settings: {
                     baseDir: "pages",
 
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             // Trie matches "xxx" directly since it's inserted without baseDir prefix
@@ -332,7 +332,7 @@ describe("replaceLinks with baseDir", () => {
                 settings: {
                     baseDir: "pages",
 
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             expect(result).toBe("[[xxx]]")
@@ -360,7 +360,7 @@ describe("replaceLinks with baseDir", () => {
                 settings: {
                     baseDir: "pages",
 
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             // Trie matches "target" directly - root level file is matched first
@@ -416,7 +416,7 @@ describe("replaceLinks with baseDir", () => {
                     baseDir: "pages",
 
                     ignoreCase: true,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             expect(result).toBe("[[Foo/Bar|bar]]")
@@ -491,7 +491,7 @@ describe("replaceLinks with baseDir", () => {
                 settings: {
                     baseDir: "pages",
 
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 },
             })
             expect(result).toBe("[[multi word file]]")

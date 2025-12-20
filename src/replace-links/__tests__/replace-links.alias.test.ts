@@ -96,7 +96,7 @@ describe("replaceLinks - alias handling", () => {
             const settings = {
                 scoped: true,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
@@ -118,7 +118,7 @@ describe("replaceLinks - alias handling", () => {
             const settings = {
                 scoped: false,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],
@@ -140,7 +140,7 @@ describe("replaceLinks - alias handling", () => {
             const settings = {
                 scoped: true,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [{ path: "pages/set/HelloWorld", aliases: ["HW"] }],

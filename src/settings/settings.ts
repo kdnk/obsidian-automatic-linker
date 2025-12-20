@@ -107,17 +107,17 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     })
             })
 
-        // Toggle for automatic namespace resolution.
+        // Toggle for proximity-based linking.
         new Setting(containerEl)
-            .setName("Automatic namespace resolution")
+            .setName("Proximity-based linking")
             .setDesc(
                 "When enabled, the plugin will automatically resolve namespaces for shorthand links. If multiple candidates share the same shorthand, the candidate with the most common path segments relative to the current file will be selected.",
             )
             .addToggle((toggle) => {
                 toggle
-                    .setValue(this.plugin.settings.namespaceResolution)
+                    .setValue(this.plugin.settings.proximityBasedLinking)
                     .onChange(async (value) => {
-                        this.plugin.settings.namespaceResolution = value
+                        this.plugin.settings.proximityBasedLinking = value
                         await this.plugin.saveData(this.plugin.settings)
                     })
             })

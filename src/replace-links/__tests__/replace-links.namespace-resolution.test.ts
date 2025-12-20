@@ -80,7 +80,7 @@ describe("replaceLinks - namespace resolution", () => {
                 const settings = {
                     scoped: false,
                     baseDir: undefined,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 }
                 const { candidateMap, trie } = buildCandidateTrieForTest({
                     files: [
@@ -106,7 +106,7 @@ describe("replaceLinks - namespace resolution", () => {
                 const settings = {
                     scoped: false,
                     baseDir: undefined,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 }
                 const { candidateMap, trie } = buildCandidateTrieForTest({
                     files: [
@@ -131,7 +131,7 @@ describe("replaceLinks - namespace resolution", () => {
                 const settings = {
                     scoped: false,
                     baseDir: undefined,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                 }
                 const { candidateMap, trie } = buildCandidateTrieForTest({
                     files: [
@@ -160,7 +160,7 @@ describe("replaceLinks - namespace resolution", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -189,7 +189,7 @@ describe("replaceLinks - namespace resolution", () => {
             const settings = {
                 scoped: false,
                 baseDir: "base",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -225,7 +225,7 @@ describe("replaceLinks - namespace resolution", () => {
             const settings2 = {
                 scoped: false,
                 baseDir: "base",
-                namespaceResolution: false,
+                proximityBasedLinking: false,
             }
             const result2 = replaceLinks({
                 body: "link link2",
@@ -245,7 +245,7 @@ describe("replaceLinks - namespace resolution", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -325,7 +325,7 @@ describe("replaceLinks - namespace resolution", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [

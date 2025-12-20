@@ -8,7 +8,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: ["dir"],
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -31,7 +31,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: ["dir"],
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -54,7 +54,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: ["dir"],
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -79,7 +79,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: ["dir1", "dir2"],
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -108,7 +108,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: ["dir"],
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -131,7 +131,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: ["dir"],
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -202,7 +202,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: [],
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -225,7 +225,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [{ path: "dir/xxx" }],
@@ -294,7 +294,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: ["dir"],
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -321,7 +321,7 @@ describe("replaceLinks - directory-specific alias removal", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 removeAliasInDirs: manyDirs,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({

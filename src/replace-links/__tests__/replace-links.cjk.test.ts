@@ -72,7 +72,7 @@ describe("replaceLinks - CJK handling", () => {
                     scoped: false,
                     baseDir: "pages",
                     ignoreCase: true,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                     ignoreDateFormats: true,
                 }
                 const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -95,7 +95,7 @@ describe("replaceLinks - CJK handling", () => {
                     scoped: false,
                     baseDir: "pages",
                     ignoreCase: true,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                     ignoreDateFormats: true,
                 }
                 const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -120,7 +120,7 @@ describe("replaceLinks - CJK handling", () => {
                     scoped: false,
                     baseDir: "pages",
                     ignoreCase: true,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                     ignoreDateFormats: true,
                 }
                 const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -145,7 +145,7 @@ describe("replaceLinks - CJK handling", () => {
                     scoped: false,
                     baseDir: "pages",
                     ignoreCase: false,
-                    namespaceResolution: true,
+                    proximityBasedLinking: true,
                     ignoreDateFormats: true,
                 }
                 const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -295,7 +295,7 @@ describe("replaceLinks - CJK handling", () => {
             const settings = {
                 scoped: true,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -320,7 +320,7 @@ describe("replaceLinks - CJK handling", () => {
             const settings = {
                 scoped: true,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -368,7 +368,7 @@ describe("replaceLinks - CJK handling", () => {
             const settings = {
                 scoped: false,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [{ path: "RM/関係性の勇者", aliases: [] }],
@@ -392,7 +392,7 @@ describe("replaceLinks - CJK handling", () => {
             const settings = {
                 scoped: false,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [{ path: "RM/関係性の勇者", aliases: ["勇者"] }],
@@ -416,7 +416,7 @@ describe("replaceLinks - CJK handling", () => {
             const settings = {
                 scoped: false,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [{ path: "RM/関係性の勇者", aliases: [] }],

@@ -8,7 +8,7 @@ describe("replaceLinks - restrict namespace", () => {
             const settings = {
                 scoped: true,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -33,7 +33,7 @@ describe("replaceLinks - restrict namespace", () => {
             const settings = {
                 scoped: true,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -58,7 +58,7 @@ describe("replaceLinks - restrict namespace", () => {
             const settings = {
                 scoped: true,
                 baseDir: "pages",
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [

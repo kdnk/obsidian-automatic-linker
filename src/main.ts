@@ -148,7 +148,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 candidateMap: this.candidateMap,
             },
             settings: {
-                namespaceResolution: this.settings.namespaceResolution,
+                proximityBasedLinking: this.settings.proximityBasedLinking,
                 baseDir,
                 ignoreDateFormats: this.settings.ignoreDateFormats,
                 ignoreCase: this.settings.ignoreCase,
@@ -250,7 +250,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 candidateMap: this.candidateMap,
             },
             settings: {
-                namespaceResolution: this.settings.namespaceResolution,
+                proximityBasedLinking: this.settings.proximityBasedLinking,
                 baseDir,
                 ignoreDateFormats: this.settings.ignoreDateFormats,
                 ignoreCase: this.settings.ignoreCase,

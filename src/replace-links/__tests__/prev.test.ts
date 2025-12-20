@@ -699,7 +699,7 @@ describe("namespace resolution", () => {
         const settings = {
             scoped: false,
             baseDir: undefined,
-            namespaceResolution: true,
+            proximityBasedLinking: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [{ path: "namespaces/link" }],
@@ -721,7 +721,7 @@ describe("namespace resolution", () => {
         const settings = {
             scoped: false,
             baseDir: undefined,
-            namespaceResolution: true,
+            proximityBasedLinking: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [{ path: "link" }],
@@ -743,7 +743,7 @@ describe("namespace resolution", () => {
         const settings = {
             scoped: false,
             baseDir: undefined,
-            namespaceResolution: true,
+            proximityBasedLinking: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [{ path: "2025/02/08" }],
@@ -768,7 +768,7 @@ describe("namespace resolution nearlest file path", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -794,7 +794,7 @@ describe("namespace resolution nearlest file path", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -819,7 +819,7 @@ describe("namespace resolution nearlest file path", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
-                namespaceResolution: true,
+                proximityBasedLinking: true,
             }
             const { candidateMap, trie } = buildCandidateTrieForTest({
                 files: [
@@ -848,7 +848,7 @@ describe("namespace resolution nearlest file path", () => {
         const settings = {
             scoped: false,
             baseDir: undefined,
-            namespaceResolution: true,
+            proximityBasedLinking: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [
@@ -877,7 +877,7 @@ describe("namespace resolution nearlest file path", () => {
         const settings = {
             scoped: false,
             baseDir: "base",
-            namespaceResolution: true,
+            proximityBasedLinking: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [
@@ -914,7 +914,7 @@ describe("namespace resolution nearlest file path", () => {
         const settings2 = {
             scoped: false,
             baseDir: "base",
-            namespaceResolution: false,
+            proximityBasedLinking: false,
         }
         const result2 = replaceLinks({
             body: "link link2",
@@ -998,7 +998,7 @@ describe("ignoreDateFormats setting", () => {
         const settings = {
             scoped: false,
             baseDir: undefined,
-            namespaceResolution: true,
+            proximityBasedLinking: true,
             ignoreDateFormats: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -1021,7 +1021,7 @@ describe("ignoreDateFormats setting", () => {
         const settings = {
             scoped: false,
             baseDir: undefined,
-            namespaceResolution: true,
+            proximityBasedLinking: true,
             ignoreDateFormats: false,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -1151,7 +1151,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
     ])
 
     it("CJK - Korean > converts Korean words within sentence", () => {
-        const settings = { namespaceResolution: true }
+        const settings = { proximityBasedLinking: true }
         const trie = buildTrie(Array.from(candidateMap.keys()))
         const body = "이 문서는 문서이다."
         const result = replaceLinks({
@@ -1167,7 +1167,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
     })
 
     it("starting CJK > multiple same CJK words", () => {
-        const settings = { namespaceResolution: true }
+        const settings = { proximityBasedLinking: true }
         const trie = buildTrie(Array.from(candidateMap.keys()))
         const body = "- ひらがなひらがな"
         const result = replaceLinks({
@@ -1183,7 +1183,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
     })
 
     it("CJK - Chinese > converts Chinese words within sentence", () => {
-        const settings = { namespaceResolution: true }
+        const settings = { proximityBasedLinking: true }
         const trie = buildTrie(Array.from(candidateMap.keys()))
         const body = "这个文档很好。"
         const result = replaceLinks({
@@ -1199,7 +1199,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
     })
 
     it("base character (pages) > unmatched namespace", () => {
-        const settings = { namespaceResolution: true }
+        const settings = { proximityBasedLinking: true }
         const trie = buildTrie(Array.from(candidateMap.keys()))
         const body = "tags"
         const result = replaceLinks({
@@ -1215,7 +1215,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
     })
 
     it("aliases > replaces alias with canonical form using file path and alias", () => {
-        const settings = { namespaceResolution: true }
+        const settings = { proximityBasedLinking: true }
         const trie = buildTrie(Array.from(candidateMap.keys()))
         const body = "HelloWorld"
         const result = replaceLinks({
@@ -1231,7 +1231,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
     })
 
     it("aliases > replaces multiple occurrences of alias and normal candidate", () => {
-        const settings = { namespaceResolution: true }
+        const settings = { proximityBasedLinking: true }
         const trie = buildTrie(Array.from(candidateMap.keys()))
         const body = "Hello HelloWorld"
         const result = replaceLinks({
@@ -1247,7 +1247,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
     })
 
     it("replaceLinks > should not replace when inside a protected segment", () => {
-        const settings = { namespaceResolution: true }
+        const settings = { proximityBasedLinking: true }
         const trie = buildTrie(Array.from(candidateMap.keys()))
         const body = "Some text `x` more text"
         const result = replaceLinks({
@@ -1275,7 +1275,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
         it("should replace candidate with scoped when effective namespace matches", () => {
             // Current file is in "pages/set/...", so effective namespace is "set"
             const settings = {
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 baseDir: "pages",
             }
             const body = "a"
@@ -1291,7 +1291,7 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
         it("should not replace candidate with scoped when effective namespace does not match", () => {
             // Current file is in "pages/other/...", so effective namespace is "other"
             const settings = {
-                namespaceResolution: true,
+                proximityBasedLinking: true,
                 baseDir: "pages",
             }
             const body = "a"

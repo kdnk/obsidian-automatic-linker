@@ -38,7 +38,7 @@ The plugin automatically detects file names in your text and converts them to wi
 Organize large vaults with sophisticated namespace handling:
 
 - **Base Directory**: Define a base directory (e.g., `pages/`) where the prefix is omitted from links
-- **Namespace Resolution**: Automatically resolve shorthand links to their full namespaced paths
+- **Proximity-based Linking**: Automatically resolve shorthand links to their full namespaced paths
 - **Namespace Restriction**: Use `automatic-linker-scoped: true` in frontmatter to restrict linking to files within the same namespace
 - **Closest Match Selection**: When multiple candidates exist, the plugin selects the file closest to your current note
 
@@ -96,7 +96,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 ### Link Behavior
 
 - **Consider Aliases**: Include frontmatter aliases when matching text
-- **Namespace Resolution**: Automatically resolve shorthand to full namespaced links
+- **Proximity-based Linking**: Automatically resolve shorthand to full namespaced links
 - **Ignore Case**: Enable case-insensitive link matching
 - **Prevent Self-Linking**: Don't create links from a file to itself
 - **Ignore Date Formats**: Skip date-formatted text like `2025-02-10`
@@ -139,9 +139,9 @@ It becomes:
 I'm learning [[Python]] and [[JavaScript]] for web development.
 ```
 
-### Example 2: Namespace Resolution
+### Example 2: Proximity-based Linking
 
-With `baseDir: "pages"` and namespace resolution enabled:
+With `baseDir: "pages"` and Proximity-based Linking enabled:
 
 File structure:
 ```
@@ -159,7 +159,7 @@ When you type: `React uses TypeScript`
 
 It becomes: `[[frameworks/React]] uses [[languages/TypeScript]]`
 
-### Example 3: Namespace Restriction
+### Example 3: Proximity-based Linking
 
 File `pages/team-a/internal.md` has frontmatter:
 ```yaml
@@ -305,7 +305,7 @@ The plugin uses a Trie data structure for efficient file name matching, making i
 ## Known Limitations
 
 - URL title fetching requires network access and may be slow for many URLs
-- Namespace resolution requires files to be indexed (restart may be needed after adding many files)
+- Proximity-based Linking requires files to be indexed (restart may be needed after adding many files)
 - Alias consideration requires plugin restart when toggled in settings
 
 ## Troubleshooting
@@ -314,8 +314,8 @@ The plugin uses a Trie data structure for efficient file name matching, making i
 - Ensure "Format on Save" is enabled or manually trigger the command
 - Verify the file isn't in an excluded directory
 
-**Namespace resolution not working:**
-- Ensure "Namespace Resolution" is enabled in settings
+**Proximity-based Linking not working:**
+- Ensure "Proximity-based Linking" is enabled in settings
 - Restart Obsidian after changing base directory settings
 - Check that files are within the configured base directory
 

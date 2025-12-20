@@ -8,7 +8,7 @@ export interface LinkResolverContext {
 }
 
 export interface ReplaceLinksSettings {
-    namespaceResolution?: boolean
+    proximityBasedLinking?: boolean
     baseDir?: string
     ignoreDateFormats?: boolean
     ignoreCase?: boolean
@@ -781,7 +781,7 @@ const processStandardText = (
 
                 // Skip if namespace restriction applies
                 if (
-                    settings.namespaceResolution
+                    settings.proximityBasedLinking
                     && candidateData.scoped
                     && candidateData.namespace !== currentNamespace
                 ) {
@@ -811,7 +811,7 @@ const processStandardText = (
         }
 
         // Fallback: multi-word lookup using fallback index
-        if (settings.namespaceResolution) {
+        if (settings.proximityBasedLinking) {
             const fallbackResult = processFallbackSearch(
                 text,
                 i,
@@ -841,7 +841,7 @@ export const replaceLinks = ({
     body,
     linkResolverContext: { filePath, trie, candidateMap },
     settings = {
-        namespaceResolution: true,
+        proximityBasedLinking: true,
         baseDir: undefined,
         ignoreDateFormats: true,
     },
