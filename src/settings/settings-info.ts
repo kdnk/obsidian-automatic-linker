@@ -25,7 +25,7 @@ export type AutomaticLinkerSettings = {
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     formatOnSave: false,
     showNotice: false,
-    respectNewFileFolderPath: false, // Default: do not respect Obsidian's "Folder to create new notes in" setting
+    respectNewFileFolderPath: true, // Default: do not respect Obsidian's "Folder to create new notes in" setting
     considerAliases: true, // Default: consider aliases
     proximityBasedLinking: true, // Default: enable automatic namespace resolution
     ignoreDateFormats: true, // Default: ignore date formats (e.g. 2025-02-10)
