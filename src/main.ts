@@ -268,12 +268,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 // Filter out files in excluded directories
                 const path = file.path.replace(/\.md$/, "")
                 return !this.settings.excludeDirsFromAutoLinking.some(
-                    (excludeDir) => {
-                        return (
-                            path.startsWith(excludeDir + "/")
-                            || path === excludeDir
-                        )
-                    },
+                    (excludeDir) => { return (path.startsWith(excludeDir + "/") || path === excludeDir) },
                 )
             })
             .map((file) => {
@@ -286,10 +281,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
                 const aliases = (() => {
                     if (this.settings.considerAliases) {
-                        const frontmatter
-                            = this.app.metadataCache.getFileCache(
-                                file,
-                            )?.frontmatter
+                        const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
                         const aliases = parseFrontMatterAliases(frontmatter)
                         return aliases
                     }
@@ -329,8 +321,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
     }
 
     private refreshFileDataAndTrieOnFrontmatterChange(file: TFile) {
-        const metadata
-            = this.app.metadataCache.getFileCache(file)?.frontmatter
+        const metadata = this.app.metadataCache.getFileCache(file)?.frontmatter
 
         // Extract frontmatter fields that affect the Trie
         const relevantFields = {
@@ -378,9 +369,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 ),
             )
             this.registerEvent(
-                this.app.metadataCache.on("changed", file =>
-                    this.refreshFileDataAndTrieOnFrontmatterChange(file),
-                ),
+                this.app.metadataCache.on("changed", file => this.refreshFileDataAndTrieOnFrontmatterChange(file)),
             )
         })
 
@@ -445,9 +434,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             name: "Copy file without links",
             editorCallback: async () => {
                 const activeFile = this.app.workspace.getActiveFile()
-                if (!activeFile) {
-                    return
-                }
+                if (!activeFile) return
                 const fileContent = await this.app.vault.read(activeFile)
                 const { contentStart } = getFrontMatterInfo(fileContent)
                 const body = fileContent.slice(contentStart)
@@ -470,9 +457,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                     { line: to.line, ch: editor.getLine(to.line).length },
                 )
 
-                if (!selectedText) {
-                    return
-                }
+                if (!selectedText) return
 
                 // Remove minimal indent
                 const textWithMinimalIndent = removeMinimalIndent(selectedText)
@@ -484,9 +469,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         })
 
         // Optionally, override the default save command to run modifyLinks (throttled).
-        const saveCommandDefinition
-        // @ts-ignore
-            = this.app?.commands?.commands?.["editor:save-file"]
+        const saveCommandDefinition = this.app?.commands?.commands?.["editor:save-file"]
         const saveCallback = saveCommandDefinition?.checkCallback
         if (typeof saveCallback === "function") {
             // Preserve the original save callback to call it after modifying links.
@@ -498,9 +481,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 return saveCallback?.(checking)
             }
             else {
-                if (!this.settings.formatOnSave) {
-                    return
-                }
+                if (!this.settings.formatOnSave) return
                 await sleep(this.settings.formatDelayMs ?? 100)
                 await this.formatThenRunPrettierAndLinter()
             }
@@ -509,20 +490,14 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
     async onunload() {
         // Restore original save command callback
-        const saveCommandDefinition
-        // @ts-ignore
-            = this.app?.commands?.commands?.["editor:save-file"]
+        const saveCommandDefinition = this.app?.commands?.commands?.["editor:save-file"]
         if (saveCommandDefinition && this.originalSaveCallback) {
             saveCommandDefinition.checkCallback = this.originalSaveCallback
         }
     }
 
     async loadSettings() {
-        this.settings = Object.assign(
-            {},
-            DEFAULT_SETTINGS,
-            await this.loadData(),
-        )
+        this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData())
     }
 
     async saveSettings() {
