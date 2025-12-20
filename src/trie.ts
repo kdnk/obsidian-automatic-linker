@@ -21,11 +21,11 @@ export interface TrieNode {
 }
 
 /**
- * Returns the effective namespace for a given file path.
- * If the path starts with one of the baseDir (e.g. "pages/"), the directory immediately
- * under the baseDir is considered the effective namespace.
+ * Returns the top level directory name for a given file path.
+ * If the path starts with baseDir (e.g. "pages/"), returns the directory immediately
+ * under the baseDir. Otherwise, returns the first directory segment.
  */
-export const getEffectiveNamespace = (
+export const getTopLevelDirectoryName = (
 	path: string,
 	baseDir?: string,
 ): string => {
@@ -93,7 +93,7 @@ export const buildCandidateTrie = (
 			full: f.path,
 			short: null,
 			scoped: f.scoped,
-			namespace: getEffectiveNamespace(f.path, baseDir),
+			namespace: getTopLevelDirectoryName(f.path, baseDir),
 		};
 		if (basePrefix && f.path.startsWith(basePrefix)) {
 			candidate.short = f.path.slice(basePrefixLength);
@@ -166,7 +166,7 @@ export const buildCandidateTrie = (
 					candidateMap.set(alias, {
 						canonical: canonicalForAlias,
 						scoped: file.scoped,
-						namespace: getEffectiveNamespace(file.path, baseDir),
+						namespace: getTopLevelDirectoryName(file.path, baseDir),
 					});
 				}
 				// Register lowercase version when ignoreCase is enabled
@@ -174,7 +174,7 @@ export const buildCandidateTrie = (
 					candidateMap.set(alias.toLowerCase(), {
 						canonical: canonicalForAlias,
 						scoped: file.scoped,
-						namespace: getEffectiveNamespace(file.path, baseDir),
+						namespace: getTopLevelDirectoryName(file.path, baseDir),
 					});
 				}
 			}
@@ -191,20 +191,20 @@ export const buildCandidateTrie = (
 if (import.meta.vitest) {
 	const { it, expect, describe } = import.meta.vitest;
 
-	// Test for getEffectiveNamespace
-	describe("getEffectiveNamespace", () => {
+	// Test for getTopLevelDirectoryName
+	describe("getTopLevelDirectoryName", () => {
 		it("should return the first directory after the baseDir", () => {
-			expect(getEffectiveNamespace("pages/docs/file", "pages")).toBe(
+			expect(getTopLevelDirectoryName("pages/docs/file", "pages")).toBe(
 				"docs",
 			);
-			expect(getEffectiveNamespace("pages/home/readme", "pages")).toBe(
+			expect(getTopLevelDirectoryName("pages/home/readme", "pages")).toBe(
 				"home",
 			);
 		});
 
 		it("should return the first segment if baseDir is not found", () => {
-			expect(getEffectiveNamespace("docs/file")).toBe("docs");
-			expect(getEffectiveNamespace("home/readme")).toBe("home");
+			expect(getTopLevelDirectoryName("docs/file")).toBe("docs");
+			expect(getTopLevelDirectoryName("home/readme")).toBe("home");
 		});
 	});
 

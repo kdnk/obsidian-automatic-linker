@@ -1,4 +1,4 @@
-import { CandidateData, getEffectiveNamespace, TrieNode } from "../trie";
+import { CandidateData, getTopLevelDirectoryName, TrieNode } from "../trie";
 
 // Types for the replaceLinks function
 export interface LinkResolverContext {
@@ -125,7 +125,7 @@ const buildFallbackIndex = (
 
 const getCurrentNamespace = (filePath: string, baseDir?: string): string => {
 	if (baseDir) {
-		return getEffectiveNamespace(filePath, baseDir);
+		return getTopLevelDirectoryName(filePath, baseDir);
 	}
 
 	const segments = filePath.split("/");
