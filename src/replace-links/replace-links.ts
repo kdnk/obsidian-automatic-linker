@@ -55,10 +55,7 @@ const REGEX_PATTERNS = {
 const isWordBoundary = (char: string | undefined): boolean => {
     if (char === undefined) return true
     if (REGEX_PATTERNS.CJK.test(char)) return true
-    return (
-        !REGEX_PATTERNS.WORD_BOUNDARY.test(char)
-        || REGEX_PATTERNS.WHITESPACE.test(char)
-    )
+    return (!REGEX_PATTERNS.WORD_BOUNDARY.test(char) || REGEX_PATTERNS.WHITESPACE.test(char))
 }
 
 const isMonthNote = (candidate: string): boolean =>
@@ -66,16 +63,13 @@ const isMonthNote = (candidate: string): boolean =>
     && parseInt(candidate, 10) >= 1
     && parseInt(candidate, 10) <= 12
 
-const isProtectedLink = (body: string): boolean =>
-    REGEX_PATTERNS.PROTECTED_LINK.test(body)
+const isProtectedLink = (body: string): boolean => REGEX_PATTERNS.PROTECTED_LINK.test(body)
 
 const isCjkText = (text: string): boolean => REGEX_PATTERNS.CJK.test(text)
 
-const isCjkCandidate = (candidate: string): boolean =>
-    REGEX_PATTERNS.CJK_CANDIDATE.test(candidate)
+const isCjkCandidate = (candidate: string): boolean => REGEX_PATTERNS.CJK_CANDIDATE.test(candidate)
 
-const isKoreanText = (text: string): boolean =>
-    REGEX_PATTERNS.KOREAN.test(text)
+const isKoreanText = (text: string): boolean => REGEX_PATTERNS.KOREAN.test(text)
 
 // Cache for fallback index to avoid rebuilding
 const fallbackIndexCache = new WeakMap<
@@ -97,9 +91,7 @@ const buildFallbackIndex = (
     // Check if we have cached result for this ignoreCase setting
     const cacheKey = ignoreCase ? "ignoreCase" : "normal"
     const cached = cacheForMap.get(cacheKey)
-    if (cached) {
-        return cached
-    }
+    if (cached) return cached
 
     // Build new fallback index
     const fallbackIndex = new Map<string, Array<[string, CandidateData]>>()
@@ -240,8 +232,7 @@ const createLinkContent = (
         }
 
         // For paths with slashes, use the last segment as the display text
-        const lastSegment
-            = normalizedPath.split("/").pop() || originalMatchedText
+        const lastSegment = normalizedPath.split("/").pop() || originalMatchedText
 
         // If ignoreCase is enabled and originalMatchedText contains a slash,
         // use the last segment of originalMatchedText to preserve case
@@ -321,8 +312,7 @@ const isMarkdownTableLine = (line: string): boolean => {
         return false
     }
 
-    if (
-        trimmedLine.startsWith("|")
+    if (trimmedLine.startsWith("|")
         && trimmedLine.endsWith("|")
         && REGEX_PATTERNS.TABLE_SEPARATOR.test(trimmedLine)
     ) {
@@ -601,26 +591,19 @@ const findBestCandidateInSameNamespace = (
                 const bestCandidateDepth = getRelativeDepth(bestCandidate[0])
 
                 // Prefer the candidate with lower depth or shorter path
-                if (
-                    candidateDepth < bestCandidateDepth
-                    || (candidateDepth === bestCandidateDepth
-                        && key.length < bestCandidate[0].length)
-                ) {
+                if (candidateDepth < bestCandidateDepth
+                    || (candidateDepth === bestCandidateDepth && key.length < bestCandidate[0].length)) {
                     bestCandidate = [key, data]
                 }
             }
             else {
                 // Otherwise, choose the candidate with fewer directory segments
-                const currentBestDir = bestCandidate[0].slice(
-                    0,
-                    bestCandidate[0].lastIndexOf("/"),
-                )
+                const currentBestDir = bestCandidate[0].slice(0, bestCandidate[0].lastIndexOf("/"))
                 const currentBestSegments = currentBestDir.split("/")
 
                 if (
                     candidateSegments.length < currentBestSegments.length
-                    || (candidateSegments.length === currentBestSegments.length
-                        && key.length < bestCandidate[0].length)
+                    || (candidateSegments.length === currentBestSegments.length && key.length < bestCandidate[0].length)
                 ) {
                     bestCandidate = [key, data]
                 }
@@ -711,10 +694,7 @@ const processStandardText = (
             const candidateData = candidateMap.get(trieCandidateKey)
 
             // Store the original text matched for potential use as display text
-            const originalMatchedText = text.substring(
-                i,
-                i + lastCandidate.length,
-            )
+            const originalMatchedText = text.substring(i, i + lastCandidate.length)
 
             if (candidateData) {
                 // Check if this is a self-link and should be prevented
@@ -747,8 +727,7 @@ const processStandardText = (
                 const candidateIsCjk = isCjkCandidate(candidate)
                 if (!candidateIsCjk) {
                     const left = i > 0 ? text[i - 1] : undefined
-                    const right
-                        = i + candidate.length < text.length
+                    const right = i + candidate.length < text.length
                             ? text[i + candidate.length]
                             : undefined
 
@@ -762,13 +741,12 @@ const processStandardText = (
                 // Check for Korean particles (extended)
                 const isKoreanCandidate = isKoreanText(candidate)
                 if (isKoreanCandidate) {
-                    const right
-                        = i + candidate.length < text.length
-                            ? text.slice(
-                                    i + candidate.length,
-                                    i + candidate.length + 10,
-                                )
-                            : ""
+                    const right = i + candidate.length < text.length
+                        ? text.slice(
+                                i + candidate.length,
+                                i + candidate.length + 10,
+                            )
+                        : ""
 
                     // Check for Korean particles (no action needed, just a check point)
                     if (right.match(REGEX_PATTERNS.KOREAN_PARTICLES_EXTENDED)) {
