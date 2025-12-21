@@ -238,9 +238,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         if (!this.trie || !this.candidateMap) return
 
         const linkGenerator = this.createLinkGenerator(activeFile.path)
-        const baseDir = this.settings.respectNewFileFolderPath
-            ? this.app.vault.getConfig("newFileFolderPath")
-            : undefined
+        const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
         const updatedText = replaceLinks({
             body: selectedText,
             linkResolverContext: {
@@ -267,9 +265,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
             .filter((file) => {
                 // Filter out files in excluded directories
                 const path = file.path.replace(/\.md$/, "")
-                return !this.settings.excludeDirsFromAutoLinking.some(
-                    (excludeDir) => { return (path.startsWith(excludeDir + "/") || path === excludeDir) },
-                )
+                return !this.settings.excludeDirsFromAutoLinking.some((excludeDir) => {
+                    return (path.startsWith(excludeDir + "/") || path === excludeDir)
+                })
             })
             .map((file) => {
                 // Remove the .md extension
@@ -354,14 +352,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
             this.refreshFileDataAndTrie()
 
             this.registerEvent(
-                this.app.vault.on("delete", () =>
-                    this.refreshFileDataAndTrie(),
-                ),
+                this.app.vault.on("delete", () => this.refreshFileDataAndTrie()),
             )
             this.registerEvent(
-                this.app.vault.on("create", () =>
-                    this.refreshFileDataAndTrie(),
-                ),
+                this.app.vault.on("create", () => this.refreshFileDataAndTrie()),
             )
             this.registerEvent(
                 this.app.vault.on("rename", () =>
