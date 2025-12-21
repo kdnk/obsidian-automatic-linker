@@ -45,7 +45,7 @@ const REGEX_PATTERNS = {
     PROTECTED_LINK: /^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/,
     KOREAN_SUFFIX: /^(이다\.?)/,
     KOREAN_PARTICLES: /^(는|은)/,
-    JAPANESE_PARTICLES: /^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
+    KOREAN_PARTICLES_EXTENDED: /^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
     TABLE_SEPARATOR: /^[|:\s-]+$/,
     WORD_BOUNDARY: /[\p{L}\p{N}_/-]/u,
     WHITESPACE: /[\t\n\r ]/,
@@ -76,9 +76,6 @@ const isCjkCandidate = (candidate: string): boolean =>
 
 const isKoreanText = (text: string): boolean =>
     REGEX_PATTERNS.KOREAN.test(text)
-
-const isJapaneseText = (text: string): boolean =>
-    REGEX_PATTERNS.JAPANESE.test(text) && !REGEX_PATTERNS.KOREAN.test(text)
 
 // Cache for fallback index to avoid rebuilding
 const fallbackIndexCache = new WeakMap<
@@ -762,9 +759,9 @@ const processStandardText = (
                     }
                 }
 
-                // Check for Japanese particles
-                const isJapaneseCandidate = isJapaneseText(candidate)
-                if (isJapaneseCandidate) {
+                // Check for Korean particles (extended)
+                const isKoreanCandidate = isKoreanText(candidate)
+                if (isKoreanCandidate) {
                     const right
                         = i + candidate.length < text.length
                             ? text.slice(
@@ -773,9 +770,9 @@ const processStandardText = (
                                 )
                             : ""
 
-                    // Check for Japanese particles (no action needed, just a check point)
-                    if (right.match(REGEX_PATTERNS.JAPANESE_PARTICLES)) {
-                        // Skip word boundary check for Japanese particles
+                    // Check for Korean particles (no action needed, just a check point)
+                    if (right.match(REGEX_PATTERNS.KOREAN_PARTICLES_EXTENDED)) {
+                        // Skip word boundary check for Korean particles
                     }
                 }
 
