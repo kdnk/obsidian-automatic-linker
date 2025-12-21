@@ -728,8 +728,8 @@ const processStandardText = (
                 if (!candidateIsCjk) {
                     const left = i > 0 ? text[i - 1] : undefined
                     const right = i + candidate.length < text.length
-                            ? text[i + candidate.length]
-                            : undefined
+                        ? text[i + candidate.length]
+                        : undefined
 
                     if (!isWordBoundary(left) || !isWordBoundary(right)) {
                         result += text[i]
