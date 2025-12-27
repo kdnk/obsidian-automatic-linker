@@ -307,9 +307,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
         this.candidateMap = candidateMap
         this.trie = trie
 
-        // Clear frontmatter cache when Trie is rebuilt
-        this.frontmatterCache.clear()
-
         if (this.settings.showNotice) {
             new Notice(`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`)
         }
