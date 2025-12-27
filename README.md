@@ -37,9 +37,9 @@ The plugin automatically detects file names in your text and converts them to wi
 
 Organize large vaults with sophisticated namespace handling:
 
-- **Base Directory**: Define a base directory (e.g., `pages/`) where the prefix is omitted from links
+- **Base Directory**: Use Obsidian's "Folder to create new notes in" setting as the base directory where folder prefixes are omitted from links
 - **Proximity-based Linking**: Automatically resolve shorthand links to their full namespaced paths
-- **Namespace Restriction**: Use `automatic-linker-scoped: true` in frontmatter to restrict linking to files within the same namespace
+- **Namespace Scope**: Use `automatic-linker-scoped: true` in frontmatter to restrict linking to files within the same namespace
 - **Closest Match Selection**: When multiple candidates exist, the plugin selects the file closest to your current note
 
 ### URL Formatting
@@ -91,7 +91,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 - **Format on Save**: Enable automatic linking when saving files
 - **Format Delay**: Delay in milliseconds before formatting (useful for plugin integration)
-- **Base Directory**: Root directory for namespace handling (e.g., `pages`)
+- **Respect 'Folder to create new notes in' setting**: Use Obsidian's "Folder to create new notes in" setting as the base directory for omitting folder prefixes in links
 
 ### Link Behavior
 
@@ -141,7 +141,7 @@ I'm learning [[Python]] and [[JavaScript]] for web development.
 
 ### Example 2: Proximity-based Linking
 
-With `baseDir: "pages"` and Proximity-based Linking enabled:
+With Obsidian's "Folder to create new notes in" set to `pages/` and "Respect 'Folder to create new notes in' setting" enabled, along with Proximity-based Linking enabled:
 
 File structure:
 ```
@@ -159,7 +159,7 @@ When you type: `React uses TypeScript`
 
 It becomes: `[[frameworks/React]] uses [[languages/TypeScript]]`
 
-### Example 3: Proximity-based Linking
+### Example 3: Namespace Scope
 
 File `pages/team-a/internal.md` has frontmatter:
 ```yaml
@@ -298,16 +298,6 @@ src/
 └── update-editor.ts           # Editor update utilities
 ```
 
-## Performance
-
-The plugin uses a Trie data structure for efficient file name matching, making it performant even with thousands of files. Link conversion is optimized to handle large vaults without noticeable lag.
-
-## Known Limitations
-
-- URL title fetching requires network access and may be slow for many URLs
-- Proximity-based Linking requires files to be indexed (restart may be needed after adding many files)
-- Alias consideration requires plugin restart when toggled in settings
-
 ## Troubleshooting
 
 **Links aren't being created:**
@@ -316,8 +306,7 @@ The plugin uses a Trie data structure for efficient file name matching, making i
 
 **Proximity-based Linking not working:**
 - Ensure "Proximity-based Linking" is enabled in settings
-- Restart Obsidian after changing base directory settings
-- Check that files are within the configured base directory
+- Check that files are within Obsidian's configured "Folder to create new notes in" directory if the "Respect 'Folder to create new notes in' setting" option is enabled
 
 **Conflicts with Obsidian Linter:**
 - Follow the integration guide above to run plugins in sequence
