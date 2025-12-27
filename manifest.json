@@ -1,7 +1,7 @@
 {
 	"id": "automatic-linker",
 	"name": "Automatic Linker",
-	"version": "4.0.2",
+	"version": "4.0.3",
 	"minAppVersion": "1.9.0",
 	"description": "Automatically converts plain text file references into wiki links (i.e. `[[...]]`)",
 	"author": "Kodai Nakamura",
