@@ -203,14 +203,31 @@ export default class AutomaticLinkerPlugin extends Plugin {
         for (const url of urls) {
             if (this.urlTitleMap.has(url)) continue
 
-            const response = await request(url)
-            const title = getTitleFromHtml(response)
-            this.urlTitleMap.set(url, title)
+            try {
+                const response = await request(url)
+                const title = getTitleFromHtml(response)
+
+                if (title) {
+                    this.urlTitleMap.set(url, title)
+                }
+                else {
+                    if (this.settings.debug) {
+                        console.warn(`Automatic Linker: No title found for URL: ${url}`)
+                    }
+                }
+            }
+            catch (error) {
+                if (this.settings.debug) {
+                    console.warn(`Automatic Linker: Failed to fetch URL title for: ${url}`, error)
+                }
+            }
         }
     }
 
     async formatThenRunPrettierAndLinter() {
-        await this.buildUrlTitleMap()
+        if (this.settings.replaceUrlWithTitle) {
+            await this.buildUrlTitleMap()
+        }
         this.modifyLinksForActiveFile()
 
         if (this.settings.runPrettierAfterFormatting) {
