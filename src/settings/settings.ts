@@ -236,7 +236,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
             })
 
         new Setting(containerEl)
-            .setName("Igonre domains")
+            .setName("Ignore domains")
             .setDesc(
                 "Ignore domains for replacing URLs with titles, one per line (e.g. x.com)",
             )
