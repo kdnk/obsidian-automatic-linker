@@ -154,6 +154,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 ignoreCase: this.settings.ignoreCase,
                 preventSelfLinking: this.settings.preventSelfLinking,
                 removeAliasInDirs: this.settings.removeAliasInDirs,
+                ignoreHeadings: this.settings.ignoreHeadings,
             },
             linkGenerator,
         })
@@ -270,6 +271,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 ignoreCase: this.settings.ignoreCase,
                 preventSelfLinking: this.settings.preventSelfLinking,
                 removeAliasInDirs: this.settings.removeAliasInDirs,
+                ignoreHeadings: this.settings.ignoreHeadings,
             },
             linkGenerator,
         })
