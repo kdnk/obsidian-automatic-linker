@@ -5,6 +5,7 @@ export type AutomaticLinkerSettings = {
     considerAliases: boolean // Consider aliases when linking
     proximityBasedLinking: boolean // Automatically resolve namespaces for shorthand links
     ignoreDateFormats: boolean // Ignore date formatted links (e.g. 2025-02-10)
+    ignoreHeadings: boolean // Ignore headings (lines starting with #) when adding links
     formatGitHubURLs: boolean // Format GitHub URLs on save
     githubEnterpriseURLs: string[] // List of GitHub Enterprise URLs
     formatJiraURLs: boolean // Format Jira URLs on save
@@ -29,6 +30,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     considerAliases: true, // Default: consider aliases
     proximityBasedLinking: true, // Default: enable automatic namespace resolution
     ignoreDateFormats: true, // Default: ignore date formats (e.g. 2025-02-10)
+    ignoreHeadings: false, // Default: do not ignore headings
     formatGitHubURLs: true, // Default: format GitHub URLs
     githubEnterpriseURLs: [], // Default: empty list
     formatJiraURLs: true, // Default: format Jira URLs

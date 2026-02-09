@@ -141,6 +141,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     })
             })
 
+        // Toggle for ignoring headings
+        new Setting(containerEl)
+            .setName("Ignore headings")
+            .setDesc(
+                "When enabled, headings (lines starting with #) will not have links added to them.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.ignoreHeadings)
+                    .onChange(async (value) => {
+                        this.plugin.settings.ignoreHeadings = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
+
         // Toggle for ignoring case in link matching
         new Setting(containerEl)
             .setName("Ignore case")

@@ -14,6 +14,7 @@ export interface ReplaceLinksSettings {
     ignoreCase?: boolean
     preventSelfLinking?: boolean
     removeAliasInDirs?: string[]
+    ignoreHeadings?: boolean
 }
 
 export interface LinkGeneratorParams {
@@ -866,6 +867,21 @@ export const replaceLinks = ({
         }
     }
 
+    // Extract and protect headings first
+    const headingPattern = /^#{1,6}\s+.*$/gm
+    const headings: Array<{ placeholder: string, content: string }> = []
+    let headingIndex = 0
+
+    let bodyAfterHeadings = body
+    if (settings.ignoreHeadings) {
+        bodyAfterHeadings = body.replace(headingPattern, (match) => {
+            const placeholder = `__HEADING_${headingIndex}__`
+            headings.push({ placeholder, content: match })
+            headingIndex++
+            return placeholder
+        })
+    }
+
     // Extract and protect callout blocks first
     // Match callout blocks: starts with > [!type] and continues with lines starting with >
     const calloutPattern = /^>[ \t]*\[![\w-]+\].*?(\n>.*?)*(?=\n(?!>)|$)/gm
@@ -873,7 +889,7 @@ export const replaceLinks = ({
     let calloutIndex = 0
 
     // Replace callouts with placeholders
-    const bodyWithPlaceholders = body.replace(calloutPattern, (match) => {
+    const bodyWithPlaceholders = bodyAfterHeadings.replace(calloutPattern, (match) => {
         const placeholder = `__CALLOUT_${calloutIndex}__`
         callouts.push({ placeholder, content: match })
         calloutIndex++
@@ -909,6 +925,11 @@ export const replaceLinks = ({
 
     // Restore callouts
     for (const { placeholder, content } of callouts) {
+        resultBody = resultBody.replace(placeholder, content)
+    }
+
+    // Restore headings
+    for (const { placeholder, content } of headings) {
         resultBody = resultBody.replace(placeholder, content)
     }
 
