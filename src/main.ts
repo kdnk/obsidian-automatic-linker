@@ -297,7 +297,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 const exclude = isLinkingExcluded(metadata)
 
                 const aliases = (() => {
-                    if (this.settings.considerAliases) {
+                    if (this.settings.includeAliases) {
                         const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
                         const aliases = parseFrontMatterAliases(frontmatter)
                         return aliases

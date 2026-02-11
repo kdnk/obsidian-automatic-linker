@@ -95,7 +95,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 ### Link Behavior
 
-- **Consider Aliases**: Include frontmatter aliases when matching text
+- **Include Aliases**: Include frontmatter aliases when matching text
 - **Proximity-based Linking**: Automatically resolve shorthand to full namespaced links
 - **Ignore Case**: Enable case-insensitive link matching
 - **Prevent Self-Linking**: Don't create links from a file to itself

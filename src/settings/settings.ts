@@ -45,17 +45,17 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     })
             })
 
-        // Toggle for considering aliases.
+        // Toggle for including aliases.
         new Setting(containerEl)
-            .setName("Consider aliases")
+            .setName("Include aliases")
             .setDesc(
-                "When enabled, aliases will be taken into account when processing links. Note: A restart is required for changes to take effect.",
+                "When enabled, aliases will be included when processing links. Note: A restart is required for changes to take effect.",
             )
             .addToggle((toggle) => {
                 toggle
-                    .setValue(this.plugin.settings.considerAliases)
+                    .setValue(this.plugin.settings.includeAliases)
                     .onChange(async (value) => {
-                        this.plugin.settings.considerAliases = value
+                        this.plugin.settings.includeAliases = value
                         await this.plugin.saveData(this.plugin.settings)
                         this.plugin.refreshFileDataAndTrie()
                     })

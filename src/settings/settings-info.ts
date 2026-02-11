@@ -2,7 +2,7 @@ export type AutomaticLinkerSettings = {
     formatOnSave: boolean
     showNotice: boolean
     respectNewFileFolderPath: boolean // Respect Obsidian's "Folder to create new notes in" setting as base directory
-    considerAliases: boolean // Consider aliases when linking
+    includeAliases: boolean // Include aliases when linking
     proximityBasedLinking: boolean // Automatically resolve namespaces for shorthand links
     ignoreDateFormats: boolean // Ignore date formatted links (e.g. 2025-02-10)
     ignoreHeadings: boolean // Ignore headings (lines starting with #) when adding links
@@ -27,7 +27,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     formatOnSave: false,
     showNotice: false,
     respectNewFileFolderPath: true, // Default: do not respect Obsidian's "Folder to create new notes in" setting
-    considerAliases: true, // Default: consider aliases
+    includeAliases: true, // Default: include aliases
     proximityBasedLinking: true, // Default: enable automatic namespace resolution
     ignoreDateFormats: true, // Default: ignore date formats (e.g. 2025-02-10)
     ignoreHeadings: false, // Default: do not ignore headings
