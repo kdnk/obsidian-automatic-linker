@@ -235,7 +235,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     })
             })
 
-
         new Setting(containerEl)
             .setName("URL Replacement with Title")
             .setHeading()

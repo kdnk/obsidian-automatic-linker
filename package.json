@@ -12,6 +12,7 @@
 		"tsc": "tsc -noEmit -skipLibCheck",
 		"tsc:watch": "tsc -noEmit -skipLibCheck --watch",
 		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
 		"lint:watch": "nodemon --watch src --ext js,ts --exec \"npm run lint\""
 	},
 	"keywords": [],
