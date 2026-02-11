@@ -45,54 +45,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     })
             })
 
-        // Toggle for running linter after formatting
-        new Setting(containerEl)
-            .setName("Run Obsidian Linter after formatting")
-            .setDesc(
-                "When enabled, Obsidian Linter will be executed after Automatic Linker formatting. This requires the Obsidian Linter plugin to be installed.",
-            )
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(this.plugin.settings.runLinterAfterFormatting)
-                    .onChange(async (value) => {
-                        this.plugin.settings.runLinterAfterFormatting = value
-                        await this.plugin.saveData(this.plugin.settings)
-                    })
-            })
-
-        // Toggle for running prettier after formatting
-        new Setting(containerEl)
-            .setName("Run Prettier after formatting")
-            .setDesc(
-                "When enabled, Prettier will be executed after Automatic Linker formatting. This requires prettier-format plugin to be installed. https://github.com/dylanarmstrong/obsidian-prettier-plugin",
-            )
-            .addToggle((toggle) => {
-                toggle
-                    .setValue(this.plugin.settings.runPrettierAfterFormatting)
-                    .onChange(async (value) => {
-                        this.plugin.settings.runPrettierAfterFormatting = value
-                        await this.plugin.saveData(this.plugin.settings)
-                    })
-            })
-
-        // Setting for linter delay
-        new Setting(containerEl)
-            .setName("Format delay (ms)")
-            .setDesc(
-                "Delay in milliseconds before formatting. Increase this value if the linter/prettier runs before the file is fully saved.",
-            )
-            .addText((text) => {
-                text.setPlaceholder("e.g. 100")
-                    .setValue(this.plugin.settings.formatDelayMs.toString())
-                    .onChange(async (value) => {
-                        const parsedValue = parseInt(value)
-                        if (!isNaN(parsedValue) && parsedValue >= 0) {
-                            this.plugin.settings.formatDelayMs = parsedValue
-                            await this.plugin.saveData(this.plugin.settings)
-                        }
-                    })
-            })
-
         // Toggle for considering aliases.
         new Setting(containerEl)
             .setName("Consider aliases")
@@ -230,6 +182,59 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                         this.plugin.refreshFileDataAndTrie()
                     })
             })
+
+        new Setting(containerEl)
+            .setName("Integrations")
+            .setHeading()
+
+        // Toggle for running linter after formatting
+        new Setting(containerEl)
+            .setName("Run Obsidian Linter after formatting")
+            .setDesc(
+                "When enabled, Obsidian Linter will be executed after Automatic Linker formatting. This requires the Obsidian Linter plugin to be installed.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.runLinterAfterFormatting)
+                    .onChange(async (value) => {
+                        this.plugin.settings.runLinterAfterFormatting = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
+
+        // Toggle for running prettier after formatting
+        new Setting(containerEl)
+            .setName("Run Prettier after formatting")
+            .setDesc(
+                "When enabled, Prettier will be executed after Automatic Linker formatting. This requires prettier-format plugin to be installed. https://github.com/dylanarmstrong/obsidian-prettier-plugin",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.runPrettierAfterFormatting)
+                    .onChange(async (value) => {
+                        this.plugin.settings.runPrettierAfterFormatting = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
+
+        // Setting for linter delay
+        new Setting(containerEl)
+            .setName("Format delay (ms)")
+            .setDesc(
+                "Delay in milliseconds before formatting. Increase this value if the linter/prettier runs before the file is fully saved.",
+            )
+            .addText((text) => {
+                text.setPlaceholder("e.g. 100")
+                    .setValue(this.plugin.settings.formatDelayMs.toString())
+                    .onChange(async (value) => {
+                        const parsedValue = parseInt(value)
+                        if (!isNaN(parsedValue) && parsedValue >= 0) {
+                            this.plugin.settings.formatDelayMs = parsedValue
+                            await this.plugin.saveData(this.plugin.settings)
+                        }
+                    })
+            })
+
 
         new Setting(containerEl)
             .setName("URL Replacement with Title")
