@@ -60,9 +60,6 @@ importers:
       obsidian-typings:
         specifier: ^2.15.0
         version: 2.44.3(@codemirror/view@6.36.7)(@pixi/core@7.2.4)(@pixi/display@7.2.4(@pixi/core@7.2.4))(@pixi/utils@7.2.4)
-      prettier:
-        specifier: ^3.5.1
-        version: 3.5.3
       tslib:
         specifier: 2.4.0
         version: 2.4.0
@@ -2011,11 +2008,6 @@ packages:
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
     engines: {node: '>= 0.8.0'}
-
-  prettier@3.5.3:
-    resolution: {integrity: sha512-QQtaxnoDJeAkDvDKWCLiwIXkTgRhwYDEQCghU9Z6q03iyek/rxRh/2lC3HB7P8sWT2xC/y5JDctPLBIGzHKbhw==}
-    engines: {node: '>=14'}
-    hasBin: true
 
   progress@2.0.3:
     resolution: {integrity: sha512-7PiHtLll5LdnKIMw100I+8xJXR5gW2QwWYkT6iJva0bXitZKa/XMrSbdmg3r2Xnaidz9Qumd0VPaMrZlF9V9sA==}
@@ -4345,8 +4337,6 @@ snapshots:
       source-map-js: 1.2.1
 
   prelude-ls@1.2.1: {}
-
-  prettier@3.5.3: {}
 
   progress@2.0.3: {}
 
