@@ -13,6 +13,7 @@ export type AutomaticLinkerSettings = {
     formatLinearURLs: boolean // Format Linear URLs on save
     debug: boolean // Enable debug logging
     ignoreCase: boolean // Ignore case when matching links
+    matchSentenceCase: boolean // Match sentence-start capitalized text when ignoreCase is off
     replaceUrlWithTitle: boolean // Replace raw URLs with [Title](URL)
     replaceUrlWithTitleIgnoreDomains: string[] // List of domains to ignore when replacing URLs with titles
     excludeDirsFromAutoLinking: string[] // Optional: List of directories to exclude from auto-linking
@@ -38,6 +39,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     formatLinearURLs: false, // Default: format Linear URLs
     debug: false, // Default: disable debug logging
     ignoreCase: true, // Default: case-sensitive matching
+    matchSentenceCase: true, // Default: match sentence-start capitalized text
     replaceUrlWithTitle: true, // Default: enable replacing URLs with titles
     replaceUrlWithTitleIgnoreDomains: [],
     excludeDirsFromAutoLinking: [], // Default: no excluded directories

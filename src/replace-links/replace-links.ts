@@ -12,6 +12,7 @@ export interface ReplaceLinksSettings {
     baseDir?: string
     ignoreDateFormats?: boolean
     ignoreCase?: boolean
+    matchSentenceCase?: boolean
     preventSelfLinking?: boolean
     removeAliasInDirs?: string[]
     ignoreHeadings?: boolean
@@ -71,6 +72,20 @@ const isCjkText = (text: string): boolean => REGEX_PATTERNS.CJK.test(text)
 const isCjkCandidate = (candidate: string): boolean => REGEX_PATTERNS.CJK_CANDIDATE.test(candidate)
 
 const isKoreanText = (text: string): boolean => REGEX_PATTERNS.KOREAN.test(text)
+
+const isSentenceStart = (text: string, index: number): boolean => {
+    if (index === 0) return true
+    if (text[index - 1] === "\n") return true
+    // ". " pattern (after period + space)
+    // Avoid acronyms by checking the char before the period is a letter
+    if (index >= 3 && text[index - 1] === " " && text[index - 2] === ".") {
+        const charBeforePeriod = text[index - 3]
+        if (/[a-zA-Z]/.test(charBeforePeriod)) {
+            return true
+        }
+    }
+    return false
+}
 
 // Cache for fallback index to avoid rebuilding
 const fallbackIndexCache = new WeakMap<
@@ -221,8 +236,8 @@ const createLinkContent = (
         if (removeAlias) {
             return { linkPath: normalizedPath }
         }
-        // Use originalMatchedText to preserve case when ignoreCase is enabled
-        const displayAlias = settings.ignoreCase ? originalMatchedText : alias
+        // Use originalMatchedText to preserve case when ignoreCase or matchSentenceCase is enabled
+        const displayAlias = (settings.ignoreCase || settings.matchSentenceCase) ? originalMatchedText : alias
         return { linkPath: normalizedPath, alias: displayAlias }
     }
 
@@ -238,13 +253,13 @@ const createLinkContent = (
         // If ignoreCase is enabled and originalMatchedText contains a slash,
         // use the last segment of originalMatchedText to preserve case
         let displayText = lastSegment
-        if (settings.ignoreCase && originalMatchedText.includes("/")) {
+        if ((settings.ignoreCase || settings.matchSentenceCase) && originalMatchedText.includes("/")) {
             const originalLastSegment = originalMatchedText.split("/").pop()
             if (originalLastSegment) {
                 displayText = originalLastSegment
             }
         }
-        else if (settings.ignoreCase) {
+        else if (settings.ignoreCase || settings.matchSentenceCase) {
             // If originalMatchedText doesn't contain a slash, use it as-is
             displayText = originalMatchedText
         }
@@ -398,9 +413,19 @@ const processFallbackSearch = (
         const endIndex = startIndex + length
         const currentChar = text[startIndex + length - 1]
         potentialMatch += currentChar
-        searchWord = settings.ignoreCase
-            ? searchWord + currentChar.toLowerCase()
-            : potentialMatch
+        if (settings.matchSentenceCase && !settings.ignoreCase && isSentenceStart(text, startIndex)) {
+            if (length === 1) {
+                searchWord = currentChar.toLowerCase()
+            }
+            else {
+                searchWord = searchWord + currentChar
+            }
+        }
+        else {
+            searchWord = settings.ignoreCase
+                ? searchWord + currentChar.toLowerCase()
+                : potentialMatch
+        }
 
         // Check if this potential match exists in fallback index
         const candidateList = fallbackIndex.get(searchWord)
@@ -647,7 +672,11 @@ const processStandardText = (
 
         while (j < text.length) {
             const ch = text[j]
-            const chLower = settings.ignoreCase ? ch.toLowerCase() : ch
+            let chLower = settings.ignoreCase ? ch.toLowerCase() : ch
+            // At sentence start, lowercase only the first character to allow matching
+            if (settings.matchSentenceCase && !settings.ignoreCase && j === i && isSentenceStart(text, i)) {
+                chLower = ch.toLowerCase()
+            }
             candidateBuilder += ch
 
             const child = node.children.get(chLower)

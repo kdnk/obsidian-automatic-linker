@@ -124,6 +124,21 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     })
             })
 
+        // Toggle for matching sentence-case text
+        new Setting(containerEl)
+            .setName("Match sentence case")
+            .setDesc(
+                "When 'Ignore case' is OFF, match text that is capitalized at the start of a sentence. For example, 'My name' at a sentence start will match the file 'my name'. This setting is ignored when 'Ignore case' is ON.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.matchSentenceCase)
+                    .onChange(async (value) => {
+                        this.plugin.settings.matchSentenceCase = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
+
         // Toggle for preventing self-linking
         new Setting(containerEl)
             .setName("Prevent self-linking")
