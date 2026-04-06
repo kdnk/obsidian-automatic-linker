@@ -431,5 +431,62 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                         await this.plugin.saveData(this.plugin.settings)
                     })
             })
+
+        new Setting(containerEl)
+            .setName("AI Link Enhancement (Beta)")
+            .setHeading()
+
+        new Setting(containerEl)
+            .setName("Enable AI Link Enhancement")
+            .setDesc(
+                "When enabled, an AI-powered link enhancer command will be available. It uses a local LLM to resolve ambiguous links and correct existing ones.",
+            )
+            .addToggle((toggle) => {
+                toggle
+                    .setValue(this.plugin.settings.aiEnabled)
+                    .onChange(async (value) => {
+                        this.plugin.settings.aiEnabled = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
+
+        new Setting(containerEl)
+            .setName("AI API Endpoint")
+            .setDesc("The URL of your OpenAI-compatible AI server (e.g. LM Studio, Ollama).")
+            .addText((text) => {
+                text.setPlaceholder("http://localhost:1234/v1")
+                    .setValue(this.plugin.settings.aiEndpoint)
+                    .onChange(async (value) => {
+                        this.plugin.settings.aiEndpoint = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
+
+        new Setting(containerEl)
+            .setName("AI Model")
+            .setDesc("The name of the model to use (e.g. gemma-4-7b).")
+            .addText((text) => {
+                text.setPlaceholder("gemma-4-7b")
+                    .setValue(this.plugin.settings.aiModel)
+                    .onChange(async (value) => {
+                        this.plugin.settings.aiModel = value
+                        await this.plugin.saveData(this.plugin.settings)
+                    })
+            })
+
+        new Setting(containerEl)
+            .setName("Max Context Length")
+            .setDesc("Number of characters around the link to provide as context to the AI.")
+            .addText((text) => {
+                text.setPlaceholder("500")
+                    .setValue(this.plugin.settings.aiMaxContext.toString())
+                    .onChange(async (value) => {
+                        const parsedValue = parseInt(value)
+                        if (!isNaN(parsedValue) && parsedValue > 0) {
+                            this.plugin.settings.aiMaxContext = parsedValue
+                            await this.plugin.saveData(this.plugin.settings)
+                        }
+                    })
+            })
     }
 }

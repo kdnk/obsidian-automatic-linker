@@ -1046,34 +1046,42 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
         [
             "x",
             {
-                canonical: "namespace/x",
-                scoped: true,
-                namespace: "namespace",
+                candidates: [{
+                    canonical: "namespace/x",
+                    scoped: true,
+                    namespace: "namespace",
+                }],
             },
         ],
         [
             "z",
             {
-                canonical: "namespace/y/z",
-                scoped: true,
-                namespace: "namespace",
+                candidates: [{
+                    canonical: "namespace/y/z",
+                    scoped: true,
+                    namespace: "namespace",
+                }],
             },
         ],
         [
             "root",
             {
-                canonical: "root-note",
-                scoped: true,
-                namespace: "",
+                candidates: [{
+                    canonical: "root-note",
+                    scoped: true,
+                    namespace: "",
+                }],
             },
         ],
         // Candidate without namespace restriction.
         [
             "free",
             {
-                canonical: "free-note",
-                scoped: false,
-                namespace: "other",
+                candidates: [{
+                    canonical: "free-note",
+                    scoped: false,
+                    namespace: "other",
+                }],
             },
         ],
         // For alias testing:
@@ -1081,71 +1089,87 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
         [
             "pages/HelloWorld",
             {
-                canonical: "pages/HelloWorld",
-                scoped: false,
-                namespace: "pages",
+                candidates: [{
+                    canonical: "pages/HelloWorld",
+                    scoped: false,
+                    namespace: "pages",
+                }],
             },
         ],
         // Alias "Hello" is different from the shorthand, so canonical becomes "pages/HelloWorld|Hello".
         [
             "Hello",
             {
-                canonical: "pages/HelloWorld|Hello",
-                scoped: false,
-                namespace: "pages",
+                candidates: [{
+                    canonical: "pages/HelloWorld|Hello",
+                    scoped: false,
+                    namespace: "pages",
+                }],
             },
         ],
         // Also register the shorthand candidate.
         [
             "HelloWorld",
             {
-                canonical: "HelloWorld",
-                scoped: false,
-                namespace: "pages",
+                candidates: [{
+                    canonical: "HelloWorld",
+                    scoped: false,
+                    namespace: "pages",
+                }],
             },
         ],
         // For "tags" test: candidate key "tags" should map to canonical "tags"
         [
             "pages/tags",
             {
-                canonical: "pages/tags",
-                scoped: false,
-                namespace: "pages",
+                candidates: [{
+                    canonical: "pages/tags",
+                    scoped: false,
+                    namespace: "pages",
+                }],
             },
         ],
         [
             "tags",
             {
-                canonical: "tags",
-                scoped: false,
-                namespace: "pages",
+                candidates: [{
+                    canonical: "tags",
+                    scoped: false,
+                    namespace: "pages",
+                }],
             },
         ],
         // For Korean test, add candidate "문서"
         [
             "문서",
             {
-                canonical: "문서",
-                scoped: false,
-                namespace: "namespace",
+                candidates: [{
+                    canonical: "문서",
+                    scoped: false,
+                    namespace: "namespace",
+                }],
             },
         ],
         // For Japanese test, add candidate "ひらがな"
         [
             "ひらがな",
             {
-                canonical: "ひらがな",
-                scoped: false,
-                namespace: "namespace",
+                candidates: [{
+                    canonical: "ひらがな",
+                    scoped: false,
+                    namespace: "namespace",
+                }],
             },
         ],
         // For Chinese test, add candidate "文档"
         [
             "文档",
             {
-                canonical: "文档",
-                scoped: false,
-                namespace: "namespace",
+                candidates: [{
+                    canonical: "文档",
+                    scoped: false,
+                    namespace: "namespace",
+                }],
             },
         ],
     ])
@@ -1266,9 +1290,11 @@ describe("replaceLinks (manual candidateMap/trie)", () => {
         // Add candidate "a" corresponding to a file at "pages/set/a"
         // with scoped enabled and an effective namespace of "set".
         candidateMap.set("a", {
-            canonical: "set/a",
-            scoped: true,
-            namespace: "set",
+            candidates: [{
+                canonical: "set/a",
+                scoped: true,
+                namespace: "set",
+            }],
         })
         const trie = buildTrie(Array.from(candidateMap.keys()))
 
