@@ -10,7 +10,7 @@ export const resolveAmbiguities = async (
     settings: AutomaticLinkerSettings,
 ): Promise<Map<string, string>> => {
     const requests: AIResolveRequest[] = []
-    
+
     // 1. Scan for existing links [[Path|Alias]] or [[Path]]
     const existingLinkRegex = /\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g
     let match: RegExpExecArray | null
@@ -18,12 +18,12 @@ export const resolveAmbiguities = async (
         const fullMatch = match[0]
         const path = match[1]
         const alias = match[2] || path
-        
+
         const candidateData = candidateMap.get(alias)
         if (candidateData && candidateData.candidates.length > 1) {
             const start = Math.max(0, match.index - settings.aiMaxContext)
             const end = Math.min(text.length, match.index + fullMatch.length + settings.aiMaxContext)
-            
+
             requests.push({
                 word: fullMatch, // Using the full link as the "word" key for replacement
                 text: text.slice(start, end),
@@ -38,7 +38,7 @@ export const resolveAmbiguities = async (
     while (i < text.length) {
         let node = trie
         let j = i
-        let lastMatch: { word: string; data: CandidateData; index: number } | null = null
+        let lastMatch: { word: string, data: CandidateData, index: number } | null = null
 
         while (j < text.length && node.children.has(text[j].toLowerCase())) {
             node = node.children.get(text[j].toLowerCase())!
@@ -53,13 +53,13 @@ export const resolveAmbiguities = async (
 
         if (lastMatch && lastMatch.data.candidates.length > 1) {
             // Check if it's already inside a link (simple check)
-            const isInsideLink = text.slice(Math.max(0, i - 2), i) === "[[" || 
-                                 text.slice(i + lastMatch.word.length, i + lastMatch.word.length + 2) === "]]"
-            
+            const isInsideLink = text.slice(Math.max(0, i - 2), i) === "[["
+                || text.slice(i + lastMatch.word.length, i + lastMatch.word.length + 2) === "]]"
+
             if (!isInsideLink) {
                 const start = Math.max(0, i - settings.aiMaxContext)
                 const end = Math.min(text.length, i + lastMatch.word.length + settings.aiMaxContext)
-                
+
                 requests.push({
                     word: lastMatch.word,
                     text: text.slice(start, end),
@@ -67,7 +67,8 @@ export const resolveAmbiguities = async (
                 })
             }
             i += lastMatch.word.length
-        } else {
+        }
+        else {
             i++
         }
     }

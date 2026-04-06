@@ -734,9 +734,6 @@ const processStandardText = (
             // Case comparison happened during trie traversal if ignoreCase is true.
             const candidateData = candidateMap.get(trieCandidateKey)
 
-            // Store the original text matched for potential use as display text
-            const originalMatchedText = text.substring(i, i + lastCandidate.length)
-
             if (candidateData) {
                 // Check if this is a self-link and should be prevented
                 if (isSelfLink(candidateData, filePath, settings)) {
@@ -968,23 +965,23 @@ export const replaceLinks = ({
         const mIndex = match.index
         const segment = bodyWithPlaceholders.slice(lastIndex, mIndex)
         resultBody += processTextSegment(segment)
-        
+
         const fullMatch = match[0]
         if (resolvedAmbiguities?.has(fullMatch)) {
             // Existing link replacement
             const resolvedPath = resolvedAmbiguities.get(fullMatch)!
             const { linkPath, alias: resolvedAlias } = extractLinkParts(resolvedPath)
-            
+
             // Try to extract existing alias from the matched link
             const existingLinkRegex = /\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/
             const linkMatch = fullMatch.match(existingLinkRegex)
             const existingPath = linkMatch ? linkMatch[1] : ""
             const existingAlias = linkMatch ? linkMatch[2] : undefined
-            
-            // Use resolved alias if present, otherwise use existing alias, 
+
+            // Use resolved alias if present, otherwise use existing alias,
             // otherwise use existing path (as alias if it was a simple link)
             const finalAlias = resolvedAlias || existingAlias || (fullMatch.includes("|") ? undefined : existingPath)
-            
+
             const isInTable = isIndexInsideMarkdownTable(bodyWithPlaceholders, mIndex)
             resultBody += linkGenerator({
                 linkPath,

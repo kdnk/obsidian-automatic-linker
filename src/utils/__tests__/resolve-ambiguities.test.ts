@@ -37,7 +37,7 @@ describe("resolveAmbiguities", () => {
     it("should identify ambiguous unlinked words", async () => {
         const text = "I have a meeting tomorrow."
         vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(
-            new Map([["meeting", "work/meeting"]])
+            new Map([["meeting", "work/meeting"]]),
         )
 
         const result = await resolveAmbiguities(text, candidateMap, trie, mockSettings)
@@ -48,8 +48,8 @@ describe("resolveAmbiguities", () => {
                 expect.objectContaining({
                     word: "meeting",
                     candidates: ["work/meeting", "private/meeting"],
-                })
-            ])
+                }),
+            ]),
         )
         expect(result.get("meeting")).toBe("work/meeting")
     })
@@ -57,7 +57,7 @@ describe("resolveAmbiguities", () => {
     it("should identify ambiguous existing links for verification", async () => {
         const text = "Check the [[private/meeting|meeting]] notes."
         vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(
-            new Map([["[[private/meeting|meeting]]", "work/meeting"]])
+            new Map([["[[private/meeting|meeting]]", "work/meeting"]]),
         )
 
         const result = await resolveAmbiguities(text, candidateMap, trie, mockSettings)
@@ -68,8 +68,8 @@ describe("resolveAmbiguities", () => {
                 expect.objectContaining({
                     word: "[[private/meeting|meeting]]",
                     candidates: ["work/meeting", "private/meeting"],
-                })
-            ])
+                }),
+            ]),
         )
         expect(result.get("[[private/meeting|meeting]]")).toBe("work/meeting")
     })

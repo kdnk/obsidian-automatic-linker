@@ -53,7 +53,8 @@ export const callAI = async (
 
         const data = JSON.parse(response)
         return data.choices[0].message.content
-    } catch (error) {
+    }
+    catch (error) {
         console.error("AI Link Enhancer API Error:", error)
         throw error
     }
@@ -83,10 +84,10 @@ ${JSON.stringify(requests, null, 2)}
 `
 
     const resultRaw = await callAI(settings, prompt)
-    
+
     // Clean up potential markdown code blocks if the AI included them
     const cleanJson = resultRaw.replace(/```json\n?/, "").replace(/\n?```/, "").trim()
-    
+
     const result = JSON.parse(cleanJson)
     const resultMap = new Map<string, string>()
 
