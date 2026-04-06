@@ -22,6 +22,10 @@ export type AutomaticLinkerSettings = {
     runLinterAfterFormatting: boolean // Run Obsidian Linter after automatic linker formatting
     runPrettierAfterFormatting: boolean // Run Prettier after automatic linker formatting
     formatDelayMs: number // Delay in milliseconds before running linter after formatting
+    aiEnabled: boolean // Enable AI link enhancement
+    aiEndpoint: string // API endpoint for AI (OpenAI compatible)
+    aiModel: string // Model name for AI
+    aiMaxContext: number // Maximum context length for AI
 }
 
 export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
@@ -48,4 +52,8 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     runLinterAfterFormatting: false, // Default: do not run linter after formatting
     runPrettierAfterFormatting: false, // Run Prettier after automatic linker formatting
     formatDelayMs: 1, // Default: 1ms delay before running linter
+    aiEnabled: false, // Default: disable AI enhancement
+    aiEndpoint: "http://localhost:1234/v1", // Default: LM Studio
+    aiModel: "gemma-4-7b", // Default: Gemma 4
+    aiMaxContext: 500, // Default: 500 characters
 }

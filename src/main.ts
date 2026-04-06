@@ -37,6 +37,7 @@ import {
 } from "./settings/settings-info"
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie"
 import { updateEditor } from "./update-editor"
+import { resolveAmbiguities } from "./utils/resolve-ambiguities"
 
 const sleep = (ms: number) => {
     return new Promise(resolve => setTimeout(resolve, ms))
@@ -477,6 +478,76 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 const textWithoutLinks = excludeLinks(textWithMinimalIndent)
 
                 await navigator.clipboard.writeText(textWithoutLinks)
+            },
+        })
+
+        this.addCommand({
+            id: "ai-link-enhancer",
+            name: "Run AI Link Enhancer",
+            icon: "sparkles",
+            editorCallback: async (editor: Editor) => {
+                if (!this.settings.aiEnabled) {
+                    new Notice("AI Link Enhancement is not enabled in settings.")
+                    return
+                }
+
+                const activeFile = this.app.workspace.getActiveFile()
+                if (!activeFile) return
+
+                const noticeFragment = document.createDocumentFragment()
+                const container = noticeFragment.createEl("div")
+                container.createEl("div", { text: "AI Link Enhancer: Analyzing context..." })
+                const progress = container.createEl("progress")
+                progress.setAttr("style", "width: 100%; height: 10px;")
+                const notice = new Notice(noticeFragment, 0)
+
+                try {
+                    const fileContent = await this.app.vault.read(activeFile)
+                    const { contentStart } = getFrontMatterInfo(fileContent)
+                    const body = fileContent.slice(contentStart)
+
+                    if (!this.candidateMap || !this.trie) {
+                        this.refreshFileDataAndTrie()
+                    }
+
+                    if (!this.candidateMap || !this.trie) {
+                        new Notice("Failed to build index.")
+                        return
+                    }
+
+                    const resolvedAmbiguitiesResult = await resolveAmbiguities(
+                        body,
+                        this.candidateMap,
+                        this.trie,
+                        this.settings,
+                    )
+
+                    const resultBody = replaceLinks({
+                        body,
+                        linkResolverContext: {
+                            filePath: activeFile.path,
+                            trie: this.trie,
+                            candidateMap: this.candidateMap,
+                        },
+                        settings: this.settings,
+                        resolvedAmbiguities: resolvedAmbiguitiesResult,
+                    })
+
+                    if (body !== resultBody) {
+                        updateEditor(body, resultBody, editor)
+                        new Notice("AI Link Enhancement completed.")
+                    }
+                    else {
+                        new Notice("No links to enhance.")
+                    }
+                }
+                catch (error) {
+                    console.error("AI Link Enhancer error:", error)
+                    new Notice("AI Link Enhancement failed. Check console for details.")
+                }
+                finally {
+                    notice.hide()
+                }
             },
         })
 

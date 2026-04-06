@@ -63,10 +63,14 @@ export const buildTrie = (words: string[], ignoreCase = false): TrieNode => {
 }
 
 // CandidateData holds the canonical replacement string as well as namespace‐設定
-export interface CandidateData {
+export interface CandidateItem {
     canonical: string
     scoped: boolean
     namespace: string
+}
+
+export interface CandidateData {
+    candidates: CandidateItem[]
 }
 
 export const buildCandidateTrie = (
@@ -104,10 +108,23 @@ export const buildCandidateTrie = (
     // Build a mapping from candidate string to its CandidateData.
     const candidateMap = new Map<string, CandidateData>()
 
+    const addCandidate = (key: string, item: CandidateItem) => {
+        const existing = candidateMap.get(key)
+        if (existing) {
+            // Check if this canonical path is already added to avoid duplicates
+            if (!existing.candidates.some(c => c.canonical === item.canonical)) {
+                existing.candidates.push(item)
+            }
+        }
+        else {
+            candidateMap.set(key, { candidates: [item] })
+        }
+    }
+
     // Register normal candidates.
     for (const { full, short, scoped, namespace } of candidates) {
-        // Register the full path and its case-insensitive variant if needed
-        candidateMap.set(full, {
+        // Register the full path
+        addCandidate(full, {
             canonical: full,
             scoped,
             namespace,
@@ -124,25 +141,21 @@ export const buildCandidateTrie = (
                     lastSegment,
                 )
             ) {
-                // Register both the original case and lowercase versions
-                candidateMap.set(lastSegment, {
+                const item = {
                     canonical: full,
                     scoped,
                     namespace,
-                })
+                }
+                addCandidate(lastSegment, item)
                 if (ignoreCase) {
-                    candidateMap.set(lastSegment.toLowerCase(), {
-                        canonical: full,
-                        scoped,
-                        namespace,
-                    })
+                    addCandidate(lastSegment.toLowerCase(), item)
                 }
             }
         }
 
         // Register the short path if available
         if (short) {
-            candidateMap.set(short, {
+            addCandidate(short, {
                 canonical: full,
                 scoped,
                 namespace,
@@ -162,20 +175,15 @@ export const buildCandidateTrie = (
                 // If alias equals the shorthand, use alias as canonical; otherwise use "full|alias".
                 const canonicalForAlias
                     = short && alias === short ? alias : `${file.path}|${alias}`
-                if (!candidateMap.has(alias)) {
-                    candidateMap.set(alias, {
-                        canonical: canonicalForAlias,
-                        scoped: file.scoped,
-                        namespace: getTopLevelDirectoryName(file.path, baseDir),
-                    })
+                const item = {
+                    canonical: canonicalForAlias,
+                    scoped: file.scoped,
+                    namespace: getTopLevelDirectoryName(file.path, baseDir),
                 }
+                addCandidate(alias, item)
                 // Register lowercase version when ignoreCase is enabled
-                if (ignoreCase && !candidateMap.has(alias.toLowerCase())) {
-                    candidateMap.set(alias.toLowerCase(), {
-                        canonical: canonicalForAlias,
-                        scoped: file.scoped,
-                        namespace: getTopLevelDirectoryName(file.path, baseDir),
-                    })
+                if (ignoreCase) {
+                    addCandidate(alias.toLowerCase(), item)
                 }
             }
         }
@@ -246,11 +254,33 @@ if (import.meta.vitest) {
 
             expect(candidateMap.has("pages/docs/readme")).toBe(true)
             expect(candidateMap.has("docs/readme")).toBe(true)
-            expect(candidateMap.get("intro")?.canonical).toBe(
+            expect(candidateMap.get("intro")?.candidates[0].canonical).toBe(
                 "pages/docs/readme|intro",
             )
             expect(trie.children.has("d")).toBe(true)
             expect(trie.children.has("h")).toBe(true)
+        })
+
+        it("should handle multiple candidates for the same word", () => {
+            const allFiles: PathAndAliases[] = [
+                {
+                    path: "work/meeting",
+                    scoped: false,
+                    aliases: [],
+                },
+                {
+                    path: "private/meeting",
+                    scoped: false,
+                    aliases: [],
+                },
+            ]
+
+            const { candidateMap } = buildCandidateTrie(allFiles, undefined, true)
+
+            const meetingData = candidateMap.get("meeting")
+            expect(meetingData?.candidates).toHaveLength(2)
+            expect(meetingData?.candidates.map(c => c.canonical)).toContain("work/meeting")
+            expect(meetingData?.candidates.map(c => c.canonical)).toContain("private/meeting")
         })
     })
 }

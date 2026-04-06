@@ -33,6 +33,15 @@ The plugin automatically detects file names in your text and converts them to wi
 - **CJK Support**: Full support for Japanese, Chinese, Korean, and other CJK languages
 - **Case Sensitivity**: Optional case-insensitive matching
 
+### AI Link Enhancer (Beta)
+
+Resolve ambiguous links and correct existing ones using AI:
+
+- **Disambiguation**: When multiple notes have the same name or alias, the AI selects the most appropriate one based on context.
+- **Link Correction**: Automatically verify and correct existing wiki links if a better candidate is found.
+- **Local LLM Support**: Connect to any OpenAI-compatible local AI server (e.g., LM Studio, Ollama).
+- **Context-Aware**: Uses surrounding text to provide the AI with necessary context for accurate linking.
+
 ### Smart Namespace Management
 
 Organize large vaults with sophisticated namespace handling:
@@ -81,6 +90,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 | **Automatic Linker: Format file** | Convert text to links in the current file |
 | **Automatic Linker: Format selection** | Convert only selected text to links |
 | **Automatic Linker: Format vault** | Batch process all files in your vault |
+| **Automatic Linker: Run AI Link Enhancer** | Use AI to resolve ambiguous links in the current file |
 | **Automatic Linker: Copy file without links** | Copy current file content with links as plain text |
 | **Automatic Linker: Copy selection without links** | Copy selected lines with minimal indent and links removed |
 | **Automatic Linker: Rebuild index** | Rebuild the file index for link candidates |
@@ -108,6 +118,13 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 - **Format Jira URLs**: Convert Jira issue links
 - **Jira URLs**: Configure Jira domain(s)
 - **Format Linear URLs**: Convert Linear issue links
+
+### AI Link Enhancement (Beta)
+
+- **Enable AI Link Enhancement**: Add a command to resolve links using a local LLM.
+- **AI API Endpoint**: URL of your OpenAI-compatible AI server (e.g., `http://localhost:1234/v1`).
+- **AI Model**: Name of the model to use (e.g., `gemma-2-9b`).
+- **Max Context Length**: Number of characters around the link to provide as context to the AI.
 
 ### Advanced Options
 

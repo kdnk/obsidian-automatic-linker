@@ -32,11 +32,12 @@ export interface ReplaceLinksOptions {
     linkResolverContext: LinkResolverContext
     settings?: ReplaceLinksSettings
     linkGenerator?: LinkGenerator
+    resolvedAmbiguities?: Map<string, string>
 }
 
 // Constants and Regular Expressions
 const REGEX_PATTERNS = {
-    PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
+    PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[([^\]]+)\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
     DATE_FORMAT: /^\d{4}-\d{2}-\d{2}$/,
     MONTH_NOTE: /^[0-9]{1,2}$/,
     CJK: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u,
@@ -169,12 +170,12 @@ const isSelfLink = (
     currentFilePath: string,
     settings: ReplaceLinksSettings = {},
 ): boolean => {
-    if (!settings.preventSelfLinking) {
+    if (!settings.preventSelfLinking || candidateData.candidates.length === 0) {
         return false
     }
 
     // Extract the link path from the canonical path
-    const { linkPath } = extractLinkParts(candidateData.canonical)
+    const { linkPath } = extractLinkParts(candidateData.candidates[0].canonical)
 
     // Normalize paths for comparison
     const normalizedLinkPath = normalizeCanonicalPath(
@@ -220,8 +221,11 @@ const createLinkContent = (
     originalMatchedText: string,
     settings: ReplaceLinksSettings = {},
 ): { linkPath: string, alias?: string } => {
+    if (candidateData.candidates.length === 0) {
+        return { linkPath: originalMatchedText }
+    }
     const { linkPath, alias, hasAlias } = extractLinkParts(
-        candidateData.canonical,
+        candidateData.candidates[0].canonical,
     )
     const normalizedPath = normalizeCanonicalPath(linkPath, settings.baseDir)
 
@@ -365,6 +369,7 @@ const processCjkText = (
     filePath: string,
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings = {},
+    resolvedAmbiguities?: Map<string, string>,
 ): string => {
     // For CJK texts that might contain non-CJK terms like "taro-san", ensure we use a consistent approach
     // Pass the proper filePath to maintain correct namespace resolution
@@ -377,6 +382,7 @@ const processCjkText = (
         currentNamespace,
         linkGenerator,
         settings,
+        resolvedAmbiguities,
     )
 }
 
@@ -459,7 +465,11 @@ const processFallbackSearch = (
 
     // Filter candidates based on namespace restrictions
     const filteredCandidates = longestMatch.candidateList.filter(
-        ([, data]) => !(data.scoped && data.namespace !== currentNamespace),
+        ([, data]) => {
+            if (data.candidates.length === 0) return true
+            const candidate = data.candidates[0]
+            return !(candidate.scoped && candidate.namespace !== currentNamespace)
+        },
     )
 
     let bestCandidateData: CandidateData | null = null
@@ -649,6 +659,7 @@ const processStandardText = (
     currentNamespace: string,
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings = {},
+    resolvedAmbiguities?: Map<string, string>,
 ): string => {
     let result = ""
     let i = 0
@@ -787,8 +798,9 @@ const processStandardText = (
                 // Skip if namespace restriction applies
                 if (
                     settings.proximityBasedLinking
-                    && candidateData.scoped
-                    && candidateData.namespace !== currentNamespace
+                    && candidateData.candidates.length > 0
+                    && candidateData.candidates[0].scoped
+                    && candidateData.candidates[0].namespace !== currentNamespace
                 ) {
                     result += candidate
                     i += candidate.length
@@ -796,11 +808,25 @@ const processStandardText = (
                 }
 
                 // Create the link
-                const { linkPath, alias } = createLinkContent(
-                    candidateData,
-                    originalMatchedText,
-                    settings,
-                )
+                let linkPath = ""
+                let alias: string | undefined
+
+                if (resolvedAmbiguities?.has(candidate)) {
+                    const resolvedPath = resolvedAmbiguities.get(candidate)!
+                    const parts = extractLinkParts(resolvedPath)
+                    linkPath = parts.linkPath
+                    alias = parts.alias || candidate
+                }
+                else {
+                    const content = createLinkContent(
+                        candidateData,
+                        candidate,
+                        settings,
+                    )
+                    linkPath = content.linkPath
+                    alias = content.alias
+                }
+
                 const isInTable = isIndexInsideMarkdownTable(text, i)
                 const finalLink = linkGenerator({
                     linkPath,
@@ -851,6 +877,7 @@ export const replaceLinks = ({
         ignoreDateFormats: true,
     },
     linkGenerator = defaultLinkGenerator,
+    resolvedAmbiguities,
 }: ReplaceLinksOptions): string => {
     // Normalize the body text to NFC
     body = body.normalize("NFC")
@@ -880,6 +907,7 @@ export const replaceLinks = ({
                 filePath,
                 linkGenerator,
                 settings,
+                resolvedAmbiguities,
             )
         }
         else {
@@ -892,6 +920,7 @@ export const replaceLinks = ({
                 currentNamespace,
                 linkGenerator,
                 settings,
+                resolvedAmbiguities,
             )
         }
     }
@@ -939,12 +968,39 @@ export const replaceLinks = ({
         const mIndex = match.index
         const segment = bodyWithPlaceholders.slice(lastIndex, mIndex)
         resultBody += processTextSegment(segment)
-        // Append the protected segment unchanged
-        resultBody += match[0]
-        lastIndex = mIndex + match[0].length
+        
+        const fullMatch = match[0]
+        if (resolvedAmbiguities?.has(fullMatch)) {
+            // Existing link replacement
+            const resolvedPath = resolvedAmbiguities.get(fullMatch)!
+            const { linkPath, alias: resolvedAlias } = extractLinkParts(resolvedPath)
+            
+            // Try to extract existing alias from the matched link
+            const existingLinkRegex = /\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/
+            const linkMatch = fullMatch.match(existingLinkRegex)
+            const existingPath = linkMatch ? linkMatch[1] : ""
+            const existingAlias = linkMatch ? linkMatch[2] : undefined
+            
+            // Use resolved alias if present, otherwise use existing alias, 
+            // otherwise use existing path (as alias if it was a simple link)
+            const finalAlias = resolvedAlias || existingAlias || (fullMatch.includes("|") ? undefined : existingPath)
+            
+            const isInTable = isIndexInsideMarkdownTable(bodyWithPlaceholders, mIndex)
+            resultBody += linkGenerator({
+                linkPath,
+                sourcePath: filePath,
+                alias: finalAlias,
+                isInTable,
+            })
+        }
+        else {
+            // Append the protected segment unchanged
+            resultBody += fullMatch
+        }
+        lastIndex = mIndex + fullMatch.length
 
         // Prevent infinite loop on zero-length matches
-        if (match[0].length === 0) {
+        if (fullMatch.length === 0) {
             REGEX_PATTERNS.PROTECTED.lastIndex++
         }
     }
