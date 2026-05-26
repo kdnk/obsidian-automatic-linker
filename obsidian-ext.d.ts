@@ -7,7 +7,7 @@ declare module "obsidian" {
             commands: {
                 "editor:save-file": {
                     callback?: () => void
-                    checkCallback?: (checking: boolean) => void
+                    checkCallback?: (checking: boolean) => boolean | void
                 }
             }
         }

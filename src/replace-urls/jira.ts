@@ -37,7 +37,7 @@ export function formatJiraURL(
         const cleanURL = getCleanURL(jiraURL, urlInfo)
         return formatToObsidianLink(jiraURL, urlInfo, cleanURL)
     }
-    catch (_e) {
+    catch {
         // If URL is invalid, return original string
         return url
     }

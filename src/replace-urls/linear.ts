@@ -43,7 +43,7 @@ export function formatLinearURL(
         const cleanURL = getCleanURL(urlInfo)
         return formatToObsidianLink(urlInfo, cleanURL)
     }
-    catch (_e) {
+    catch {
         // If URL is invalid, return original string
         return url
     }

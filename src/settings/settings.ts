@@ -12,7 +12,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
         const { containerEl } = this
         containerEl.empty()
 
-        new Setting(containerEl).setName("General").setHeading()
+        new Setting(containerEl).setName("Formatting").setHeading()
 
         // Toggle for "Format on Save" setting.
         new Setting(containerEl)

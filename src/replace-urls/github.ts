@@ -36,7 +36,7 @@ export function formatGitHubURL(
         const cleanURL = getCleanURL(githubURL, urlInfo)
         return formatToObsidianLink(urlInfo, cleanURL)
     }
-    catch (_e) {
+    catch {
         // If URL is invalid, return original string
         return url
     }

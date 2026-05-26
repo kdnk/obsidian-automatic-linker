@@ -37,11 +37,8 @@ import {
 } from "./settings/settings-info"
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie"
 import { updateEditor } from "./update-editor"
+import { runAsyncSafely, sleep } from "./plugin-compat"
 import { resolveAmbiguities } from "./utils/resolve-ambiguities"
-
-const sleep = (ms: number) => {
-    return new Promise(resolve => setTimeout(resolve, ms))
-}
 
 export default class AutomaticLinkerPlugin extends Plugin {
     settings: AutomaticLinkerSettings
@@ -362,8 +359,14 @@ export default class AutomaticLinkerPlugin extends Plugin {
         }
     }
 
-    async onload() {
-        await this.loadSettings()
+    onload() {
+        runAsyncSafely(async () => {
+            await this.loadSettings()
+            this.initializePlugin()
+        })
+    }
+
+    private initializePlugin() {
         this.addSettingTab(new AutomaticLinkerPluginSettingsTab(this.app, this))
 
         // Load file data and build the Trie when the layout is ready.
@@ -452,7 +455,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 const { contentStart } = getFrontMatterInfo(fileContent)
                 const body = fileContent.slice(contentStart)
                 const bodyWithoutLinks = excludeLinks(body)
-                navigator.clipboard.writeText(bodyWithoutLinks)
+                await navigator.clipboard.writeText(bodyWithoutLinks)
             },
         })
 
@@ -494,7 +497,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 const activeFile = this.app.workspace.getActiveFile()
                 if (!activeFile) return
 
-                const noticeFragment = document.createDocumentFragment()
+                const noticeFragment = activeDocument.createDocumentFragment()
                 const container = noticeFragment.createEl("div")
                 container.createEl("div", { text: "AI Link Enhancer: Analyzing context..." })
                 const progress = container.createEl("progress")
@@ -559,19 +562,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
             this.originalSaveCallback = saveCallback
         }
 
-        saveCommandDefinition.checkCallback = async (checking: boolean) => {
+        saveCommandDefinition.checkCallback = (checking: boolean) => {
             if (checking) {
                 return saveCallback?.(checking)
             }
             else {
                 if (!this.settings.formatOnSave) return
-                await sleep(this.settings.formatDelayMs ?? 100)
-                await this.formatThenRunPrettierAndLinter()
+                runAsyncSafely(async () => {
+                    await sleep(this.settings.formatDelayMs ?? 100)
+                    await this.formatThenRunPrettierAndLinter()
+                })
             }
         }
     }
 
-    async onunload() {
+    onunload() {
         // Restore original save command callback
         const saveCommandDefinition = this.app?.commands?.commands?.["editor:save-file"]
         if (saveCommandDefinition && this.originalSaveCallback) {
