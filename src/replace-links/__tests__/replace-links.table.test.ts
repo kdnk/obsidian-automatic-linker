@@ -1,8 +1,13 @@
 import { describe, it, expect } from "vitest"
-import { replaceLinks } from "../replace-links"
+import { escapeLinkForMarkdownTable, replaceLinks } from "../replace-links"
 import { buildCandidateTrieForTest } from "./test-helpers"
 
 describe("table", () => {
+    it("escapes link separators only when rendering inside a markdown table", () => {
+        expect(escapeLinkForMarkdownTable("[[ns/note1|note1]]", true)).toBe("[[ns/note1\\|note1]]")
+        expect(escapeLinkForMarkdownTable("[[ns/note1|note1]]", false)).toBe("[[ns/note1|note1]]")
+    })
+
     it("escape pipe inside table", () => {
         const settings = {
             scoped: false,

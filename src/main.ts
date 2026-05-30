@@ -19,6 +19,8 @@ import {
 import { PathAndAliases } from "./path-and-aliases.types"
 import { removeMinimalIndent } from "./remove-minimal-indent"
 import {
+    defaultLinkGenerator,
+    escapeLinkForMarkdownTable,
     LinkGenerator,
     LinkGeneratorParams,
     replaceLinks,
@@ -77,11 +79,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
             if (targetFile instanceof TFile) {
                 // File exists, use Obsidian's generateMarkdownLink API
                 try {
-                    let link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", alias || "")
-                    if (isInTable && link.includes("|")) {
-                        link = link.replace(/\|/g, "\\|")
-                    }
-                    return link
+                    const link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", alias || "")
+                    return escapeLinkForMarkdownTable(link, isInTable)
                 }
                 catch (error) {
                     // Fall back to default format if API fails
@@ -89,15 +88,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 }
             }
 
-            // Fallback: use default wikilink format
-            let linkContent = linkPath
-            if (alias) {
-                linkContent = `${linkPath}|${alias}`
-            }
-            if (isInTable && linkContent.includes("|")) {
-                linkContent = linkContent.replace(/\|/g, "\\|")
-            }
-            return `[[${linkContent}]]`
+            return defaultLinkGenerator({ linkPath, sourcePath, alias, isInTable })
         }
     }
 

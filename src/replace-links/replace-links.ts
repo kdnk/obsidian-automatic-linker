@@ -346,6 +346,17 @@ const createLinkContent = (
 }
 
 // Default link generator that creates standard Obsidian wikilinks
+export const escapeLinkForMarkdownTable = (
+    link: string,
+    isInTable = false,
+): string => {
+    if (isInTable && link.includes("|")) {
+        return link.replace(/\|/g, "\\|")
+    }
+
+    return link
+}
+
 export const defaultLinkGenerator: LinkGenerator = ({
     linkPath,
     alias,
@@ -357,11 +368,7 @@ export const defaultLinkGenerator: LinkGenerator = ({
         linkContent = `${linkPath}|${alias}`
     }
 
-    if (isInTable && linkContent.includes("|")) {
-        linkContent = linkContent.replace(/\|/g, "\\|")
-    }
-
-    return `[[${linkContent}]]`
+    return escapeLinkForMarkdownTable(`[[${linkContent}]]`, isInTable)
 }
 
 // Candidate Validation
