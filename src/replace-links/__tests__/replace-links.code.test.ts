@@ -44,4 +44,47 @@ describe("ignore code", () => {
         })
         expect(result).toBe("```typescript\nexample\n```")
     })
+
+    it("unclosed code block", () => {
+        const settings = {
+            scoped: false,
+            baseDir: undefined,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "example" }, { path: "typescript" }],
+            settings,
+        })
+        const result = replaceLinks({
+            body: "```typescript\nexample",
+            linkResolverContext: {
+                filePath: "journals/2022-01-01",
+                trie,
+                candidateMap,
+            },
+            settings,
+        })
+        expect(result).toBe("```typescript\nexample")
+    })
+
+    it("unclosed code block when headings are ignored", () => {
+        const settings = {
+            scoped: false,
+            baseDir: undefined,
+            ignoreHeadings: true,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "example" }, { path: "typescript" }],
+            settings,
+        })
+        const result = replaceLinks({
+            body: "```typescript\nexample",
+            linkResolverContext: {
+                filePath: "journals/2022-01-01",
+                trie,
+                candidateMap,
+            },
+            settings,
+        })
+        expect(result).toBe("```typescript\nexample")
+    })
 })

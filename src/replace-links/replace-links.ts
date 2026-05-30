@@ -165,6 +165,58 @@ const extractLinkParts = (
     return { linkPath: canonicalPath, alias: "", hasAlias }
 }
 
+const escapeRegExp = (text: string): string =>
+    text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+const extractFencedCodeBlocks = (
+    body: string,
+): { body: string, codeBlocks: Array<{ placeholder: string, content: string }> } => {
+    if (!body.includes("```") && !body.includes("~~~")) {
+        return { body, codeBlocks: [] }
+    }
+
+    const codeBlocks: Array<{ placeholder: string, content: string }> = []
+    let result = ""
+    let cursor = 0
+    let codeBlockIndex = 0
+
+    const openingFencePattern = /^ {0,3}(`{3,}|~{3,})[^\r\n]*(?:\r?\n|$)/gm
+    let openingMatch: RegExpExecArray | null
+
+    while ((openingMatch = openingFencePattern.exec(body)) !== null) {
+        const start = openingMatch.index
+        if (start < cursor) {
+            continue
+        }
+
+        const openingFence = openingMatch[1]
+        const fenceChar = openingFence[0]
+        const fenceLength = openingFence.length
+        const closingFencePattern = new RegExp(
+            `^ {0,3}${escapeRegExp(fenceChar)}{${fenceLength},}[ \\t]*(?:\\r?\\n|$)`,
+            "gm",
+        )
+        closingFencePattern.lastIndex = openingMatch.index + openingMatch[0].length
+        const closingMatch = closingFencePattern.exec(body)
+        const end = closingMatch
+            ? closingMatch.index + closingMatch[0].length
+            : body.length
+
+        const placeholder = `__CODE_BLOCK_${codeBlockIndex}__`
+        codeBlocks.push({
+            placeholder,
+            content: body.slice(start, end),
+        })
+        result += body.slice(cursor, start) + placeholder
+        cursor = end
+        codeBlockIndex++
+        openingFencePattern.lastIndex = end
+    }
+
+    result += body.slice(cursor)
+    return { body: result, codeBlocks }
+}
+
 // Self-linking Prevention
 const isSelfLink = (
     candidateData: CandidateData,
@@ -945,14 +997,17 @@ export const replaceLinks = ({
         })
     }
 
+    // Extract and protect fenced code blocks before any other block-level rules.
+    const { body: bodyAfterCodeBlocks, codeBlocks } = extractFencedCodeBlocks(body)
+
     // Extract and protect headings first
     const headingPattern = /^#{1,6}\s+.*$/gm
     const headings: Array<{ placeholder: string, content: string }> = []
     let headingIndex = 0
 
-    let bodyAfterHeadings = body
+    let bodyAfterHeadings = bodyAfterCodeBlocks
     if (settings.ignoreHeadings) {
-        bodyAfterHeadings = body.replace(headingPattern, (match) => {
+        bodyAfterHeadings = bodyAfterCodeBlocks.replace(headingPattern, (match) => {
             const placeholder = `__HEADING_${headingIndex}__`
             headings.push({ placeholder, content: match })
             headingIndex++
@@ -1041,6 +1096,11 @@ export const replaceLinks = ({
 
     // Restore headings
     for (const { placeholder, content } of headings) {
+        resultBody = resultBody.replace(placeholder, content)
+    }
+
+    // Restore fenced code blocks
+    for (const { placeholder, content } of codeBlocks) {
         resultBody = resultBody.replace(placeholder, content)
     }
 
