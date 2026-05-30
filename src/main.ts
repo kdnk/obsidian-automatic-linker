@@ -77,7 +77,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
             if (targetFile instanceof TFile) {
                 // File exists, use Obsidian's generateMarkdownLink API
                 try {
-                    const link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", alias || "")
+                    let link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", alias || "")
+                    if (isInTable && link.includes("|")) {
+                        link = link.replace(/\|/g, "\\|")
+                    }
                     return link
                 }
                 catch (error) {
