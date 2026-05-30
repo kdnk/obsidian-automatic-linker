@@ -16,6 +16,7 @@ export interface ReplaceLinksSettings {
     preventSelfLinking?: boolean
     removeAliasInDirs?: string[]
     ignoreHeadings?: boolean
+    ignoreMarkdownTables?: boolean
 }
 
 export interface LinkGeneratorParams {
@@ -922,6 +923,28 @@ export const replaceLinks = ({
         }
     }
 
+    const processTableAwareTextSegment = (text: string): string => {
+        if (!settings.ignoreMarkdownTables) {
+            return processTextSegment(text)
+        }
+
+        return text.replace(/[^\n]*(?:\n|$)/g, (line) => {
+            if (line === "") {
+                return line
+            }
+
+            const lineContent = line.endsWith("\n")
+                ? line.slice(0, -1)
+                : line
+
+            if (isMarkdownTableLine(lineContent)) {
+                return line
+            }
+
+            return processTextSegment(line)
+        })
+    }
+
     // Extract and protect headings first
     const headingPattern = /^#{1,6}\s+.*$/gm
     const headings: Array<{ placeholder: string, content: string }> = []
@@ -964,10 +987,16 @@ export const replaceLinks = ({
     ) {
         const mIndex = match.index
         const segment = bodyWithPlaceholders.slice(lastIndex, mIndex)
-        resultBody += processTextSegment(segment)
+        resultBody += processTableAwareTextSegment(segment)
 
         const fullMatch = match[0]
-        if (resolvedAmbiguities?.has(fullMatch)) {
+        if (
+            settings.ignoreMarkdownTables
+            && isIndexInsideMarkdownTable(bodyWithPlaceholders, mIndex)
+        ) {
+            resultBody += fullMatch
+        }
+        else if (resolvedAmbiguities?.has(fullMatch)) {
             // Existing link replacement
             const resolvedPath = resolvedAmbiguities.get(fullMatch)!
             const { linkPath, alias: resolvedAlias } = extractLinkParts(resolvedPath)
@@ -1003,7 +1032,7 @@ export const replaceLinks = ({
     }
 
     // Process the remaining text
-    resultBody += processTextSegment(bodyWithPlaceholders.slice(lastIndex))
+    resultBody += processTableAwareTextSegment(bodyWithPlaceholders.slice(lastIndex))
 
     // Restore callouts
     for (const { placeholder, content } of callouts) {

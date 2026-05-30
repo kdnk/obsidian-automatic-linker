@@ -19,6 +19,7 @@ export type AutomaticLinkerSettings = {
     excludeDirsFromAutoLinking: string[] // Optional: List of directories to exclude from auto-linking
     preventSelfLinking: boolean // Prevent linking text to its own file
     removeAliasInDirs: string[] // Remove aliases for links in specified directories
+    ignoreMarkdownTables: boolean // Ignore Markdown table rows when adding links
     runLinterAfterFormatting: boolean // Run Obsidian Linter after automatic linker formatting
     runPrettierAfterFormatting: boolean // Run Prettier after automatic linker formatting
     formatDelayMs: number // Delay in milliseconds before running linter after formatting
@@ -49,6 +50,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     excludeDirsFromAutoLinking: [], // Default: no excluded directories
     preventSelfLinking: false, // Default: allow self-linking (backward compatibility)
     removeAliasInDirs: [], // Default: no directories for alias removal
+    ignoreMarkdownTables: false, // Default: add links inside Markdown tables
     runLinterAfterFormatting: false, // Default: do not run linter after formatting
     runPrettierAfterFormatting: false, // Run Prettier after automatic linker formatting
     formatDelayMs: 1, // Default: 1ms delay before running linter

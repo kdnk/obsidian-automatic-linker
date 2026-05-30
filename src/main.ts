@@ -157,6 +157,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 preventSelfLinking: this.settings.preventSelfLinking,
                 removeAliasInDirs: this.settings.removeAliasInDirs,
                 ignoreHeadings: this.settings.ignoreHeadings,
+                ignoreMarkdownTables: this.settings.ignoreMarkdownTables,
             },
             linkGenerator,
         })
@@ -275,6 +276,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 preventSelfLinking: this.settings.preventSelfLinking,
                 removeAliasInDirs: this.settings.removeAliasInDirs,
                 ignoreHeadings: this.settings.ignoreHeadings,
+                ignoreMarkdownTables: this.settings.ignoreMarkdownTables,
             },
             linkGenerator,
         })
