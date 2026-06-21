@@ -132,6 +132,7 @@ const collectFencedCodeRanges = (text: string): ProtectedRange[] => {
 const buildProtectedPattern = (protectUrls: boolean): RegExp => {
     const parts = [
         "`[^`]*`",
+        "<(?:https?:\\/\\/|linear:\\/\\/)[^>]+>",
         "\\[\\[[^\\]]+\\]\\]",
         "\\[[^\\]]+\\]\\([^)]+\\)",
         "\\[[^\\]]+\\]",
@@ -196,11 +197,13 @@ export const segmentMarkdown = (
 ): MarkdownSegment[] => {
     const mayContainProtectedMarkdown = text.includes("`")
         || text.includes("~")
+        || text.includes("<")
         || text.includes("[")
         || (options.protectHeadings && text.includes("#"))
         || (options.protectCallouts && text.includes(">"))
         || (options.protectTableRows && text.includes("|"))
-        || (options.protectUrls && text.includes("http"))
+        || (options.protectUrls
+            && (text.includes("http") || text.includes("linear://")))
 
     if (!mayContainProtectedMarkdown) {
         return [{

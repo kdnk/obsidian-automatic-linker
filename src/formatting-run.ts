@@ -4,10 +4,7 @@ import {
     replaceLinks,
 } from "./replace-links/replace-links"
 import { replaceUrlWithTitle } from "./replace-url-with-title"
-import { formatGitHubURL } from "./replace-urls/github"
-import { formatJiraURL } from "./replace-urls/jira"
-import { formatLinearURL } from "./replace-urls/linear"
-import { replaceURLs } from "./replace-urls/replace-urls"
+import { formatURLsInText } from "./replace-urls/url-formatting"
 import {
     AutomaticLinkerSettings,
     projectReplaceLinksSettings,
@@ -36,21 +33,11 @@ export { projectReplaceLinksSettings as toReplaceLinksSettings } from "./setting
 const formatMarkdownURLs = (
     text: string,
     settings: AutomaticLinkerSettings,
-): string => {
-    let updatedText = text
-
-    if (settings.formatGitHubURLs) {
-        updatedText = replaceURLs(updatedText, settings, formatGitHubURL)
-    }
-    if (settings.formatJiraURLs) {
-        updatedText = replaceURLs(updatedText, settings, formatJiraURL)
-    }
-    if (settings.formatLinearURLs) {
-        updatedText = replaceURLs(updatedText, settings, formatLinearURL)
-    }
-
-    return updatedText
-}
+): string =>
+    formatURLsInText({
+        text,
+        settings,
+    })
 
 export const formatMarkdownBody = ({
     body,

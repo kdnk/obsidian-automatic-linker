@@ -1,6 +1,4 @@
 import { AutomaticLinkerSettings } from "../settings/settings-info"
-import { formatJiraURL } from "./jira"
-import { formatLinearURL } from "./linear"
 
 type GitHubURLInfo = {
     owner: string
@@ -123,32 +121,4 @@ function isGitHubURL(url: URL, enterpriseURLs: string[]): boolean {
 function isPullRequestOrIssueURL(url: URL): boolean {
     const path = url.pathname.toLowerCase()
     return path.includes("/pull/") || path.includes("/issues/")
-}
-
-export function formatURL(
-    url: string,
-    settings: AutomaticLinkerSettings,
-): string {
-    if (settings.formatGitHubURLs) {
-        const formattedGitHubURL = formatGitHubURL(url, settings)
-        if (formattedGitHubURL !== url) {
-            return formattedGitHubURL
-        }
-    }
-
-    if (settings.formatJiraURLs) {
-        const formattedJiraURL = formatJiraURL(url, settings)
-        if (formattedJiraURL !== url) {
-            return formattedJiraURL
-        }
-    }
-
-    if (settings.formatLinearURLs) {
-        const formattedLinearURL = formatLinearURL(url, settings)
-        if (formattedLinearURL !== url) {
-            return formattedLinearURL
-        }
-    }
-
-    return url
 }
