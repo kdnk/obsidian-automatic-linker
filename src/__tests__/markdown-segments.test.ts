@@ -74,12 +74,12 @@ describe("mapMarkdownProse", () => {
         expect(result).toBe("TS `TypeScript` [[TypeScript]]")
     })
 
-    it("treats angle-bracket autolinks as protected segments", () => {
+    it("does not globally protect angle-bracket autolinks", () => {
         const result = mapMarkdownProse(
             "<https://example.com> https://example.com",
             text => text.replace(/https:\/\/example\.com/g, "URL"),
         )
 
-        expect(result).toBe("<https://example.com> URL")
+        expect(result).toBe("<URL> URL")
     })
 })

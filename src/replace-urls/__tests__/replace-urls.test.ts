@@ -14,8 +14,7 @@ describe("replace-urls", () => {
     }
 
     it("should replace GitHub URLs", () => {
-        const input
-            = "[[github/kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)"
+        const input = "https://github.com/kdnk/obsidian-automatic-linker"
         const expected
             = "[[github/kdnk/obsidian-automatic-linker]] [🔗](https://github.com/kdnk/obsidian-automatic-linker)"
         expect(replaceURLs(input, baseSettings, formatGitHubURL)).toBe(
@@ -36,6 +35,26 @@ describe("replace-urls", () => {
                     formatLinearURLs: true,
                 },
                 formatLinearURL,
+            ),
+        ).toBe(expected)
+    })
+
+    it("keeps raw helper semantics inside Markdown links and angle autolinks", () => {
+        const input = [
+            "[label](https://github.com/kdnk/obsidian-automatic-linker)",
+            "<linear://workspace/issue/ACME-123>",
+        ].join(" ")
+
+        const expected = [
+            "[label](converted:https://github.com/kdnk/obsidian-automatic-linker)",
+            "<converted:linear://workspace/issue/ACME-123>",
+        ].join(" ")
+
+        expect(
+            replaceURLs(
+                input,
+                baseSettings,
+                url => `converted:${url}`,
             ),
         ).toBe(expected)
     })

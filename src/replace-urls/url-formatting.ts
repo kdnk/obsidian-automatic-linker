@@ -26,6 +26,48 @@ const formatJiraURLIfEnabled: UrlFormatter = (url, settings) =>
 const formatLinearURLIfEnabled: UrlFormatter = (url, settings) =>
     settings.formatLinearURLs ? formatLinearURL(url, settings) : url
 
+const TRAILING_PUNCTUATION = new Set([".", ",", ";", "!", "?", "]", "}"])
+
+const countCharacter = (text: string, character: string): number => {
+    let count = 0
+
+    for (const currentCharacter of text) {
+        if (currentCharacter === character) {
+            count += 1
+        }
+    }
+
+    return count
+}
+
+const splitTrailingBoundary = (match: string): { url: string, suffix: string } => {
+    let url = match
+    let suffix = ""
+
+    while (url.length > 0) {
+        const lastCharacter = url[url.length - 1]
+
+        if (TRAILING_PUNCTUATION.has(lastCharacter)) {
+            suffix = lastCharacter + suffix
+            url = url.slice(0, -1)
+            continue
+        }
+
+        if (
+            lastCharacter === ")"
+            && countCharacter(url, "(") < countCharacter(url, ")")
+        ) {
+            suffix = lastCharacter + suffix
+            url = url.slice(0, -1)
+            continue
+        }
+
+        break
+    }
+
+    return { url, suffix }
+}
+
 export const DEFAULT_URL_FORMATTERS: readonly UrlFormatter[] = [
     formatGitHubURLIfEnabled,
     formatJiraURLIfEnabled,
@@ -54,8 +96,19 @@ export const formatURLsInText = ({
 }: FormatURLsInTextOptions): string =>
     mapMarkdownProse(
         text,
-        prose =>
-            prose.replace(URL_PATTERN, match =>
-                formatURLWithAdapters(match, settings, formatters),
-            ),
+        (prose, segment) =>
+            prose.replace(URL_PATTERN, (match, offset) => {
+                const precedingCharacter = offset > 0
+                    ? segment.text[offset - 1]
+                    : undefined
+                const followingCharacter = segment.text[offset + match.length]
+
+                if (precedingCharacter === "<" && followingCharacter === ">") {
+                    return match
+                }
+
+                const { url, suffix } = splitTrailingBoundary(match)
+
+                return formatURLWithAdapters(url, settings, formatters) + suffix
+            }),
     )

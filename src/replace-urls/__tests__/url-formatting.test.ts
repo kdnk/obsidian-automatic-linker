@@ -60,6 +60,18 @@ describe("formatURLsInText", () => {
         ].join("\n"))
     })
 
+    it("does not format GitHub URLs wrapped in angle brackets", () => {
+        const result = formatURLsInText({
+            text: "<https://github.com/owner/repo/issues/123>",
+            settings: {
+                ...DEFAULT_SETTINGS,
+                formatGitHubURLs: true,
+            },
+        })
+
+        expect(result).toBe("<https://github.com/owner/repo/issues/123>")
+    })
+
     it("leaves disabled adapter URLs unchanged", () => {
         const result = formatURLsInText({
             text: "https://linear.app/team/issue/BUG-789/title",
@@ -70,6 +82,35 @@ describe("formatURLsInText", () => {
         })
 
         expect(result).toBe("https://linear.app/team/issue/BUG-789/title")
+    })
+
+    it("leaves Jira URLs with query strings unchanged", () => {
+        const result = formatURLsInText({
+            text: "https://jira.company.com/browse/ABC-456?focusedCommentId=12345",
+            settings: {
+                ...DEFAULT_SETTINGS,
+                jiraURLs: ["jira.company.com"],
+                formatJiraURLs: true,
+            },
+        })
+
+        expect(result).toBe(
+            "https://jira.company.com/browse/ABC-456?focusedCommentId=12345",
+        )
+    })
+
+    it("keeps closing parens and trailing punctuation outside formatted URLs", () => {
+        const result = formatURLsInText({
+            text: "See (https://github.com/owner/repo/issues/123).",
+            settings: {
+                ...DEFAULT_SETTINGS,
+                formatGitHubURLs: true,
+            },
+        })
+
+        expect(result).toBe(
+            "See ([[github/owner/repo/issues/123]] [🔗](https://github.com/owner/repo/issues/123)).",
+        )
     })
 
     it("does not format URLs inside protected Markdown segments", () => {
