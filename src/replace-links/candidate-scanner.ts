@@ -672,7 +672,7 @@ const collectUnlinkedOccurrences = ({
                 }
 
                 if (shouldSkipKoreanTrieOccurrence(text, i, candidate)) {
-                    i += candidate.length
+                    i += 1
                     continue
                 }
 

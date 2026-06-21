@@ -217,8 +217,8 @@ meeting`,
         ])
     })
 
-    it("does not emit Korean particle forms that replaceLinks currently skips", () => {
-        const { candidateMap, trie } = buildCandidateTrieForTest({
+    it("skips Korean particle hits but still finds overlapping follow-on candidates", () => {
+        const isolatedFixture = buildCandidateTrieForTest({
             files: [
                 { path: "work/문서" },
                 { path: "private/문서" },
@@ -229,24 +229,48 @@ meeting`,
                 ignoreCase: true,
             },
         })
+        const isolatedOccurrences = scanCandidateOccurrences({
+            text: "문서는",
+            filePath: "notes/today",
+            trie: isolatedFixture.trie,
+            candidateMap: isolatedFixture.candidateMap,
+            settings: { ignoreCase: true, proximityBasedLinking: true },
+        })
 
-        const occurrences = scanCandidateOccurrences({
-            text: "문서는 문서은 문서이다",
+        expect(isolatedOccurrences).toEqual([])
+
+        const overlappingFixture = buildCandidateTrieForTest({
+            files: [
+                { path: "work/문서" },
+                { path: "private/문서" },
+                { path: "work/서는" },
+                { path: "private/서는" },
+            ],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+        const { candidateMap, trie } = overlappingFixture
+
+        const overlappingOccurrences = scanCandidateOccurrences({
+            text: "문서는",
             filePath: "notes/today",
             trie,
             candidateMap,
             settings: { ignoreCase: true, proximityBasedLinking: true },
         })
 
-        expect(occurrences.map(o => ({
+        expect(overlappingOccurrences.map(o => ({
             text: o.text,
             start: o.start,
             end: o.end,
         }))).toEqual([
             {
-                text: "문서",
-                start: 8,
-                end: 10,
+                text: "서는",
+                start: 1,
+                end: 3,
             },
         ])
     })

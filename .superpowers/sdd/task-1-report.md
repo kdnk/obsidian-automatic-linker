@@ -288,3 +288,56 @@ Results:
 - `npm run test -- --reporter=dot`: passed, `328/328` tests across `38/38` files
 - `npm run tsc`: passed
 - `npm run lint`: passed
+
+## Review Fix 4
+
+### Scope
+
+Fixed the remaining Task 1 review finding for Korean particle cursor advancement:
+
+- `scanCandidateOccurrences()` now advances by one codepoint after skipping a Korean particle hit, instead of consuming the full matched candidate length
+- added a regression proving an isolated `문서는` hit is still omitted while an overlapping follow-on candidate at index `1` is still discovered
+
+No AGENTS.md changes were needed.
+
+### TDD Evidence
+
+#### RED
+
+Command:
+
+```bash
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts
+```
+
+Result:
+
+- Failed as expected
+- Failure: the scanner skipped `문서` in `문서는` by `candidate.length`, so it never reached the overlapping `서는` candidate at index `1`
+
+#### GREEN
+
+Commands:
+
+```bash
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts src/replace-links/__tests__/ai-disambiguation.test.ts src/utils/__tests__/resolve-ambiguities.test.ts src/replace-links/__tests__/prev.test.ts
+npm run test -- --reporter=dot
+npm run tsc
+npm run lint
+```
+
+Results:
+
+- `src/replace-links/__tests__/candidate-scanner.test.ts`: passed `8/8`
+- focused scanner/AI/CJK suite: passed `60/60` across `4/4` files
+- initial full-suite run: failed once on the namespace-resolution performance check at `320.1955ms` versus the `300ms` threshold
+- rerun of `npm run test -- --reporter=dot`: passed, `328/328` tests across `38/38` files
+- `npm run tsc`: passed
+- `npm run lint`: passed
+
+### Implementation Summary
+
+- Changed the Korean particle skip branch in `scanCandidateOccurrences()` to advance by one codepoint, matching the existing cursor behavior in `replaceLinks()`
+- Kept the isolated particle omission intact for `문서는` when no overlapping follow-on candidate is present
+- Preserved public interfaces unchanged
