@@ -11,10 +11,11 @@ export const resolveAmbiguities = async (
     candidateMap: Map<string, CandidateData>,
     trie: TrieNode,
     settings: AutomaticLinkerSettings,
+    filePath = "",
 ): Promise<Map<string, string>> => {
     const occurrences = scanCandidateOccurrences({
         text,
-        filePath: "",
+        filePath,
         trie,
         candidateMap,
         settings,

@@ -153,4 +153,40 @@ meeting`
         )
         expect(result.size).toBe(0)
     })
+
+    it("should not request AI for self-link candidates when the file path matches", async () => {
+        const selfLinkCandidateMap = new Map<string, CandidateData>([
+            [
+                "meeting",
+                {
+                    candidates: [
+                        { canonical: "work/meeting", scoped: false, namespace: "work" },
+                        { canonical: "private/meeting", scoped: false, namespace: "private" },
+                    ],
+                },
+            ],
+        ])
+        const selfLinkTrie: TrieNode = buildTrie(["meeting"], true)
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockClear()
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(new Map())
+
+        const result = await resolveAmbiguities(
+            "meeting",
+            selfLinkCandidateMap,
+            selfLinkTrie,
+            {
+                ...mockSettings,
+                preventSelfLinking: true,
+            },
+            "work/meeting",
+        )
+
+        expect(aiClient.resolveAmbiguitiesBatch).toHaveBeenCalledWith(
+            expect.objectContaining({
+                preventSelfLinking: true,
+            }),
+            [],
+        )
+        expect(result.size).toBe(0)
+    })
 })

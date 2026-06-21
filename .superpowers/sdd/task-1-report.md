@@ -289,6 +289,78 @@ Results:
 - `npm run tsc`: passed
 - `npm run lint`: passed
 
+## Review Fix 5
+
+### Scope
+
+Fixed the remaining AI ambiguity-path review finding:
+
+- threaded the current file path into `resolveAmbiguities()` with a safe default so existing callers stay compatible
+- passed the active markdown file path without `.md` from `src/main.ts`
+- added a regression proving `resolveAmbiguities()` skips self-link candidates when `preventSelfLinking` is enabled and the current file matches the candidate
+
+No AGENTS.md changes were needed.
+
+### TDD Evidence
+
+#### RED
+
+Command:
+
+```bash
+npx vitest run src/utils/__tests__/resolve-ambiguities.test.ts
+```
+
+Result:
+
+- Failed as expected on the new self-link regression
+- The AI request still contained `meeting` because `resolveAmbiguities()` was scanning with `filePath: ""`
+
+#### GREEN
+
+Commands:
+
+```bash
+npx vitest run src/utils/__tests__/resolve-ambiguities.test.ts
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts
+npx vitest run src/replace-links/__tests__/ai-disambiguation.test.ts src/replace-links/__tests__/replace-links.prevent-self-linking.test.ts
+```
+
+Results:
+
+- `src/utils/__tests__/resolve-ambiguities.test.ts`: passed `6/6`
+- `src/replace-links/__tests__/candidate-scanner.test.ts`: passed `8/8`
+- `src/replace-links/__tests__/ai-disambiguation.test.ts` and `src/replace-links/__tests__/replace-links.prevent-self-linking.test.ts`: passed `13/13`
+
+### Full Verification
+
+Commands:
+
+```bash
+npm run test -- --reporter=dot
+npm run tsc
+npm run lint
+```
+
+Results:
+
+- First `npm run test -- --reporter=dot` run failed once on the existing namespace-resolution performance threshold: `364.82662500000004ms` vs the `300ms` limit
+- Reran `npm run test -- --reporter=dot` and it passed: `329/329` tests across `38/38` files
+- `npm run tsc`: passed
+- `npm run lint`: passed
+
+### Implementation Summary
+
+- Added an optional `filePath` parameter to `resolveAmbiguities()` and threaded it into `scanCandidateOccurrences()`
+- Passed `activeFile.path.replace(/\.md$/, "")` from the AI command in `src/main.ts`
+- Kept scanner public interfaces unchanged
+
+### Files Changed
+
+- `src/utils/resolve-ambiguities.ts`
+- `src/main.ts`
+- `src/utils/__tests__/resolve-ambiguities.test.ts`
+
 ## Review Fix 4
 
 ### Scope

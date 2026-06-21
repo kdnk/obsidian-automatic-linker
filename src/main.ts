@@ -531,6 +531,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                         this.candidateMap,
                         this.trie,
                         this.settings,
+                        activeFile.path.replace(/\.md$/, ""),
                     )
 
                     const resultBody = replaceLinks({
