@@ -497,6 +497,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                         this.trie,
                         this.settings,
                         normalizedActiveFilePath,
+                        baseDir,
                     )
 
                     const resultBody = replaceLinks({

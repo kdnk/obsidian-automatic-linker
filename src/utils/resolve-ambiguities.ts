@@ -12,13 +12,17 @@ export const resolveAmbiguities = async (
     trie: TrieNode,
     settings: AutomaticLinkerSettings,
     filePath = "",
+    baseDir?: string,
 ): Promise<Map<string, string>> => {
+    const scannerSettings = baseDir === undefined
+        ? settings
+        : { ...settings, baseDir }
     const occurrences = scanCandidateOccurrences({
         text,
         filePath,
         trie,
         candidateMap,
-        settings,
+        settings: scannerSettings,
     })
 
     const requests: AIResolveRequest[] = occurrences

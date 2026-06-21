@@ -189,4 +189,78 @@ meeting`
         )
         expect(result.size).toBe(0)
     })
+
+    it("uses baseDir when filtering scoped candidates for AI requests", async () => {
+        const scopedCandidateMap = new Map<string, CandidateData>([
+            [
+                "internal",
+                {
+                    candidates: [
+                        { canonical: "pages/team-a/internal", scoped: true, namespace: "team-a" },
+                        { canonical: "pages/team-a/archive/internal", scoped: true, namespace: "team-a" },
+                    ],
+                },
+            ],
+        ])
+        const scopedTrie: TrieNode = buildTrie(["internal"], true)
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockClear()
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(new Map())
+
+        await resolveAmbiguities(
+            "internal",
+            scopedCandidateMap,
+            scopedTrie,
+            {
+                ...mockSettings,
+                proximityBasedLinking: true,
+            },
+            "pages/team-a/today",
+            "pages",
+        )
+
+        const [settingsArg, requestsArg] = vi.mocked(aiClient.resolveAmbiguitiesBatch).mock.calls[0]
+        expect(settingsArg).toEqual(expect.objectContaining({
+            proximityBasedLinking: true,
+        }))
+        expect(settingsArg).not.toHaveProperty("baseDir")
+        expect(requestsArg).toEqual([
+            expect.objectContaining({
+                word: "internal",
+                candidates: [
+                    "pages/team-a/internal",
+                    "pages/team-a/archive/internal",
+                ],
+            }),
+        ])
+    })
+
+    it("does not request AI for candidates inside raw Linear URLs", async () => {
+        const linearCandidateMap = new Map<string, CandidateData>([
+            [
+                "linear",
+                {
+                    candidates: [
+                        { canonical: "work/linear", scoped: false, namespace: "work" },
+                        { canonical: "private/linear", scoped: false, namespace: "private" },
+                    ],
+                },
+            ],
+        ])
+        const linearTrie: TrieNode = buildTrie(["linear"], true)
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockClear()
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(new Map())
+
+        const result = await resolveAmbiguities(
+            "Open linear://issue/TEAM-123",
+            linearCandidateMap,
+            linearTrie,
+            mockSettings,
+        )
+
+        expect(aiClient.resolveAmbiguitiesBatch).toHaveBeenCalledWith(
+            mockSettings,
+            [],
+        )
+        expect(result.size).toBe(0)
+    })
 })

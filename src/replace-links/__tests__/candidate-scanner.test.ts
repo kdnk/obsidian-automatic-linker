@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import { buildTrie, CandidateData } from "../../trie"
 import { buildCandidateTrieForTest } from "./test-helpers"
+import { replaceLinks } from "../replace-links"
 import {
     getOccurrenceContext,
     scanCandidateOccurrences,
@@ -172,6 +173,103 @@ describe("scanCandidateOccurrences", () => {
         })
 
         expect(occurrences).toEqual([])
+    })
+
+    it("matches replaceLinks scoped namespace behavior when baseDir is set", () => {
+        const settings = {
+            scoped: true,
+            baseDir: "pages",
+            ignoreCase: true,
+            proximityBasedLinking: true,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [
+                { path: "pages/team-a/internal" },
+                { path: "pages/team-a/archive/internal" },
+            ],
+            settings,
+        })
+
+        const occurrences = scanCandidateOccurrences({
+            text: "internal",
+            filePath: "pages/team-a/today",
+            trie,
+            candidateMap,
+            settings,
+        })
+        const replaced = replaceLinks({
+            body: "internal",
+            linkResolverContext: {
+                filePath: "pages/team-a/today",
+                trie,
+                candidateMap,
+            },
+            settings,
+        })
+
+        expect(occurrences.map(o => ({
+            text: o.text,
+            candidates: o.candidateData.candidates.map(c => c.canonical),
+        }))).toEqual([
+            {
+                text: "internal",
+                candidates: [
+                    "pages/team-a/internal",
+                    "pages/team-a/archive/internal",
+                ],
+            },
+        ])
+        expect(replaced).toBe("[[team-a/archive/internal|internal]]")
+    })
+
+    it("matches replaceLinks by protecting raw Linear URLs", () => {
+        const settings = {
+            scoped: false,
+            baseDir: undefined,
+            ignoreCase: true,
+            proximityBasedLinking: true,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [
+                { path: "work/linear" },
+                { path: "private/linear" },
+            ],
+            settings,
+        })
+        const body = "Open linear://issue/TEAM-123 then linear"
+        const expectedStart = body.lastIndexOf("linear")
+
+        const occurrences = scanCandidateOccurrences({
+            text: body,
+            filePath: "notes/today",
+            trie,
+            candidateMap,
+            settings,
+        })
+        const replaced = replaceLinks({
+            body,
+            linkResolverContext: {
+                filePath: "notes/today",
+                trie,
+                candidateMap,
+            },
+            settings,
+        })
+
+        expect(occurrences.map(o => ({
+            text: o.text,
+            start: o.start,
+            end: o.end,
+        }))).toEqual([
+            {
+                text: "linear",
+                start: expectedStart,
+                end: expectedStart + "linear".length,
+            },
+        ])
+        expect(replaced).toBe(
+            "Open linear://issue/TEAM-123 then [[private/linear|linear]]",
+        )
     })
 
     it("skips fenced code blocks, callouts, and ignored headings", () => {

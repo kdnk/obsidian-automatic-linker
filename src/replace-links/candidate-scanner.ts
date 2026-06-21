@@ -1,4 +1,5 @@
 import { CandidateData, getTopLevelDirectoryName, TrieNode } from "../trie"
+import { RAW_URL_AT_START_PATTERN, RAW_URL_SOURCE } from "../markdown-protection"
 import type { ReplaceLinksSettings } from "./replace-links"
 
 export type CandidateOccurrenceKind = "unlinked" | "existing-wikilink"
@@ -10,8 +11,14 @@ export interface CandidateOccurrence {
     text: string
     candidateKey: string
     candidateData: CandidateData
+    replacementCandidateData?: CandidateData
     isInTable: boolean
 }
+
+export type UnlinkedCandidateScanResult
+    = | { action: "match", occurrence: CandidateOccurrence }
+        | { action: "skip", end: number }
+        | null
 
 export interface ScanCandidateOccurrencesOptions {
     text: string
@@ -22,14 +29,17 @@ export interface ScanCandidateOccurrencesOptions {
 }
 
 export const REGEX_PATTERNS = {
-    PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[([^\]]+)\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
+    PROTECTED: new RegExp(
+        `(\`\`\`[\\s\\S]*?\`\`\`|\`[^\`]*\`|\\[\\[([^\\]]+)\\]\\]|\\[[^\\]]+\\]\\([^)]+\\)|\\[[^\\]]+\\]|${RAW_URL_SOURCE})`,
+        "g",
+    ),
     DATE_FORMAT: /^\d{4}-\d{2}-\d{2}$/,
     MONTH_NOTE: /^[0-9]{1,2}$/,
     CJK: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u,
     CJK_CANDIDATE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u,
     KOREAN: /^[\p{Script=Hangul}]+$/u,
     JAPANESE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u,
-    URL: /^(https?:\/\/[^\s]+)/,
+    URL: RAW_URL_AT_START_PATTERN,
     PROTECTED_LINK: /^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/,
     KOREAN_SUFFIX: /^(이다\.?)/,
     KOREAN_PARTICLES: /^(는|은)/,
@@ -498,7 +508,7 @@ const collectFallbackOccurrence = ({
     filePath: string
     currentNamespace: string
     settings: ReplaceLinksSettings
-}): CandidateOccurrence | null => {
+}): UnlinkedCandidateScanResult => {
     const prevChar = text[startIndex - 1]
     if (!isWordBoundary(prevChar)) {
         return null
@@ -579,10 +589,6 @@ const collectFallbackOccurrence = ({
         return null
     }
 
-    if (isSelfLink(candidateData, filePath, settings)) {
-        return null
-    }
-
     const bestCandidateResult = filteredCandidates.length > 1
         ? findBestCandidateInSameNamespace(filteredCandidates, filePath, settings)
         : filteredCandidates[0]
@@ -590,14 +596,25 @@ const collectFallbackOccurrence = ({
         return null
     }
 
+    if (isSelfLink(bestCandidateResult[1], filePath, settings)) {
+        return {
+            action: "skip",
+            end: startIndex + longestMatch.length,
+        }
+    }
+
     return {
-        kind: "unlinked",
-        start: startIndex,
-        end: startIndex + longestMatch.length,
-        text: longestMatch.word,
-        candidateKey: longestMatch.key,
-        candidateData,
-        isInTable: isIndexInsideMarkdownTable(text, startIndex),
+        action: "match",
+        occurrence: {
+            kind: "unlinked",
+            start: startIndex,
+            end: startIndex + longestMatch.length,
+            text: longestMatch.word,
+            candidateKey: longestMatch.key,
+            candidateData,
+            replacementCandidateData: bestCandidateResult[1],
+            isInTable: isIndexInsideMarkdownTable(text, startIndex),
+        },
     }
 }
 
@@ -612,6 +629,152 @@ const shouldSkipKoreanTrieOccurrence = (
 
     const remaining = text.slice(startIndex + candidate.length)
     return REGEX_PATTERNS.KOREAN_PARTICLES.test(remaining)
+}
+
+export const scanUnlinkedCandidateAt = ({
+    text,
+    startIndex,
+    filePath,
+    trie,
+    candidateMap,
+    fallbackIndex,
+    currentNamespace,
+    settings,
+}: {
+    text: string
+    startIndex: number
+    filePath: string
+    trie: TrieNode
+    candidateMap: Map<string, CandidateData>
+    fallbackIndex: Map<string, Array<[string, CandidateData]>>
+    currentNamespace: string
+    settings: ReplaceLinksSettings
+}): UnlinkedCandidateScanResult => {
+    if (
+        (text[startIndex] === "h" && text.slice(startIndex, startIndex + 4) === "http")
+        || (text[startIndex] === "l" && text.slice(startIndex, startIndex + 9) === "linear://")
+    ) {
+        const urlMatch = text.slice(startIndex).match(REGEX_PATTERNS.URL)
+        if (urlMatch) {
+            return {
+                action: "skip",
+                end: startIndex + urlMatch[0].length,
+            }
+        }
+    }
+
+    let node = trie
+    let lastCandidate: { candidate: string, length: number } | null = null
+    let j = startIndex
+    let candidateBuilder = ""
+
+    while (j < text.length) {
+        const ch = text[j]
+        let chLower = settings.ignoreCase ? ch.toLowerCase() : ch
+        if (settings.matchSentenceCase && !settings.ignoreCase && j === startIndex && isSentenceStart(text, startIndex)) {
+            chLower = ch.toLowerCase()
+        }
+        candidateBuilder += ch
+
+        const child = node.children.get(chLower)
+        if (!child) break
+
+        node = child
+        if (node.candidate) {
+            const candidateIsCjk = isCjkCandidate(candidateBuilder)
+            if (candidateIsCjk || isWordBoundary(text[j + 1])) {
+                lastCandidate = {
+                    candidate: node.candidate,
+                    length: j - startIndex + 1,
+                }
+            }
+        }
+        j++
+    }
+
+    if (lastCandidate) {
+        const candidate = candidateBuilder.slice(0, lastCandidate.length)
+
+        if (shouldSkipCandidate(candidate, settings)) {
+            return {
+                action: "skip",
+                end: startIndex + lastCandidate.length,
+            }
+        }
+
+        const trieCandidateKey = lastCandidate.candidate
+        const candidateData = candidateMap.get(trieCandidateKey)
+
+        if (candidateData) {
+            if (isSelfLink(candidateData, filePath, settings)) {
+                return {
+                    action: "skip",
+                    end: startIndex + candidate.length,
+                }
+            }
+
+            if (shouldSkipKoreanTrieOccurrence(text, startIndex, candidate)) {
+                return {
+                    action: "skip",
+                    end: startIndex + 1,
+                }
+            }
+
+            const candidateIsCjk = isCjkCandidate(candidate)
+            if (!candidateIsCjk) {
+                const left = startIndex > 0 ? text[startIndex - 1] : undefined
+                const right = startIndex + candidate.length < text.length
+                    ? text[startIndex + candidate.length]
+                    : undefined
+
+                if (!isWordBoundary(left) || !isWordBoundary(right)) {
+                    return {
+                        action: "skip",
+                        end: startIndex + 1,
+                    }
+                }
+            }
+
+            if (
+                settings.proximityBasedLinking
+                && candidateData.candidates.length > 0
+                && candidateData.candidates[0].scoped
+                && candidateData.candidates[0].namespace !== currentNamespace
+            ) {
+                return {
+                    action: "skip",
+                    end: startIndex + candidate.length,
+                }
+            }
+
+            return {
+                action: "match",
+                occurrence: {
+                    kind: "unlinked",
+                    start: startIndex,
+                    end: startIndex + candidate.length,
+                    text: candidate,
+                    candidateKey: trieCandidateKey,
+                    candidateData: dedupeCandidates(candidateData.candidates),
+                    replacementCandidateData: candidateData,
+                    isInTable: isIndexInsideMarkdownTable(text, startIndex),
+                },
+            }
+        }
+    }
+
+    if (settings.proximityBasedLinking) {
+        return collectFallbackOccurrence({
+            text,
+            startIndex,
+            fallbackIndex,
+            filePath,
+            currentNamespace,
+            settings,
+        })
+    }
+
+    return null
 }
 
 const collectUnlinkedOccurrences = ({
@@ -635,117 +798,27 @@ const collectUnlinkedOccurrences = ({
 }): void => {
     let i = 0
 
-    outer: while (i < text.length) {
-        if (text[i] === "h" && text.slice(i, i + 4) === "http") {
-            const urlMatch = text.slice(i).match(REGEX_PATTERNS.URL)
-            if (urlMatch) {
-                i += urlMatch[0].length
-                continue
-            }
+    while (i < text.length) {
+        const result = scanUnlinkedCandidateAt({
+            text,
+            startIndex: i,
+            filePath,
+            trie,
+            candidateMap,
+            fallbackIndex,
+            currentNamespace,
+            settings,
+        })
+
+        if (result?.action === "match") {
+            occurrences.push(result.occurrence)
+            i = result.occurrence.end
+            continue
         }
 
-        let node = trie
-        let lastCandidate: { candidate: string, length: number } | null = null
-        let j = i
-        let candidateBuilder = ""
-
-        while (j < text.length) {
-            const ch = text[j]
-            let chLower = settings.ignoreCase ? ch.toLowerCase() : ch
-            if (settings.matchSentenceCase && !settings.ignoreCase && j === i && isSentenceStart(text, i)) {
-                chLower = ch.toLowerCase()
-            }
-            candidateBuilder += ch
-
-            const child = node.children.get(chLower)
-            if (!child) break
-
-            node = child
-            if (node.candidate) {
-                const candidateIsCjk = isCjkCandidate(candidateBuilder)
-                if (candidateIsCjk || isWordBoundary(text[j + 1])) {
-                    lastCandidate = {
-                        candidate: node.candidate,
-                        length: j - i + 1,
-                    }
-                }
-            }
-            j++
-        }
-
-        if (lastCandidate) {
-            const candidate = candidateBuilder.slice(0, lastCandidate.length)
-
-            if (shouldSkipCandidate(candidate, settings)) {
-                i += lastCandidate.length
-                continue
-            }
-
-            const trieCandidateKey = lastCandidate.candidate
-            const candidateData = candidateMap.get(trieCandidateKey)
-
-            if (candidateData) {
-                if (isSelfLink(candidateData, filePath, settings)) {
-                    i += candidate.length
-                    continue
-                }
-
-                if (shouldSkipKoreanTrieOccurrence(text, i, candidate)) {
-                    i += 1
-                    continue
-                }
-
-                const candidateIsCjk = isCjkCandidate(candidate)
-                if (!candidateIsCjk) {
-                    const left = i > 0 ? text[i - 1] : undefined
-                    const right = i + candidate.length < text.length
-                        ? text[i + candidate.length]
-                        : undefined
-
-                    if (!isWordBoundary(left) || !isWordBoundary(right)) {
-                        i++
-                        continue
-                    }
-                }
-
-                if (
-                    settings.proximityBasedLinking
-                    && candidateData.candidates.length > 0
-                    && candidateData.candidates[0].scoped
-                    && candidateData.candidates[0].namespace !== currentNamespace
-                ) {
-                    i += candidate.length
-                    continue
-                }
-
-                occurrences.push({
-                    kind: "unlinked",
-                    start: i,
-                    end: i + candidate.length,
-                    text: candidate,
-                    candidateKey: trieCandidateKey,
-                    candidateData: dedupeCandidates(candidateData.candidates),
-                    isInTable: isIndexInsideMarkdownTable(text, i),
-                })
-                i += candidate.length
-                continue
-            }
-        }
-
-        if (settings.proximityBasedLinking) {
-            const fallbackOccurrence = collectFallbackOccurrence({
-                text,
-                startIndex: i,
-                fallbackIndex,
-                filePath,
-                currentNamespace,
-                settings,
-            })
-            if (fallbackOccurrence) {
-                occurrences.push(fallbackOccurrence)
-                i = fallbackOccurrence.end
-                continue outer
-            }
+        if (result?.action === "skip") {
+            i = result.end
+            continue
         }
 
         i++

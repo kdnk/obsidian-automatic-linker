@@ -1,4 +1,5 @@
 import { isMarkdownTableLine } from "./replace-links/candidate-scanner"
+import { RAW_URL_SOURCE } from "./markdown-protection"
 
 export type MarkdownSegmentKind = "prose" | "protected"
 
@@ -138,7 +139,7 @@ const buildProtectedPattern = (protectUrls: boolean): RegExp => {
     ]
 
     if (protectUrls) {
-        parts.push("(?:https?:\\/\\/|linear:\\/\\/)[^\\s]+")
+        parts.push(RAW_URL_SOURCE)
     }
 
     return new RegExp(`(${parts.join("|")})`, "g")
