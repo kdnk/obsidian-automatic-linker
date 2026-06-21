@@ -76,4 +76,56 @@ describe("AutomaticLinkerPlugin link generator", () => {
 
         expect(result).toBe("| [[notes/foo\\|bar]] | x |\n| --- | --- |\n")
     })
+
+    it("keeps selection formatting to link replacement only", async () => {
+        const { default: AutomaticLinkerPlugin } = await import("../main")
+        const settings = {
+            scoped: false,
+            baseDir: undefined,
+            ignoreCase: true,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "notes/TypeScript" }],
+            settings,
+        })
+        const replaceSelection = vi.fn()
+        const app = {
+            workspace: {
+                getActiveFile: vi.fn(() => ({ path: "current-file.md" })),
+                activeEditor: {
+                    editor: {
+                        getSelection: vi.fn(() => "TypeScript https://github.com/openai/openai/issues/1"),
+                        replaceSelection,
+                    },
+                },
+            },
+            vault: {
+                getConfig: vi.fn(() => "pages"),
+                getAbstractFileByPath: vi.fn((path: string) => {
+                    if (path === "notes/TypeScript.md") return { path: "notes/TypeScript.md" }
+                    return null
+                }),
+            },
+            fileManager: {
+                generateMarkdownLink: vi.fn(() => "[[notes/TypeScript|TypeScript]]"),
+            },
+        }
+        const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
+        plugin.settings = {
+            ...DEFAULT_SETTINGS,
+            formatGitHubURLs: true,
+            formatJiraURLs: true,
+            formatLinearURLs: true,
+            replaceUrlWithTitle: true,
+            respectNewFileFolderPath: true,
+        }
+        ;(plugin as unknown as { trie: typeof trie }).trie = trie
+        ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
+
+        await plugin.mofifyLinksSelection()
+
+        expect(replaceSelection).toHaveBeenCalledWith(
+            "[[notes/TypeScript|TypeScript]] https://github.com/openai/openai/issues/1",
+        )
+    })
 })

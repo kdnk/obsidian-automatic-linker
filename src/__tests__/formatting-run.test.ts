@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
     formatMarkdownBody,
     formatMarkdownDocument,
+    formatMarkdownSelection,
     toReplaceLinksSettings,
 } from "../formatting-run"
 import { buildCandidateTrieForTest } from "../replace-links/__tests__/test-helpers"
@@ -109,5 +110,36 @@ describe("formatMarkdownBody", () => {
         })
 
         expect(result).toBe("[[notes/TypeScript|TypeScript]]")
+    })
+})
+
+describe("formatMarkdownSelection", () => {
+    it("keeps selection formatting to link replacement only", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "notes/TypeScript" }],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const result = formatMarkdownSelection({
+            body: "TypeScript https://github.com/openai/openai/issues/1",
+            filePath: "current-file.md",
+            settings: {
+                ...DEFAULT_SETTINGS,
+                formatGitHubURLs: true,
+                formatJiraURLs: true,
+                formatLinearURLs: true,
+                replaceUrlWithTitle: true,
+                ignoreCase: true,
+            },
+            candidateIndex: { candidateMap, trie },
+        })
+
+        expect(result).toBe(
+            "[[notes/TypeScript|TypeScript]] https://github.com/openai/openai/issues/1",
+        )
     })
 })

@@ -12,8 +12,8 @@ import {
 } from "obsidian"
 import { excludeLinks } from "./exclude-links"
 import {
-    formatMarkdownBody,
     formatMarkdownDocument,
+    formatMarkdownSelection,
     toReplaceLinksSettings,
 } from "./formatting-run"
 import {
@@ -233,7 +233,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
         const linkGenerator = this.createLinkGenerator(activeFile.path)
         const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
-        const updatedText = formatMarkdownBody({
+        const updatedText = formatMarkdownSelection({
             body: selectedText,
             filePath: activeFile.path,
             settings: this.settings,

@@ -84,6 +84,30 @@ export const formatMarkdownBody = ({
     return updatedBody
 }
 
+export const formatMarkdownSelection = ({
+    body,
+    filePath,
+    settings,
+    baseDir,
+    candidateIndex,
+    linkGenerator,
+}: Omit<FormattingRunOptions, "content" | "frontmatter" | "urlTitleMap"> & { body: string }): string => {
+    if (!candidateIndex) {
+        return body
+    }
+
+    return replaceLinks({
+        body,
+        linkResolverContext: {
+            filePath: filePath.replace(/\.md$/, ""),
+            trie: candidateIndex.trie,
+            candidateMap: candidateIndex.candidateMap,
+        },
+        settings: toReplaceLinksSettings(settings, baseDir),
+        linkGenerator,
+    })
+}
+
 const inferContentStart = (content: string): number => {
     const frontmatter = content.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n?/)
     return frontmatter?.[0].length ?? 0

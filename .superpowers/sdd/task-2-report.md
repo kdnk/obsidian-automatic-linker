@@ -83,3 +83,49 @@ Results:
 ## Concerns
 
 None.
+
+## Fix: Selection Formatting Regression
+
+Selection formatting was accidentally routed through `formatMarkdownBody(...)`, which let URL-formatting behavior leak into the selection command.
+
+### RED
+
+Command:
+
+```bash
+npx vitest run src/__tests__/main-link-generator.test.ts
+```
+
+Result:
+
+- Failed as expected
+- Failure showed `mofifyLinksSelection()` was formatting a GitHub URL instead of leaving it unchanged:
+  `[[notes/TypeScript|TypeScript]] [[github/openai/openai/issues/1]] [🔗](https://github.com/openai/openai/issues/1)`
+
+### GREEN
+
+Changes:
+
+- Added `formatMarkdownSelection(...)` in `src/formatting-run.ts`
+- Updated `mofifyLinksSelection()` in `src/main.ts` to call the selection-only helper
+- Added a unit guard in `src/__tests__/formatting-run.test.ts`
+
+### Verification
+
+Commands:
+
+```bash
+npx vitest run src/__tests__/formatting-run.test.ts src/__tests__/main-link-generator.test.ts
+npm run tsc
+npm run lint
+```
+
+Results:
+
+- `npx vitest run src/__tests__/formatting-run.test.ts src/__tests__/main-link-generator.test.ts`: passed `2` files, `7` tests
+- `npm run tsc`: exit `0`
+- `npm run lint`: exit `0`
+
+### Concerns
+
+- Selection formatting now has its own helper; any future selection-specific behavior should be added there, not to `formatMarkdownBody(...)`.
