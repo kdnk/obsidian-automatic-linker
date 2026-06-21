@@ -55,6 +55,39 @@ describe("formatMarkdownDocument", () => {
         )
     })
 
+    it("formats GitHub URLs in frontmatter without moving body-only formatting into frontmatter", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "notes/TypeScript" }],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const result = formatMarkdownDocument({
+            content:
+                "---\nautomatic-linker-disable-url-title: true\nreference: https://github.com/openai/openai/issues/1\nterm: TypeScript\n---\nTypeScript https://example.com",
+            filePath: "current-file.md",
+            frontmatter: {
+                "automatic-linker-disable-url-title": true,
+            },
+            settings: {
+                ...DEFAULT_SETTINGS,
+                formatGitHubURLs: true,
+                formatJiraURLs: false,
+                formatLinearURLs: false,
+                replaceUrlWithTitle: true,
+                ignoreCase: true,
+            },
+            candidateIndex: { candidateMap, trie },
+        })
+
+        expect(result).toBe(
+            "---\nautomatic-linker-disable-url-title: true\nreference: [[github/openai/openai/issues/1]] [🔗](https://github.com/openai/openai/issues/1)\nterm: TypeScript\n---\n[[notes/TypeScript|TypeScript]] https://example.com",
+        )
+    })
+
     it("runs URL formatting, URL titles, and link replacement in order", () => {
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [{ path: "notes/TypeScript" }],

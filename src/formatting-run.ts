@@ -44,6 +44,25 @@ export const toReplaceLinksSettings = (
     ignoreMarkdownTables: settings.ignoreMarkdownTables,
 })
 
+const formatMarkdownURLs = (
+    text: string,
+    settings: AutomaticLinkerSettings,
+): string => {
+    let updatedText = text
+
+    if (settings.formatGitHubURLs) {
+        updatedText = replaceURLs(updatedText, settings, formatGitHubURL)
+    }
+    if (settings.formatJiraURLs) {
+        updatedText = replaceURLs(updatedText, settings, formatJiraURL)
+    }
+    if (settings.formatLinearURLs) {
+        updatedText = replaceURLs(updatedText, settings, formatLinearURL)
+    }
+
+    return updatedText
+}
+
 export const formatMarkdownBody = ({
     body,
     filePath,
@@ -54,17 +73,8 @@ export const formatMarkdownBody = ({
     urlTitleMap = new Map(),
     linkGenerator,
 }: Omit<FormattingRunOptions, "content"> & { body: string }): string => {
-    let updatedBody = body
+    let updatedBody = formatMarkdownURLs(body, settings)
 
-    if (settings.formatGitHubURLs) {
-        updatedBody = replaceURLs(updatedBody, settings, formatGitHubURL)
-    }
-    if (settings.formatJiraURLs) {
-        updatedBody = replaceURLs(updatedBody, settings, formatJiraURL)
-    }
-    if (settings.formatLinearURLs) {
-        updatedBody = replaceURLs(updatedBody, settings, formatLinearURL)
-    }
     if (settings.replaceUrlWithTitle && !isUrlTitleReplacementOff(frontmatter)) {
         updatedBody = replaceUrlWithTitle({ body: updatedBody, urlTitleMap })
     }
@@ -118,7 +128,10 @@ export const formatMarkdownDocument = ({
     contentStart = inferContentStart(content),
     ...options
 }: FormattingRunOptions): string => {
-    const frontmatterText = content.slice(0, contentStart)
+    const frontmatterText = formatMarkdownURLs(
+        content.slice(0, contentStart),
+        options.settings,
+    )
     const body = content.slice(contentStart)
     return frontmatterText + formatMarkdownBody({ ...options, body })
 }
