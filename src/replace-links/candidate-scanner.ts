@@ -144,27 +144,18 @@ export const extractLinkParts = (
 export const escapeRegExp = (text: string): string =>
     text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
-export const extractFencedCodeBlocks = (
+const findFencedCodeBlockRanges = (
     body: string,
-): { body: string, codeBlocks: Array<{ placeholder: string, content: string }> } => {
+): Array<{ start: number, end: number }> => {
     if (!body.includes("```") && !body.includes("~~~")) {
-        return { body, codeBlocks: [] }
+        return []
     }
 
-    const codeBlocks: Array<{ placeholder: string, content: string }> = []
-    let result = ""
-    let cursor = 0
-    let codeBlockIndex = 0
-
+    const ranges: Array<{ start: number, end: number }> = []
     const openingFencePattern = /^ {0,3}(`{3,}|~{3,})[^\r\n]*(?:\r?\n|$)/gm
     let openingMatch: RegExpExecArray | null
 
     while ((openingMatch = openingFencePattern.exec(body)) !== null) {
-        const start = openingMatch.index
-        if (start < cursor) {
-            continue
-        }
-
         const openingFence = openingMatch[1]
         const fenceChar = openingFence[0]
         const fenceLength = openingFence.length
@@ -178,15 +169,35 @@ export const extractFencedCodeBlocks = (
             ? closingMatch.index + closingMatch[0].length
             : body.length
 
+        ranges.push({
+            start: openingMatch.index,
+            end,
+        })
+        openingFencePattern.lastIndex = end
+    }
+
+    return ranges
+}
+
+export const extractFencedCodeBlocks = (
+    body: string,
+): { body: string, codeBlocks: Array<{ placeholder: string, content: string }> } => {
+    if (!body.includes("```") && !body.includes("~~~")) {
+        return { body, codeBlocks: [] }
+    }
+
+    const ranges = findFencedCodeBlockRanges(body)
+    const codeBlocks: Array<{ placeholder: string, content: string }> = []
+    let result = ""
+    let cursor = 0
+    for (const [codeBlockIndex, range] of ranges.entries()) {
         const placeholder = `__CODE_BLOCK_${codeBlockIndex}__`
         codeBlocks.push({
             placeholder,
-            content: body.slice(start, end),
+            content: body.slice(range.start, range.end),
         })
-        result += body.slice(cursor, start) + placeholder
-        cursor = end
-        codeBlockIndex++
-        openingFencePattern.lastIndex = end
+        result += body.slice(cursor, range.start) + placeholder
+        cursor = range.end
     }
 
     result += body.slice(cursor)
@@ -345,20 +356,57 @@ const dedupeCandidates = (candidates: CandidateData["candidates"]): CandidateDat
     }
 }
 
-const filterCandidateDataForNamespace = (
-    candidateData: CandidateData,
-    currentNamespace: string,
+const findProtectedBlockRanges = (
+    text: string,
     settings: ReplaceLinksSettings,
-): CandidateData => {
-    if (!settings.proximityBasedLinking) {
-        return dedupeCandidates(candidateData.candidates)
+): Array<{ start: number, end: number }> => {
+    const ranges: Array<{ start: number, end: number }> = [
+        ...findFencedCodeBlockRanges(text),
+    ]
+
+    if (settings.ignoreHeadings) {
+        const headingPattern = /^#{1,6}\s+.*$/gm
+        let headingMatch: RegExpExecArray | null
+
+        while ((headingMatch = headingPattern.exec(text)) !== null) {
+            ranges.push({
+                start: headingMatch.index,
+                end: headingMatch.index + headingMatch[0].length,
+            })
+        }
     }
 
-    const filteredCandidates = candidateData.candidates.filter((candidate) => {
-        return !(candidate.scoped && candidate.namespace !== currentNamespace)
-    })
+    const calloutPattern = /^>[ \t]*\[![\w-]+\].*?(\n>.*?)*(?=\n(?!>)|$)/gm
+    let calloutMatch: RegExpExecArray | null
 
-    return dedupeCandidates(filteredCandidates)
+    while ((calloutMatch = calloutPattern.exec(text)) !== null) {
+        ranges.push({
+            start: calloutMatch.index,
+            end: calloutMatch.index + calloutMatch[0].length,
+        })
+    }
+
+    ranges.sort((a, b) => a.start - b.start)
+
+    const merged: Array<{ start: number, end: number }> = []
+    for (const range of ranges) {
+        const lastRange = merged[merged.length - 1]
+        if (!lastRange || range.start > lastRange.end) {
+            merged.push({ ...range })
+            continue
+        }
+
+        lastRange.end = Math.max(lastRange.end, range.end)
+    }
+
+    return merged
+}
+
+const isIndexProtected = (
+    index: number,
+    protectedRanges: Array<{ start: number, end: number }>,
+): boolean => {
+    return protectedRanges.some(range => index >= range.start && index < range.end)
 }
 
 const collectExistingWikilinks = (
@@ -366,11 +414,16 @@ const collectExistingWikilinks = (
     candidateMap: Map<string, CandidateData>,
     occurrences: CandidateOccurrence[],
     settings: ReplaceLinksSettings,
+    protectedRanges: Array<{ start: number, end: number }>,
 ): void => {
     const existingLinkRegex = /\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g
     let match: RegExpExecArray | null
 
     while ((match = existingLinkRegex.exec(text)) !== null) {
+        if (isIndexProtected(match.index, protectedRanges)) {
+            continue
+        }
+
         const fullMatch = match[0]
         const path = match[1]
         const alias = match[2] || path
@@ -581,18 +634,7 @@ const collectUnlinkedOccurrences = ({
             const candidateData = candidateMap.get(trieCandidateKey)
 
             if (candidateData) {
-                const filteredCandidateData = filterCandidateDataForNamespace(
-                    candidateData,
-                    currentNamespace,
-                    settings,
-                )
-
-                if (filteredCandidateData.candidates.length === 0) {
-                    i += candidate.length
-                    continue
-                }
-
-                if (isSelfLink(filteredCandidateData, filePath, settings)) {
+                if (isSelfLink(candidateData, filePath, settings)) {
                     i += candidate.length
                     continue
                 }
@@ -610,13 +652,23 @@ const collectUnlinkedOccurrences = ({
                     }
                 }
 
+                if (
+                    settings.proximityBasedLinking
+                    && candidateData.candidates.length > 0
+                    && candidateData.candidates[0].scoped
+                    && candidateData.candidates[0].namespace !== currentNamespace
+                ) {
+                    i += candidate.length
+                    continue
+                }
+
                 occurrences.push({
                     kind: "unlinked",
                     start: i,
                     end: i + candidate.length,
                     text: candidate,
                     candidateKey: trieCandidateKey,
-                    candidateData: filteredCandidateData,
+                    candidateData: dedupeCandidates(candidateData.candidates),
                     isInTable: isIndexInsideMarkdownTable(text, i),
                 })
                 i += candidate.length
@@ -655,60 +707,92 @@ export const scanCandidateOccurrences = ({
     const normalizedText = text.normalize("NFC")
     const fallbackIndex = buildFallbackIndex(candidateMap, settings.ignoreCase)
     const currentNamespace = getCurrentNamespace(filePath, settings.baseDir)
+    const protectedRanges = findProtectedBlockRanges(normalizedText, settings)
 
-    collectExistingWikilinks(normalizedText, candidateMap, occurrences, settings)
+    collectExistingWikilinks(
+        normalizedText,
+        candidateMap,
+        occurrences,
+        settings,
+        protectedRanges,
+    )
 
-    const protectedFreeOccurrences: CandidateOccurrence[] = []
-    REGEX_PATTERNS.PROTECTED.lastIndex = 0
-    let lastIndex = 0
-    let match: RegExpExecArray | null
-    while ((match = REGEX_PATTERNS.PROTECTED.exec(normalizedText)) !== null) {
-        const segment = normalizedText.slice(lastIndex, match.index)
-        const segmentOccurrences: CandidateOccurrence[] = []
+    const scanUnprotectedSegment = (
+        segment: string,
+        offset: number,
+        segmentOccurrences: CandidateOccurrence[],
+    ): void => {
+        REGEX_PATTERNS.PROTECTED.lastIndex = 0
+        let lastProtectedIndex = 0
+        let match: RegExpExecArray | null
+
+        while ((match = REGEX_PATTERNS.PROTECTED.exec(segment)) !== null) {
+            const unprotectedSegment = segment.slice(lastProtectedIndex, match.index)
+            const nestedOccurrences: CandidateOccurrence[] = []
+            collectUnlinkedOccurrences({
+                text: unprotectedSegment,
+                filePath,
+                trie,
+                candidateMap,
+                fallbackIndex,
+                currentNamespace,
+                settings,
+                occurrences: nestedOccurrences,
+            })
+            for (const occurrence of nestedOccurrences) {
+                segmentOccurrences.push({
+                    ...occurrence,
+                    start: occurrence.start + offset + lastProtectedIndex,
+                    end: occurrence.end + offset + lastProtectedIndex,
+                })
+            }
+            lastProtectedIndex = match.index + match[0].length
+
+            if (match[0].length === 0) {
+                REGEX_PATTERNS.PROTECTED.lastIndex++
+            }
+        }
+
+        const nestedOccurrences: CandidateOccurrence[] = []
         collectUnlinkedOccurrences({
-            text: segment,
+            text: segment.slice(lastProtectedIndex),
             filePath,
             trie,
             candidateMap,
             fallbackIndex,
             currentNamespace,
             settings,
-            occurrences: segmentOccurrences,
+            occurrences: nestedOccurrences,
         })
-        for (const occurrence of segmentOccurrences) {
-            protectedFreeOccurrences.push({
+        for (const occurrence of nestedOccurrences) {
+            segmentOccurrences.push({
                 ...occurrence,
-                start: occurrence.start + lastIndex,
-                end: occurrence.end + lastIndex,
+                start: occurrence.start + offset + lastProtectedIndex,
+                end: occurrence.end + offset + lastProtectedIndex,
             })
         }
-        lastIndex = match.index + match[0].length
+    }
 
-        if (match[0].length === 0) {
-            REGEX_PATTERNS.PROTECTED.lastIndex++
-        }
+    const protectedFreeOccurrences: CandidateOccurrence[] = []
+    let lastIndex = 0
+    for (const range of protectedRanges) {
+        const segmentOccurrences: CandidateOccurrence[] = []
+        scanUnprotectedSegment(
+            normalizedText.slice(lastIndex, range.start),
+            lastIndex,
+            segmentOccurrences,
+        )
+        protectedFreeOccurrences.push(...segmentOccurrences)
+        lastIndex = range.end
     }
 
     const tailOccurrences: CandidateOccurrence[] = []
-    collectUnlinkedOccurrences({
-        text: normalizedText.slice(lastIndex),
-        filePath,
-        trie,
-        candidateMap,
-        fallbackIndex,
-        currentNamespace,
-        settings,
-        occurrences: tailOccurrences,
-    })
-    for (const occurrence of tailOccurrences) {
-        protectedFreeOccurrences.push({
-            ...occurrence,
-            start: occurrence.start + lastIndex,
-            end: occurrence.end + lastIndex,
-        })
-    }
-
-    occurrences.push(...protectedFreeOccurrences)
+    scanUnprotectedSegment(
+        normalizedText.slice(lastIndex),
+        lastIndex,
+        tailOccurrences,
+    )
+    occurrences.push(...protectedFreeOccurrences, ...tailOccurrences)
 
     return occurrences.sort((a, b) => a.start - b.start)
 }

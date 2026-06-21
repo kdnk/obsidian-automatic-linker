@@ -73,4 +73,40 @@ describe("resolveAmbiguities", () => {
         )
         expect(result.get("[[private/meeting|meeting]]")).toBe("work/meeting")
     })
+
+    it("should skip fenced code blocks, callouts, and ignored headings", async () => {
+        const text = `# meeting
+> [!note]
+> meeting
+
+~~~ts
+meeting
+~~~
+
+meeting`
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockClear()
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(
+            new Map([["meeting", "work/meeting"]]),
+        )
+
+        await resolveAmbiguities(text, candidateMap, trie, {
+            ...mockSettings,
+            ignoreHeadings: true,
+            proximityBasedLinking: true,
+        })
+
+        expect(aiClient.resolveAmbiguitiesBatch).toHaveBeenCalledTimes(1)
+        expect(aiClient.resolveAmbiguitiesBatch).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ignoreHeadings: true,
+                proximityBasedLinking: true,
+            }),
+            [
+                expect.objectContaining({
+                    word: "meeting",
+                    candidates: ["work/meeting", "private/meeting"],
+                }),
+            ],
+        )
+    })
 })

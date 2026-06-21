@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { buildTrie, CandidateData } from "../../trie"
 import { buildCandidateTrieForTest } from "./test-helpers"
 import {
     getOccurrenceContext,
@@ -80,7 +81,7 @@ describe("scanCandidateOccurrences", () => {
         ])
     })
 
-    it("filters scoped candidates outside the current namespace", () => {
+    it("preserves trie-hit candidate sets for scoped candidates in the current namespace", () => {
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [
                 { path: "pages/team-a/internal" },
@@ -108,6 +109,87 @@ describe("scanCandidateOccurrences", () => {
         expect(occurrences).toHaveLength(1)
         expect(occurrences[0].candidateData.candidates.map(c => c.canonical)).toEqual([
             "pages/team-a/internal",
+            "pages/team-b/internal",
+        ])
+    })
+
+    it("matches replaceLinks trie-hit namespace semantics", () => {
+        const candidateMap = new Map<string, CandidateData>([
+            [
+                "internal",
+                {
+                    candidates: [
+                        {
+                            canonical: "pages/team-b/internal",
+                            scoped: true,
+                            namespace: "team-b",
+                        },
+                        {
+                            canonical: "pages/team-a/internal",
+                            scoped: true,
+                            namespace: "team-a",
+                        },
+                    ],
+                },
+            ],
+        ])
+        const trie = buildTrie(["internal"], true)
+
+        const occurrences = scanCandidateOccurrences({
+            text: "internal",
+            filePath: "pages/team-a/today",
+            trie,
+            candidateMap,
+            settings: {
+                baseDir: "pages",
+                ignoreCase: true,
+                proximityBasedLinking: true,
+            },
+        })
+
+        expect(occurrences).toEqual([])
+    })
+
+    it("skips fenced code blocks, callouts, and ignored headings", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "meeting" }],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const occurrences = scanCandidateOccurrences({
+            text: `# meeting
+> [!note]
+> meeting
+
+~~~ts
+meeting
+~~~
+
+meeting`,
+            filePath: "notes/today",
+            trie,
+            candidateMap,
+            settings: {
+                ignoreCase: true,
+                ignoreHeadings: true,
+                proximityBasedLinking: true,
+            },
+        })
+
+        expect(occurrences.map(o => ({
+            start: o.start,
+            end: o.end,
+            text: o.text,
+        }))).toEqual([
+            {
+                start: 50,
+                end: 57,
+                text: "meeting",
+            },
         ])
     })
 })
