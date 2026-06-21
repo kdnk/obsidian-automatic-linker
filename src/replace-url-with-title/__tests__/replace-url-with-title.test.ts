@@ -76,4 +76,17 @@ describe("replaceUrlWithTitle", () => {
         })
         expect(result).toBe("~~~\nhttps://example.com\n~~~")
     })
+
+    it("should not replace angle-bracket autolinks", () => {
+        const body = "<https://example.com>"
+        const result = replaceUrlWithTitle({
+            body,
+            urlTitleMap: new Map(
+                Object.entries({
+                    "https://example.com": "Example Title",
+                }),
+            ),
+        })
+        expect(result).toBe("<https://example.com>")
+    })
 })

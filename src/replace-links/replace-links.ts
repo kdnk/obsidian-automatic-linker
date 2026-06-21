@@ -647,6 +647,7 @@ export const replaceLinks = ({
 
     // Get the current namespace
     const currentNamespace = getCurrentNamespace(filePath, settings.baseDir)
+    let bodyWithResolvedWikilinks = body
 
     const markdownOptions = {
         protectHeadings: settings.ignoreHeadings,
@@ -723,7 +724,7 @@ export const replaceLinks = ({
     ): string => {
         if (!text.includes("\n")) {
             const isInTable = !settings.ignoreMarkdownTables
-                && isIndexInsideMarkdownTable(body, segment.start)
+                && isIndexInsideMarkdownTable(bodyWithResolvedWikilinks, segment.start)
             return processTextSegment(text, isInTable)
         }
 
@@ -742,13 +743,12 @@ export const replaceLinks = ({
 
             const absoluteIndex = segment.start + offset
             const isInTable = !settings.ignoreMarkdownTables
-                && isIndexInsideMarkdownTable(body, absoluteIndex)
+                && isIndexInsideMarkdownTable(bodyWithResolvedWikilinks, absoluteIndex)
 
             return processTextSegment(line, isInTable)
         })
     }
 
-    let bodyWithResolvedWikilinks = body
     if (resolvedAmbiguities) {
         bodyWithResolvedWikilinks = segmentMarkdown(body, markdownOptions)
             .map((segment) => {

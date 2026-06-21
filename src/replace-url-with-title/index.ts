@@ -50,8 +50,12 @@ export const replaceUrlWithTitle = ({
                     nextOccurrence - 2,
                     nextOccurrence,
                 )
+                const precedingChar = resultBody[nextOccurrence - 1]
                 const followingChar = resultBody[nextOccurrence + url.length]
-                if (precedingChars === "](" && followingChar === ")") {
+                if (
+                    (precedingChars === "](" && followingChar === ")")
+                    || (precedingChar === "<" && followingChar === ">")
+                ) {
                     shouldReplace = false
                 }
 
