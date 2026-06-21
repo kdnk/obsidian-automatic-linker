@@ -175,4 +175,34 @@ describe("formatMarkdownSelection", () => {
             "[[notes/TypeScript|TypeScript]] https://github.com/openai/openai/issues/1",
         )
     })
+
+    it("leaves linear URLs unchanged when a linear note exists", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [
+                { path: "notes/linear" },
+                { path: "notes/TypeScript" },
+            ],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const result = formatMarkdownSelection({
+            body: "linear://workspace/issue/ACME-123",
+            filePath: "current-file.md",
+            settings: {
+                ...DEFAULT_SETTINGS,
+                formatGitHubURLs: true,
+                formatJiraURLs: true,
+                formatLinearURLs: true,
+                replaceUrlWithTitle: true,
+                ignoreCase: true,
+            },
+            candidateIndex: { candidateMap, trie },
+        })
+
+        expect(result).toBe("linear://workspace/issue/ACME-123")
+    })
 })

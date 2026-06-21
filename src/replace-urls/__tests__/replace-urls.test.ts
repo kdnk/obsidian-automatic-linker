@@ -22,6 +22,14 @@ describe("replace-urls", () => {
         )
     })
 
+    it("does not rewrite https URLs inside wikilinks", () => {
+        const input = "[[https://github.com/kdnk/obsidian-automatic-linker]]"
+
+        expect(
+            replaceURLs(input, baseSettings, formatGitHubURL),
+        ).toBe(input)
+    })
+
     it("should replace linear protocol URLs", () => {
         const input = "linear://workspace/issue/ACME-123"
         const expected
@@ -37,6 +45,21 @@ describe("replace-urls", () => {
                 formatLinearURL,
             ),
         ).toBe(expected)
+    })
+
+    it("does not rewrite linear protocol URLs inside wikilinks", () => {
+        const input = "[[linear://workspace/issue/ACME-123]]"
+
+        expect(
+            replaceURLs(
+                input,
+                {
+                    ...baseSettings,
+                    formatLinearURLs: true,
+                },
+                formatLinearURL,
+            ),
+        ).toBe(input)
     })
 
     it("keeps raw helper semantics inside Markdown links and angle autolinks", () => {

@@ -138,7 +138,7 @@ const buildProtectedPattern = (protectUrls: boolean): RegExp => {
     ]
 
     if (protectUrls) {
-        parts.push("https?:\\/\\/[^\\s]+")
+        parts.push("(?:https?:\\/\\/|linear:\\/\\/)[^\\s]+")
     }
 
     return new RegExp(`(${parts.join("|")})`, "g")

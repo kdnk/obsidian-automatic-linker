@@ -62,6 +62,23 @@ describe("segmentMarkdown", () => {
         ])
         expect(segments.map(segment => segment.text).join("")).toBe(text)
     })
+
+    it("protects linear URLs when requested", () => {
+        const text = "linear://workspace/issue/ACME-123"
+        const segments = segmentMarkdown(text, {
+            protectUrls: true,
+        })
+
+        expect(segments).toEqual([
+            {
+                kind: "protected",
+                protectedKind: "url",
+                start: 0,
+                end: text.length,
+                text,
+            },
+        ])
+    })
 })
 
 describe("mapMarkdownProse", () => {
