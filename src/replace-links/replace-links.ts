@@ -1,7 +1,7 @@
 import { CandidateData, TrieNode } from "../trie"
+import { mapMarkdownProse, segmentMarkdown } from "../markdown-segments"
 import {
     buildFallbackIndex,
-    extractFencedCodeBlocks,
     extractLinkParts,
     findBestCandidateInSameNamespace,
     getCurrentNamespace,
@@ -9,7 +9,6 @@ import {
     isCjkText,
     isIndexInsideMarkdownTable,
     isKoreanText,
-    isMarkdownTableLine,
     isMonthNote,
     isProtectedLink,
     isSelfLink,
@@ -211,6 +210,7 @@ const processCjkText = (
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings = {},
     resolvedAmbiguities?: Map<string, string>,
+    forceIsInTable?: boolean,
 ): string => {
     // For CJK texts that might contain non-CJK terms like "taro-san", ensure we use a consistent approach
     // Pass the proper filePath to maintain correct namespace resolution
@@ -224,6 +224,7 @@ const processCjkText = (
         linkGenerator,
         settings,
         resolvedAmbiguities,
+        forceIsInTable,
     )
 }
 
@@ -236,6 +237,7 @@ const processFallbackSearch = (
     currentNamespace: string,
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings,
+    forceIsInTable?: boolean,
 ): { result: string, newIndex: number } | null => {
     // Early boundary check - if start isn't a word boundary, skip
     const prevChar = text[startIndex - 1]
@@ -345,7 +347,7 @@ const processFallbackSearch = (
         longestMatch.word,
         settings,
     )
-    const isInTable = isIndexInsideMarkdownTable(text, startIndex)
+    const isInTable = forceIsInTable ?? isIndexInsideMarkdownTable(text, startIndex)
     const finalLink = linkGenerator({
         linkPath,
         sourcePath: filePath,
@@ -369,6 +371,7 @@ const handleKoreanSpecialCases = (
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings = {},
     resolvedAmbiguities?: Map<string, string>,
+    forceIsInTable?: boolean,
 ): { result: string, newIndex: number } | null => {
     const remaining = text.slice(i + candidate.length)
 
@@ -393,7 +396,7 @@ const handleKoreanSpecialCases = (
             linkPath,
             sourcePath: filePath,
             alias,
-            isInTable: false,
+            isInTable: forceIsInTable ?? false,
         })
 
         return {
@@ -423,6 +426,7 @@ const processStandardText = (
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings = {},
     resolvedAmbiguities?: Map<string, string>,
+    forceIsInTable?: boolean,
 ): string => {
     let result = ""
     let i = 0
@@ -517,6 +521,7 @@ const processStandardText = (
                         linkGenerator,
                         settings,
                         resolvedAmbiguities,
+                        forceIsInTable,
                     )
                     if (koreanResult) {
                         result += koreanResult.result
@@ -581,7 +586,7 @@ const processStandardText = (
                     linkPath,
                     sourcePath: filePath,
                     alias,
-                    isInTable,
+                    isInTable: forceIsInTable ?? isInTable,
                 })
                 result += finalLink
 
@@ -600,6 +605,7 @@ const processStandardText = (
                 currentNamespace,
                 linkGenerator,
                 settings,
+                forceIsInTable,
             )
             if (fallbackResult) {
                 result += fallbackResult.result
@@ -642,8 +648,43 @@ export const replaceLinks = ({
     // Get the current namespace
     const currentNamespace = getCurrentNamespace(filePath, settings.baseDir)
 
+    const markdownOptions = {
+        protectHeadings: settings.ignoreHeadings,
+        protectCallouts: true,
+        protectTableRows: settings.ignoreMarkdownTables,
+        protectUrls: true,
+    }
+
+    const replaceResolvedWikilink = (
+        wikilink: string,
+        start: number,
+    ): string => {
+        if (!resolvedAmbiguities?.has(wikilink)) {
+            return wikilink
+        }
+
+        const resolvedPath = resolvedAmbiguities.get(wikilink)!
+        const { linkPath, alias: resolvedAlias } = extractLinkParts(resolvedPath)
+        const existingLinkRegex = /\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/
+        const linkMatch = wikilink.match(existingLinkRegex)
+        const existingPath = linkMatch ? linkMatch[1] : ""
+        const existingAlias = linkMatch ? linkMatch[2] : undefined
+        const finalAlias = resolvedAlias || existingAlias || (wikilink.includes("|") ? undefined : existingPath)
+
+        return linkGenerator({
+            linkPath,
+            sourcePath: filePath,
+            alias: finalAlias,
+            isInTable: !settings.ignoreMarkdownTables
+                && isIndexInsideMarkdownTable(body, start),
+        })
+    }
+
     // Process segments of text
-    const processTextSegment = (text: string): string => {
+    const processTextSegment = (
+        text: string,
+        forceIsInTable?: boolean,
+    ): string => {
         // Check if the text contains CJK characters
         const hasCjkText = isCjkText(text)
 
@@ -657,6 +698,7 @@ export const replaceLinks = ({
                 linkGenerator,
                 settings,
                 resolvedAmbiguities,
+                forceIsInTable,
             )
         }
         else {
@@ -670,138 +712,61 @@ export const replaceLinks = ({
                 linkGenerator,
                 settings,
                 resolvedAmbiguities,
+                forceIsInTable,
             )
         }
     }
 
-    const processTableAwareTextSegment = (text: string): string => {
-        if (!settings.ignoreMarkdownTables) {
-            return processTextSegment(text)
+    const processTableAwareTextSegment = (
+        text: string,
+        segment: { start: number },
+    ): string => {
+        if (!text.includes("\n")) {
+            const isInTable = !settings.ignoreMarkdownTables
+                && isIndexInsideMarkdownTable(body, segment.start)
+            return processTextSegment(text, isInTable)
         }
 
-        return text.replace(/[^\n]*(?:\n|$)/g, (line) => {
+        return text.replace(/[^\n]*(?:\n|$)/g, (line, offset) => {
             if (line === "") {
                 return line
             }
 
             const lineContent = line.endsWith("\n")
-                ? line.slice(0, -1)
+                ? line.slice(0, -1).replace(/\r$/, "")
                 : line
 
-            if (isMarkdownTableLine(lineContent)) {
+            if (lineContent === "") {
                 return line
             }
 
-            return processTextSegment(line)
+            const absoluteIndex = segment.start + offset
+            const isInTable = !settings.ignoreMarkdownTables
+                && isIndexInsideMarkdownTable(body, absoluteIndex)
+
+            return processTextSegment(line, isInTable)
         })
     }
 
-    // Extract and protect fenced code blocks before any other block-level rules.
-    const { body: bodyAfterCodeBlocks, codeBlocks } = extractFencedCodeBlocks(body)
+    let bodyWithResolvedWikilinks = body
+    if (resolvedAmbiguities) {
+        bodyWithResolvedWikilinks = segmentMarkdown(body, markdownOptions)
+            .map((segment) => {
+                if (
+                    segment.kind === "protected"
+                    && segment.protectedKind === "wikilink"
+                ) {
+                    return replaceResolvedWikilink(segment.text, segment.start)
+                }
 
-    // Extract and protect headings first
-    const headingPattern = /^#{1,6}\s+.*$/gm
-    const headings: Array<{ placeholder: string, content: string }> = []
-    let headingIndex = 0
-
-    let bodyAfterHeadings = bodyAfterCodeBlocks
-    if (settings.ignoreHeadings) {
-        bodyAfterHeadings = bodyAfterCodeBlocks.replace(headingPattern, (match) => {
-            const placeholder = `__HEADING_${headingIndex}__`
-            headings.push({ placeholder, content: match })
-            headingIndex++
-            return placeholder
-        })
-    }
-
-    // Extract and protect callout blocks first
-    // Match callout blocks: starts with > [!type] and continues with lines starting with >
-    const calloutPattern = /^>[ \t]*\[![\w-]+\].*?(\n>.*?)*(?=\n(?!>)|$)/gm
-    const callouts: Array<{ placeholder: string, content: string }> = []
-    let calloutIndex = 0
-
-    // Replace callouts with placeholders
-    const bodyWithPlaceholders = bodyAfterHeadings.replace(calloutPattern, (match) => {
-        const placeholder = `__CALLOUT_${calloutIndex}__`
-        callouts.push({ placeholder, content: match })
-        calloutIndex++
-        return placeholder
-    })
-
-    // Process the entire body while preserving protected segments
-    let resultBody = ""
-    let lastIndex = 0
-    let match: RegExpExecArray | null
-
-    // Reset the regex to start from the beginning
-    REGEX_PATTERNS.PROTECTED.lastIndex = 0
-
-    while (
-        (match = REGEX_PATTERNS.PROTECTED.exec(bodyWithPlaceholders)) !== null
-    ) {
-        const mIndex = match.index
-        const segment = bodyWithPlaceholders.slice(lastIndex, mIndex)
-        resultBody += processTableAwareTextSegment(segment)
-
-        const fullMatch = match[0]
-        if (
-            settings.ignoreMarkdownTables
-            && isIndexInsideMarkdownTable(bodyWithPlaceholders, mIndex)
-        ) {
-            resultBody += fullMatch
-        }
-        else if (resolvedAmbiguities?.has(fullMatch)) {
-            // Existing link replacement
-            const resolvedPath = resolvedAmbiguities.get(fullMatch)!
-            const { linkPath, alias: resolvedAlias } = extractLinkParts(resolvedPath)
-
-            // Try to extract existing alias from the matched link
-            const existingLinkRegex = /\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/
-            const linkMatch = fullMatch.match(existingLinkRegex)
-            const existingPath = linkMatch ? linkMatch[1] : ""
-            const existingAlias = linkMatch ? linkMatch[2] : undefined
-
-            // Use resolved alias if present, otherwise use existing alias,
-            // otherwise use existing path (as alias if it was a simple link)
-            const finalAlias = resolvedAlias || existingAlias || (fullMatch.includes("|") ? undefined : existingPath)
-
-            const isInTable = isIndexInsideMarkdownTable(bodyWithPlaceholders, mIndex)
-            resultBody += linkGenerator({
-                linkPath,
-                sourcePath: filePath,
-                alias: finalAlias,
-                isInTable,
+                return segment.text
             })
-        }
-        else {
-            // Append the protected segment unchanged
-            resultBody += fullMatch
-        }
-        lastIndex = mIndex + fullMatch.length
-
-        // Prevent infinite loop on zero-length matches
-        if (fullMatch.length === 0) {
-            REGEX_PATTERNS.PROTECTED.lastIndex++
-        }
+            .join("")
     }
 
-    // Process the remaining text
-    resultBody += processTableAwareTextSegment(bodyWithPlaceholders.slice(lastIndex))
-
-    // Restore callouts
-    for (const { placeholder, content } of callouts) {
-        resultBody = resultBody.replace(placeholder, content)
-    }
-
-    // Restore headings
-    for (const { placeholder, content } of headings) {
-        resultBody = resultBody.replace(placeholder, content)
-    }
-
-    // Restore fenced code blocks
-    for (const { placeholder, content } of codeBlocks) {
-        resultBody = resultBody.replace(placeholder, content)
-    }
-
-    return resultBody
+    return mapMarkdownProse(
+        bodyWithResolvedWikilinks,
+        processTableAwareTextSegment,
+        markdownOptions,
+    )
 }
