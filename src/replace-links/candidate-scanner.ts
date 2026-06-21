@@ -402,6 +402,25 @@ const findProtectedBlockRanges = (
     return merged
 }
 
+const sortAndMergeRanges = (
+    ranges: Array<{ start: number, end: number }>,
+): Array<{ start: number, end: number }> => {
+    const sortedRanges = ranges.slice().sort((a, b) => a.start - b.start)
+    const merged: Array<{ start: number, end: number }> = []
+
+    for (const range of sortedRanges) {
+        const lastRange = merged[merged.length - 1]
+        if (!lastRange || range.start > lastRange.end) {
+            merged.push({ ...range })
+            continue
+        }
+
+        lastRange.end = Math.max(lastRange.end, range.end)
+    }
+
+    return merged
+}
+
 const findInlineCodeRanges = (text: string): Array<{ start: number, end: number }> => {
     if (!text.includes("`")) {
         return []
@@ -744,10 +763,10 @@ export const scanCandidateOccurrences = ({
     const normalizedText = text.normalize("NFC")
     const fallbackIndex = buildFallbackIndex(candidateMap, settings.ignoreCase)
     const currentNamespace = getCurrentNamespace(filePath, settings.baseDir)
-    const protectedRanges = [
+    const protectedRanges = sortAndMergeRanges([
         ...findProtectedBlockRanges(normalizedText, settings),
         ...findInlineCodeRanges(normalizedText),
-    ]
+    ])
 
     collectExistingWikilinks(
         normalizedText,

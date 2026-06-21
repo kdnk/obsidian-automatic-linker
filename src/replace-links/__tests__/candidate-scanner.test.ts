@@ -217,6 +217,43 @@ meeting`,
         ])
     })
 
+    it("does not re-enter a later callout when inline code appears earlier", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [
+                { path: "work/meeting" },
+                { path: "private/meeting" },
+            ],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const occurrences = scanCandidateOccurrences({
+            text: "`meeting`\n\n> [!note]\n> meeting\n\nmeeting",
+            filePath: "notes/today",
+            trie,
+            candidateMap,
+            settings: {
+                ignoreCase: true,
+                proximityBasedLinking: true,
+            },
+        })
+
+        expect(occurrences.map(o => ({
+            start: o.start,
+            end: o.end,
+            text: o.text,
+        }))).toEqual([
+            {
+                start: 32,
+                end: 39,
+                text: "meeting",
+            },
+        ])
+    })
+
     it("skips Korean particle hits but still finds overlapping follow-on candidates", () => {
         const isolatedFixture = buildCandidateTrieForTest({
             files: [

@@ -516,6 +516,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                     const fileContent = await this.app.vault.read(activeFile)
                     const { contentStart } = getFrontMatterInfo(fileContent)
                     const body = fileContent.slice(contentStart)
+                    const normalizedActiveFilePath = activeFile.path.replace(/\.md$/, "")
 
                     if (!this.candidateMap || !this.trie) {
                         this.refreshFileDataAndTrie()
@@ -531,13 +532,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
                         this.candidateMap,
                         this.trie,
                         this.settings,
-                        activeFile.path.replace(/\.md$/, ""),
+                        normalizedActiveFilePath,
                     )
 
                     const resultBody = replaceLinks({
                         body,
                         linkResolverContext: {
-                            filePath: activeFile.path,
+                            filePath: normalizedActiveFilePath,
                             trie: this.trie,
                             candidateMap: this.candidateMap,
                         },

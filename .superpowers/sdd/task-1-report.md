@@ -413,3 +413,65 @@ Results:
 - Changed the Korean particle skip branch in `scanCandidateOccurrences()` to advance by one codepoint, matching the existing cursor behavior in `replaceLinks()`
 - Kept the isolated particle omission intact for `문서는` when no overlapping follow-on candidate is present
 - Preserved public interfaces unchanged
+
+## Review Fix 5
+
+### Scope
+
+Fixed the two remaining Task 1 review findings:
+
+- normalized the AI command `linkResolverContext.filePath` once and reused the same no-`.md` path for both `resolveAmbiguities()` and the subsequent `replaceLinks()` call
+- normalized scanner protected ranges after inline-code ranges are added so mixed ordering cannot move scanning backward into protected callout content
+- added focused regressions for the AI self-link path handoff and the inline-code-before-callout protected-range ordering case
+
+No AGENTS.md changes were needed.
+
+### TDD Evidence
+
+#### RED
+
+Commands:
+
+```bash
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts
+npx vitest run src/replace-links/__tests__/ai-disambiguation.test.ts
+```
+
+Results:
+
+- `candidate-scanner.test.ts`: failed on the new mixed-order protected-range regression because the scanner emitted a `meeting` occurrence from inside the callout and duplicated the final prose occurrence
+- `ai-disambiguation.test.ts`: failed on the new AI self-link path regression because the `.md`-suffixed replacement path still allowed `[[work/meeting|meeting]]` with `preventSelfLinking: true`
+
+#### GREEN
+
+Command:
+
+```bash
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts src/replace-links/__tests__/ai-disambiguation.test.ts src/replace-links/__tests__/replace-links.prevent-linking.test.ts src/utils/__tests__/resolve-ambiguities.test.ts
+```
+
+Result:
+
+- Passed: `25/25` tests across `4/4` files
+
+### Implementation Summary
+
+- Reused one `normalizedActiveFilePath` in the AI command path so ambiguity resolution and replacement observe the same self-linking semantics.
+- Added an internal scanner `sortAndMergeRanges()` pass over the combined block and inline-code protected ranges before iterating unprotected segments.
+- Added a focused AI regression that models a `.md` active file path flowing through normalized AI disambiguation and replacement, and a focused scanner regression for inline code preceding a protected callout.
+
+### Full Verification
+
+Commands:
+
+```bash
+npm run test -- --reporter=dot
+npm run tsc
+npm run lint
+```
+
+Results:
+
+- `npm run test -- --reporter=dot`: passed, `331/331` tests across `38/38` files
+- `npm run tsc`: passed
+- `npm run lint`: passed

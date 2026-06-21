@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest"
 import { replaceLinks } from "../replace-links"
 import { buildCandidateTrie } from "../../trie"
+import { resolveAmbiguities } from "../../utils/resolve-ambiguities"
+import { DEFAULT_SETTINGS } from "../../settings/settings-info"
 
 describe("replaceLinks with AI disambiguation", () => {
     const allFiles = [
@@ -78,5 +80,38 @@ describe("replaceLinks with AI disambiguation", () => {
         })
 
         expect(result).toBe("[[private/문서|문서]]이다.")
+    })
+
+    it("should keep AI command self-link prevention when the active file path includes .md", async () => {
+        const body = "meeting"
+        const activeFilePath = "work/meeting.md"
+        const normalizedFilePath = activeFilePath.replace(/\.md$/, "")
+        const settings = {
+            ...DEFAULT_SETTINGS,
+            aiEnabled: true,
+            preventSelfLinking: true,
+        }
+
+        const resolvedAmbiguities = await resolveAmbiguities(
+            body,
+            candidateMap,
+            trie,
+            settings,
+            normalizedFilePath,
+        )
+
+        const result = replaceLinks({
+            body,
+            linkResolverContext: {
+                filePath: normalizedFilePath,
+                trie,
+                candidateMap,
+            },
+            settings,
+            resolvedAmbiguities,
+        })
+
+        expect(resolvedAmbiguities.size).toBe(0)
+        expect(result).toBe("meeting")
     })
 })
