@@ -81,6 +81,30 @@ describe("scanCandidateOccurrences", () => {
         ])
     })
 
+    it("skips existing wikilinks inside inline code", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [
+                { path: "work/meeting" },
+                { path: "private/meeting" },
+            ],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const occurrences = scanCandidateOccurrences({
+            text: "`[[private/meeting|meeting]]`",
+            filePath: "notes/today",
+            trie,
+            candidateMap,
+            settings: { ignoreCase: true, proximityBasedLinking: true },
+        })
+
+        expect(occurrences).toEqual([])
+    })
+
     it("preserves trie-hit candidate sets for scoped candidates in the current namespace", () => {
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [

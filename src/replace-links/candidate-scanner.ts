@@ -402,6 +402,25 @@ const findProtectedBlockRanges = (
     return merged
 }
 
+const findInlineCodeRanges = (text: string): Array<{ start: number, end: number }> => {
+    if (!text.includes("`")) {
+        return []
+    }
+
+    const ranges: Array<{ start: number, end: number }> = []
+    const inlineCodePattern = /`[^`]*`/g
+    let inlineCodeMatch: RegExpExecArray | null
+
+    while ((inlineCodeMatch = inlineCodePattern.exec(text)) !== null) {
+        ranges.push({
+            start: inlineCodeMatch.index,
+            end: inlineCodeMatch.index + inlineCodeMatch[0].length,
+        })
+    }
+
+    return ranges
+}
+
 const isIndexProtected = (
     index: number,
     protectedRanges: Array<{ start: number, end: number }>,
@@ -707,7 +726,10 @@ export const scanCandidateOccurrences = ({
     const normalizedText = text.normalize("NFC")
     const fallbackIndex = buildFallbackIndex(candidateMap, settings.ignoreCase)
     const currentNamespace = getCurrentNamespace(filePath, settings.baseDir)
-    const protectedRanges = findProtectedBlockRanges(normalizedText, settings)
+    const protectedRanges = [
+        ...findProtectedBlockRanges(normalizedText, settings),
+        ...findInlineCodeRanges(normalizedText),
+    ]
 
     collectExistingWikilinks(
         normalizedText,

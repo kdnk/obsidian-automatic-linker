@@ -74,6 +74,20 @@ describe("resolveAmbiguities", () => {
         expect(result.get("[[private/meeting|meeting]]")).toBe("work/meeting")
     })
 
+    it("should not request AI for existing links inside inline code", async () => {
+        const text = "Check the `[[private/meeting|meeting]]` notes."
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockClear()
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(new Map())
+
+        const result = await resolveAmbiguities(text, candidateMap, trie, mockSettings)
+
+        expect(aiClient.resolveAmbiguitiesBatch).toHaveBeenCalledWith(
+            mockSettings,
+            [],
+        )
+        expect(result.size).toBe(0)
+    })
+
     it("should skip fenced code blocks, callouts, and ignored headings", async () => {
         const text = `# meeting
 > [!note]

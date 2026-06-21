@@ -167,3 +167,44 @@ Results:
 - `npm run test -- --reporter=dot`: passed, `323/323` tests across `38/38` files
 - `npm run tsc`: passed
 - `npm run lint`: passed
+
+## Review Fix 2
+
+### Scope
+
+Fixed the remaining Task 1 review finding:
+
+- `scanCandidateOccurrences()` now skips existing wikilinks that fall inside inline code spans, not just block-level protected ranges
+- `resolveAmbiguities()` coverage now proves the protected inline wikilink produces no AI request payload
+
+No AGENTS.md changes were needed.
+
+### Focused Verification
+
+Commands:
+
+```bash
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts
+npx vitest run src/utils/__tests__/resolve-ambiguities.test.ts
+```
+
+Results:
+
+- `src/replace-links/__tests__/candidate-scanner.test.ts`: passed `7/7`
+- `src/utils/__tests__/resolve-ambiguities.test.ts`: passed `4/4`
+
+### Full Verification
+
+Commands:
+
+```bash
+npm run test -- --reporter=dot
+npm run tsc
+npm run lint
+```
+
+Results:
+
+- `npm run test -- --reporter=dot`: passed, `325/325` tests across `38/38` files
+- `npm run tsc`: passed
+- `npm run lint`: passed
