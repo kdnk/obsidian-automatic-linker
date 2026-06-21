@@ -34,3 +34,12 @@ export const isLinkingExcluded = (
         || frontmatter?.["automatic-linker-exclude"] === true
     )
 }
+
+/**
+ * Check if the file disables URL title fetching/replacement
+ */
+export const isUrlTitleReplacementOff = (
+    frontmatter: Record<string, unknown> | undefined,
+): boolean => {
+    return frontmatter?.["automatic-linker-disable-url-title"] === true
+}

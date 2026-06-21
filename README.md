@@ -130,6 +130,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 - **Replace URLs with Titles**: Automatically fetch page titles for bare URLs
 - **Ignored Domains**: Exclude specific domains from URL title replacement
+- **Frontmatter URL Title Opt-out**: Use `automatic-linker-disable-url-title: true` to skip URL title fetching/replacement for a note
 - **Exclude Directories**: List of directories to skip during auto-linking
 - **Remove Alias in Directories**: Strip aliases from links in specified folders
 
@@ -253,6 +254,9 @@ automatic-linker-exclude: true
 
 # Restrict linking to same namespace only
 automatic-linker-scoped: true
+
+# Disable URL title fetching and replacement in this file
+automatic-linker-disable-url-title: true
 
 # Define aliases for this file (standard Obsidian feature)
 aliases: [shortname, alternative-name]

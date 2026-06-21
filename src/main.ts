@@ -15,6 +15,7 @@ import {
     isLinkingOff,
     isLinkingExcluded,
     isNamespaceScoped,
+    isUrlTitleReplacementOff,
 } from "./frontmatter-utils"
 import { PathAndAliases } from "./path-and-aliases.types"
 import { removeMinimalIndent } from "./remove-minimal-indent"
@@ -92,7 +93,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
         }
     }
 
-    modifyLinks(fileContent: string, filePath: string): string {
+    modifyLinks(
+        fileContent: string,
+        filePath: string,
+        frontmatter?: Record<string, unknown>,
+    ): string {
         if (this.settings.formatGitHubURLs) {
             fileContent = replaceURLs(fileContent, this.settings, formatGitHubURL)
         }
@@ -109,12 +114,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
             )
         }
 
-        if (this.settings.replaceUrlWithTitle) {
+        if (
+            this.settings.replaceUrlWithTitle
+            && !isUrlTitleReplacementOff(frontmatter)
+        ) {
             const { contentStart } = getFrontMatterInfo(fileContent)
-            const frontmatter = fileContent.slice(0, contentStart)
+            const frontmatterText = fileContent.slice(0, contentStart)
             const body = fileContent.slice(contentStart)
             const updatedBody = replaceUrlWithTitle({ body, urlTitleMap: this.urlTitleMap })
-            fileContent = frontmatter + updatedBody
+            fileContent = frontmatterText + updatedBody
         }
 
         if (!this.trie || !this.candidateMap) {
@@ -129,7 +137,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         }
 
         const { contentStart } = getFrontMatterInfo(fileContent)
-        const frontmatter = fileContent.slice(0, contentStart)
+        const frontmatterText = fileContent.slice(0, contentStart)
         const linkGenerator = this.createLinkGenerator(filePath)
         const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
         const updatedBody = replaceLinks({
@@ -152,7 +160,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             },
             linkGenerator,
         })
-        fileContent = frontmatter + updatedBody
+        fileContent = frontmatterText + updatedBody
 
         if (this.settings.debug) {
             console.log(new Date().toISOString(), "modifyLinks finished")
@@ -173,7 +181,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
         const fileContent = editor.getValue()
         const oldText = fileContent
-        const newText = this.modifyLinks(fileContent, activeFile.path)
+        const newText = this.modifyLinks(fileContent, activeFile.path, metadata)
         updateEditor(oldText, newText, editor)
     }
 
@@ -181,8 +189,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
         this.refreshFileDataAndTrie()
         const allMarkdownFiles = this.app.vault.getMarkdownFiles()
         for (const file of allMarkdownFiles) {
+            const metadata = this.app.metadataCache.getFileCache(file)?.frontmatter
             await this.app.vault.process(file, (fileContent) => {
-                return this.modifyLinks(fileContent, file.path)
+                return this.modifyLinks(fileContent, file.path, metadata)
             })
         }
     }
@@ -190,6 +199,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
     async buildUrlTitleMap() {
         const activeFile = this.app.workspace.getActiveFile()
         if (!activeFile) return
+        const metadata = this.app.metadataCache.getFileCache(activeFile)?.frontmatter
+        if (isUrlTitleReplacementOff(metadata)) return
+
         const fileContent = await this.app.vault.read(activeFile)
         const { contentStart } = getFrontMatterInfo(fileContent)
         const body = fileContent.slice(contentStart)
