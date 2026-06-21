@@ -1,4 +1,24 @@
-import { CandidateData, getTopLevelDirectoryName, TrieNode } from "../trie"
+import { CandidateData, TrieNode } from "../trie"
+import {
+    buildFallbackIndex,
+    extractFencedCodeBlocks,
+    extractLinkParts,
+    findBestCandidateInSameNamespace,
+    getCurrentNamespace,
+    isCjkCandidate,
+    isCjkText,
+    isIndexInsideMarkdownTable,
+    isKoreanText,
+    isMarkdownTableLine,
+    isMonthNote,
+    isProtectedLink,
+    isSelfLink,
+    isSentenceStart,
+    isWordBoundary,
+    normalizeCanonicalPath,
+    REGEX_PATTERNS,
+    shouldSkipCandidate,
+} from "./candidate-scanner"
 
 // Types for the replaceLinks function
 export interface LinkResolverContext {
@@ -34,214 +54,6 @@ export interface ReplaceLinksOptions {
     settings?: ReplaceLinksSettings
     linkGenerator?: LinkGenerator
     resolvedAmbiguities?: Map<string, string>
-}
-
-// Constants and Regular Expressions
-const REGEX_PATTERNS = {
-    PROTECTED: /(```[\s\S]*?```|`[^`]*`|\[\[([^\]]+)\]\]|\[[^\]]+\]\([^)]+\)|\[[^\]]+\]|https?:\/\/[^\s]+)/g,
-    DATE_FORMAT: /^\d{4}-\d{2}-\d{2}$/,
-    MONTH_NOTE: /^[0-9]{1,2}$/,
-    CJK: /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u,
-    CJK_CANDIDATE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\s\d]+$/u,
-    KOREAN: /^[\p{Script=Hangul}]+$/u,
-    JAPANESE: /^[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\s\d]+$/u,
-    URL: /^(https?:\/\/[^\s]+)/,
-    PROTECTED_LINK: /^\s*(\[\[[^\]]+\]\]|\[[^\]]+\]\([^)]+\))\s*$/,
-    KOREAN_SUFFIX: /^(이다\.?)/,
-    KOREAN_PARTICLES: /^(는|은)/,
-    KOREAN_PARTICLES_EXTENDED: /^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
-    TABLE_SEPARATOR: /^[|:\s-]+$/,
-    WORD_BOUNDARY: /[\p{L}\p{N}_/-]/u,
-    WHITESPACE: /[\t\n\r ]/,
-} as const
-
-// Text Analysis Utilities
-const isWordBoundary = (char: string | undefined): boolean => {
-    if (char === undefined) return true
-    if (REGEX_PATTERNS.CJK.test(char)) return true
-    return (!REGEX_PATTERNS.WORD_BOUNDARY.test(char) || REGEX_PATTERNS.WHITESPACE.test(char))
-}
-
-const isMonthNote = (candidate: string): boolean =>
-    REGEX_PATTERNS.MONTH_NOTE.test(candidate)
-    && parseInt(candidate, 10) >= 1
-    && parseInt(candidate, 10) <= 12
-
-const isProtectedLink = (body: string): boolean => REGEX_PATTERNS.PROTECTED_LINK.test(body)
-
-const isCjkText = (text: string): boolean => REGEX_PATTERNS.CJK.test(text)
-
-const isCjkCandidate = (candidate: string): boolean => REGEX_PATTERNS.CJK_CANDIDATE.test(candidate)
-
-const isKoreanText = (text: string): boolean => REGEX_PATTERNS.KOREAN.test(text)
-
-const isSentenceStart = (text: string, index: number): boolean => {
-    if (index === 0) return true
-    if (text[index - 1] === "\n") return true
-    // ". " pattern (after period + space)
-    // Avoid acronyms by checking the char before the period is a letter
-    if (index >= 3 && text[index - 1] === " " && text[index - 2] === ".") {
-        const charBeforePeriod = text[index - 3]
-        if (/[a-zA-Z]/.test(charBeforePeriod)) {
-            return true
-        }
-    }
-    return false
-}
-
-// Cache for fallback index to avoid rebuilding
-const fallbackIndexCache = new WeakMap<
-    Map<string, CandidateData>,
-    Map<string, Map<string, Array<[string, CandidateData]>>>
->()
-
-const buildFallbackIndex = (
-    candidateMap: Map<string, CandidateData>,
-    ignoreCase?: boolean,
-): Map<string, Array<[string, CandidateData]>> => {
-    // Get or create cache for this candidateMap
-    let cacheForMap = fallbackIndexCache.get(candidateMap)
-    if (!cacheForMap) {
-        cacheForMap = new Map()
-        fallbackIndexCache.set(candidateMap, cacheForMap)
-    }
-
-    // Check if we have cached result for this ignoreCase setting
-    const cacheKey = ignoreCase ? "ignoreCase" : "normal"
-    const cached = cacheForMap.get(cacheKey)
-    if (cached) return cached
-
-    // Build new fallback index
-    const fallbackIndex = new Map<string, Array<[string, CandidateData]>>()
-
-    for (const [key, data] of candidateMap.entries()) {
-        const slashIndex = key.lastIndexOf("/")
-        if (slashIndex === -1) continue
-
-        const shorthand = key.slice(slashIndex + 1)
-        const indexKey = ignoreCase ? shorthand.toLowerCase() : shorthand
-
-        let arr = fallbackIndex.get(indexKey)
-        if (!arr) {
-            arr = []
-            fallbackIndex.set(indexKey, arr)
-        }
-        arr.push([key, data])
-    }
-
-    // Cache the result
-    cacheForMap.set(cacheKey, fallbackIndex)
-    return fallbackIndex
-}
-
-const getCurrentNamespace = (filePath: string, baseDir?: string): string => {
-    if (baseDir) {
-        return getTopLevelDirectoryName(filePath, baseDir)
-    }
-
-    const segments = filePath.split("/")
-    return segments[0] || ""
-}
-
-const normalizeCanonicalPath = (linkPath: string, baseDir?: string): string => {
-    if (baseDir && linkPath.startsWith(baseDir + "/")) {
-        return linkPath.slice((baseDir + "/").length)
-    }
-    return linkPath
-}
-
-const extractLinkParts = (
-    canonicalPath: string,
-): { linkPath: string, alias: string, hasAlias: boolean } => {
-    const pipeIndex = canonicalPath.indexOf("|")
-    const hasAlias = pipeIndex !== -1
-
-    if (hasAlias) {
-        const linkPath = canonicalPath.slice(0, pipeIndex)
-        const alias = canonicalPath.slice(pipeIndex + 1)
-        return { linkPath, alias, hasAlias }
-    }
-
-    return { linkPath: canonicalPath, alias: "", hasAlias }
-}
-
-const escapeRegExp = (text: string): string =>
-    text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-
-const extractFencedCodeBlocks = (
-    body: string,
-): { body: string, codeBlocks: Array<{ placeholder: string, content: string }> } => {
-    if (!body.includes("```") && !body.includes("~~~")) {
-        return { body, codeBlocks: [] }
-    }
-
-    const codeBlocks: Array<{ placeholder: string, content: string }> = []
-    let result = ""
-    let cursor = 0
-    let codeBlockIndex = 0
-
-    const openingFencePattern = /^ {0,3}(`{3,}|~{3,})[^\r\n]*(?:\r?\n|$)/gm
-    let openingMatch: RegExpExecArray | null
-
-    while ((openingMatch = openingFencePattern.exec(body)) !== null) {
-        const start = openingMatch.index
-        if (start < cursor) {
-            continue
-        }
-
-        const openingFence = openingMatch[1]
-        const fenceChar = openingFence[0]
-        const fenceLength = openingFence.length
-        const closingFencePattern = new RegExp(
-            `^ {0,3}${escapeRegExp(fenceChar)}{${fenceLength},}[ \\t]*(?:\\r?\\n|$)`,
-            "gm",
-        )
-        closingFencePattern.lastIndex = openingMatch.index + openingMatch[0].length
-        const closingMatch = closingFencePattern.exec(body)
-        const end = closingMatch
-            ? closingMatch.index + closingMatch[0].length
-            : body.length
-
-        const placeholder = `__CODE_BLOCK_${codeBlockIndex}__`
-        codeBlocks.push({
-            placeholder,
-            content: body.slice(start, end),
-        })
-        result += body.slice(cursor, start) + placeholder
-        cursor = end
-        codeBlockIndex++
-        openingFencePattern.lastIndex = end
-    }
-
-    result += body.slice(cursor)
-    return { body: result, codeBlocks }
-}
-
-// Self-linking Prevention
-const isSelfLink = (
-    candidateData: CandidateData,
-    currentFilePath: string,
-    settings: ReplaceLinksSettings = {},
-): boolean => {
-    if (!settings.preventSelfLinking || candidateData.candidates.length === 0) {
-        return false
-    }
-
-    // Extract the link path from the canonical path
-    const { linkPath } = extractLinkParts(candidateData.candidates[0].canonical)
-
-    // Normalize paths for comparison
-    const normalizedLinkPath = normalizeCanonicalPath(
-        linkPath,
-        settings.baseDir,
-    )
-    const normalizedCurrentPath = normalizeCanonicalPath(
-        currentFilePath,
-        settings.baseDir,
-    )
-
-    // Compare the paths
-    return normalizedLinkPath === normalizedCurrentPath
 }
 
 // Helper function to check if a path should have its alias removed
@@ -369,55 +181,6 @@ export const defaultLinkGenerator: LinkGenerator = ({
     }
 
     return escapeLinkForMarkdownTable(`[[${linkContent}]]`, isInTable)
-}
-
-// Candidate Validation
-const shouldSkipCandidate = (
-    candidate: string,
-    settings: ReplaceLinksSettings,
-): boolean => {
-    if (
-        settings.ignoreDateFormats
-        && REGEX_PATTERNS.DATE_FORMAT.test(candidate)
-    ) {
-        return true
-    }
-    return isMonthNote(candidate)
-}
-
-// Markdown Table Detection
-const isMarkdownTableLine = (line: string): boolean => {
-    const trimmedLine = line.trim()
-    if (!trimmedLine || !trimmedLine.includes("|")) {
-        return false
-    }
-
-    if (trimmedLine.startsWith("|")
-        && trimmedLine.endsWith("|")
-        && REGEX_PATTERNS.TABLE_SEPARATOR.test(trimmedLine)
-    ) {
-        return true
-    }
-
-    return trimmedLine.startsWith("|") && trimmedLine.endsWith("|")
-}
-
-const isIndexInsideMarkdownTable = (text: string, index: number): boolean => {
-    // Find the start of the line containing the index
-    let lineStart = text.lastIndexOf("\n", index - 1) + 1
-    if (lineStart === 0 && text[0] !== "\n") {
-        lineStart = 0
-    }
-
-    // Find the end of the line containing the index
-    let lineEnd = text.indexOf("\n", index)
-    if (lineEnd === -1) {
-        lineEnd = text.length
-    }
-
-    // Extract the line and check if it's a table line
-    const line = text.slice(lineStart, lineEnd)
-    return isMarkdownTableLine(line)
 }
 
 // Processing functions for different text types
@@ -628,86 +391,6 @@ const handleKoreanSpecialCases = (
     }
 
     return null
-}
-
-const findBestCandidateInSameNamespace = (
-    filteredCandidates: Array<[string, CandidateData]>,
-    filePath: string,
-    settings: ReplaceLinksSettings = {},
-): [string, CandidateData] | null => {
-    let bestCandidate: [string, CandidateData] | null = null
-    let bestScore = -1
-
-    // Get the directory portion of the current file (if any)
-    const filePathDir = filePath.includes("/")
-        ? filePath.slice(0, filePath.lastIndexOf("/"))
-        : ""
-    const filePathSegments = filePathDir ? filePathDir.split("/") : []
-
-    for (const [key, data] of filteredCandidates) {
-        const slashIndex = key.lastIndexOf("/")
-        const candidateDir = key.slice(0, slashIndex)
-        const candidateSegments = candidateDir.split("/")
-        let score = 0
-
-        // Calculate common prefix score
-        for (
-            let idx = 0;
-            idx < Math.min(candidateSegments.length, filePathSegments.length);
-            idx++
-        ) {
-            if (candidateSegments[idx] === filePathSegments[idx]) {
-                score++
-            }
-            else {
-                break
-            }
-        }
-
-        if (score > bestScore) {
-            bestScore = score
-            bestCandidate = [key, data]
-        }
-        else if (score === bestScore && bestCandidate !== null) {
-            if (filePathDir === "" && settings.baseDir) {
-                // When the current file is in the base directory, compare candidates by relative depth
-                const basePrefix = settings.baseDir + "/"
-                const getRelativeDepth = (k: string): number => {
-                    if (k.startsWith(basePrefix)) {
-                        // Remove the baseDir part and count the remaining segments
-                        const relativeParts = k
-                            .slice(basePrefix.length)
-                            .split("/")
-                        return relativeParts.length - 1
-                    }
-                    return Infinity
-                }
-
-                const candidateDepth = getRelativeDepth(key)
-                const bestCandidateDepth = getRelativeDepth(bestCandidate[0])
-
-                // Prefer the candidate with lower depth or shorter path
-                if (candidateDepth < bestCandidateDepth
-                    || (candidateDepth === bestCandidateDepth && key.length < bestCandidate[0].length)) {
-                    bestCandidate = [key, data]
-                }
-            }
-            else {
-                // Otherwise, choose the candidate with fewer directory segments
-                const currentBestDir = bestCandidate[0].slice(0, bestCandidate[0].lastIndexOf("/"))
-                const currentBestSegments = currentBestDir.split("/")
-
-                if (
-                    candidateSegments.length < currentBestSegments.length
-                    || (candidateSegments.length === currentBestSegments.length && key.length < bestCandidate[0].length)
-                ) {
-                    bestCandidate = [key, data]
-                }
-            }
-        }
-    }
-
-    return bestCandidate
 }
 
 const processStandardText = (
