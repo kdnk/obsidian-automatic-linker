@@ -1,7 +1,6 @@
 import { isUrlTitleReplacementOff } from "./frontmatter-utils"
 import {
     LinkGenerator,
-    ReplaceLinksSettings,
     replaceLinks,
 } from "./replace-links/replace-links"
 import { replaceUrlWithTitle } from "./replace-url-with-title"
@@ -9,7 +8,10 @@ import { formatGitHubURL } from "./replace-urls/github"
 import { formatJiraURL } from "./replace-urls/jira"
 import { formatLinearURL } from "./replace-urls/linear"
 import { replaceURLs } from "./replace-urls/replace-urls"
-import { AutomaticLinkerSettings } from "./settings/settings-info"
+import {
+    AutomaticLinkerSettings,
+    projectReplaceLinksSettings,
+} from "./settings/settings-catalog"
 import { CandidateData, TrieNode } from "./trie"
 
 export interface CandidateIndex {
@@ -29,20 +31,7 @@ export interface FormattingRunOptions {
     linkGenerator?: LinkGenerator
 }
 
-export const toReplaceLinksSettings = (
-    settings: AutomaticLinkerSettings,
-    baseDir?: string,
-): ReplaceLinksSettings => ({
-    proximityBasedLinking: settings.proximityBasedLinking,
-    baseDir,
-    ignoreDateFormats: settings.ignoreDateFormats,
-    ignoreCase: settings.ignoreCase,
-    matchSentenceCase: settings.matchSentenceCase,
-    preventSelfLinking: settings.preventSelfLinking,
-    removeAliasInDirs: settings.removeAliasInDirs,
-    ignoreHeadings: settings.ignoreHeadings,
-    ignoreMarkdownTables: settings.ignoreMarkdownTables,
-})
+export { projectReplaceLinksSettings as toReplaceLinksSettings } from "./settings/settings-catalog"
 
 const formatMarkdownURLs = (
     text: string,
@@ -86,7 +75,7 @@ export const formatMarkdownBody = ({
                 trie: candidateIndex.trie,
                 candidateMap: candidateIndex.candidateMap,
             },
-            settings: toReplaceLinksSettings(settings, baseDir),
+            settings: projectReplaceLinksSettings(settings, baseDir),
             linkGenerator,
         })
     }
@@ -113,7 +102,7 @@ export const formatMarkdownSelection = ({
             trie: candidateIndex.trie,
             candidateMap: candidateIndex.candidateMap,
         },
-        settings: toReplaceLinksSettings(settings, baseDir),
+        settings: projectReplaceLinksSettings(settings, baseDir),
         linkGenerator,
     })
 }
