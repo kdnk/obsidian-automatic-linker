@@ -32,6 +32,21 @@ describe("segmentMarkdown", () => {
         ])
     })
 
+    it("protects tilde fenced code blocks", () => {
+        const text = "before\n~~~ts\nTypeScript\n~~~\nafter"
+        const segments = segmentMarkdown(text)
+
+        expect(segments.map(segment => ({
+            kind: segment.kind,
+            protectedKind: segment.protectedKind,
+            text: segment.text,
+        }))).toEqual([
+            { kind: "prose", protectedKind: undefined, text: "before\n" },
+            { kind: "protected", protectedKind: "fenced-code", text: "~~~ts\nTypeScript\n~~~\n" },
+            { kind: "prose", protectedKind: undefined, text: "after" },
+        ])
+    })
+
     it("protects headings, tables, and callouts when requested", () => {
         const text = "# TypeScript\n| TypeScript |\n> [!note]\n> TypeScript\nTypeScript"
         const segments = segmentMarkdown(text, {

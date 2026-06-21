@@ -63,4 +63,17 @@ describe("replaceUrlWithTitle", () => {
             "Line 1: [Example Title](https://example.com)\nLine 2: [Another Title](https://another.com)",
         )
     })
+
+    it("should ignore URLs inside tilde fenced code blocks", () => {
+        const body = "~~~\nhttps://example.com\n~~~"
+        const result = replaceUrlWithTitle({
+            body,
+            urlTitleMap: new Map(
+                Object.entries({
+                    "https://example.com": "Example Title",
+                }),
+            ),
+        })
+        expect(result).toBe("~~~\nhttps://example.com\n~~~")
+    })
 })

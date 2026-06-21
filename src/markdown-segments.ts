@@ -92,10 +92,45 @@ const collectTableRowRanges = (text: string): ProtectedRange[] => {
     return ranges
 }
 
+const escapeRegExp = (text: string): string =>
+    text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+const collectFencedCodeRanges = (text: string): ProtectedRange[] => {
+    if (!text.includes("```") && !text.includes("~~~")) {
+        return []
+    }
+
+    const ranges: ProtectedRange[] = []
+    const openingFencePattern = /^ {0,3}(`{3,}|~{3,})[^\r\n]*(?:\r?\n|$)/gm
+    let openingMatch: RegExpExecArray | null
+
+    while ((openingMatch = openingFencePattern.exec(text)) !== null) {
+        const openingFence = openingMatch[1]
+        const fenceChar = openingFence[0]
+        const fenceLength = openingFence.length
+        const closingFencePattern = new RegExp(
+            `^ {0,3}${escapeRegExp(fenceChar)}{${fenceLength},}[ \\t]*(?:\\r?\\n|$)`,
+            "gm",
+        )
+        closingFencePattern.lastIndex = openingMatch.index + openingMatch[0].length
+        const closingMatch = closingFencePattern.exec(text)
+        const end = closingMatch
+            ? closingMatch.index + closingMatch[0].length
+            : text.length
+
+        ranges.push({
+            start: openingMatch.index,
+            end,
+            protectedKind: "fenced-code",
+        })
+        openingFencePattern.lastIndex = end
+    }
+
+    return ranges
+}
+
 const buildProtectedPattern = (protectUrls: boolean): RegExp => {
     const parts = [
-        "```[\\s\\S]*?(?:```|$)",
-        "~~~[\\s\\S]*?(?:~~~|$)",
         "`[^`]*`",
         "\\[\\[[^\\]]+\\]\\]",
         "\\[[^\\]]+\\]\\([^)]+\\)",
@@ -160,6 +195,7 @@ export const segmentMarkdown = (
     options: SegmentMarkdownOptions = {},
 ): MarkdownSegment[] => {
     const mayContainProtectedMarkdown = text.includes("`")
+        || text.includes("~")
         || text.includes("[")
         || (options.protectHeadings && text.includes("#"))
         || (options.protectCallouts && text.includes(">"))
@@ -188,6 +224,8 @@ export const segmentMarkdown = (
     if (options.protectTableRows) {
         ranges.push(...collectTableRowRanges(text))
     }
+
+    ranges.push(...collectFencedCodeRanges(text))
 
     const protectedPattern = buildProtectedPattern(options.protectUrls ?? false)
     let match: RegExpExecArray | null

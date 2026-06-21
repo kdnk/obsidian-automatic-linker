@@ -32,6 +32,12 @@ describe("listupAllUrls", () => {
         expect(result).not.toContain("https://example.com")
     })
 
+    it("should ignore URLs inside tilde fenced code blocks", () => {
+        const body = "~~~\nhttps://example.com\n~~~"
+        const result = listupAllUrls(body)
+        expect(result).not.toContain("https://example.com")
+    })
+
     it("ignore domains", () => {
         const body = "Check this link: https://example.com"
         const result = listupAllUrls(body, ["example.com"])

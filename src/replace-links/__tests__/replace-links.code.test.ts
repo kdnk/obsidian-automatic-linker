@@ -45,6 +45,48 @@ describe("ignore code", () => {
         expect(result).toBe("```typescript\nexample\n```")
     })
 
+    it("tilde code block", () => {
+        const settings = {
+            scoped: false,
+            baseDir: undefined,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "example" }, { path: "typescript" }],
+            settings,
+        })
+        const result = replaceLinks({
+            body: "~~~typescript\nexample\n~~~",
+            linkResolverContext: {
+                filePath: "journals/2022-01-01",
+                trie,
+                candidateMap,
+            },
+            settings,
+        })
+        expect(result).toBe("~~~typescript\nexample\n~~~")
+    })
+
+    it("wide code fence with embedded triple backticks", () => {
+        const settings = {
+            scoped: false,
+            baseDir: undefined,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "example" }, { path: "typescript" }],
+            settings,
+        })
+        const result = replaceLinks({
+            body: "````\nnot end ```\nexample\n````",
+            linkResolverContext: {
+                filePath: "journals/2022-01-01",
+                trie,
+                candidateMap,
+            },
+            settings,
+        })
+        expect(result).toBe("````\nnot end ```\nexample\n````")
+    })
+
     it("unclosed code block", () => {
         const settings = {
             scoped: false,
