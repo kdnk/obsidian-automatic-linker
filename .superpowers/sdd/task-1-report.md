@@ -208,3 +208,83 @@ Results:
 - `npm run test -- --reporter=dot`: passed, `325/325` tests across `38/38` files
 - `npm run tsc`: passed
 - `npm run lint`: passed
+
+## Review Fix 3
+
+### Scope
+
+Fixed the remaining Task 1 Korean special-case scanner/replacement drift:
+
+- `scanCandidateOccurrences()` now skips Korean particle trie hits like `문서는` / `문서은`, matching the current non-linking `replaceLinks()` behavior for that branch
+- `replaceLinks()` now honors `resolvedAmbiguities` for the Korean suffix branch like `문서이다`, so AI-resolved targets are applied consistently
+- added regressions covering scanner omission, AI request omission, and Korean suffix replacement resolution
+
+No AGENTS.md changes were needed.
+
+### TDD Evidence
+
+#### RED
+
+Commands:
+
+```bash
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts
+npx vitest run src/utils/__tests__/resolve-ambiguities.test.ts
+npx vitest run src/replace-links/__tests__/ai-disambiguation.test.ts
+```
+
+Results:
+
+- `candidate-scanner.test.ts`: failed because `scanCandidateOccurrences()` emitted `문서` for `문서는` and `문서은`
+- `resolve-ambiguities.test.ts`: failed because the scanner still generated an AI ambiguity request for Korean particle forms
+- `ai-disambiguation.test.ts`: failed because `replaceLinks()` ignored `resolvedAmbiguities` for the Korean `이다` suffix branch and kept the default candidate
+
+#### GREEN
+
+Commands:
+
+```bash
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts
+npx vitest run src/utils/__tests__/resolve-ambiguities.test.ts
+npx vitest run src/replace-links/__tests__/ai-disambiguation.test.ts
+```
+
+Results:
+
+- `src/replace-links/__tests__/candidate-scanner.test.ts`: passed `8/8`
+- `src/utils/__tests__/resolve-ambiguities.test.ts`: passed `5/5`
+- `src/replace-links/__tests__/ai-disambiguation.test.ts`: passed `4/4`
+
+### Implementation Summary
+
+- Added an internal scanner guard that skips Korean trie hits when the matched term is immediately followed by the `는` or `은` particle.
+- Introduced a shared link-content resolver in `replace-links.ts` so the normal ambiguity-resolution path and the Korean `이다` suffix path use the same `resolvedAmbiguities` lookup.
+- Kept behavior unchanged when `resolvedAmbiguities` is absent by falling back to the existing candidate-derived link generation.
+
+### Focused Verification
+
+Command:
+
+```bash
+npx vitest run src/replace-links/__tests__/candidate-scanner.test.ts src/utils/__tests__/resolve-ambiguities.test.ts src/replace-links/__tests__/ai-disambiguation.test.ts src/replace-links/__tests__/replace-links.cjk.test.ts
+```
+
+Result:
+
+- Passed: `29/29` tests across `4/4` files
+
+### Full Verification
+
+Commands:
+
+```bash
+npm run test -- --reporter=dot
+npm run tsc
+npm run lint
+```
+
+Results:
+
+- `npm run test -- --reporter=dot`: passed, `328/328` tests across `38/38` files
+- `npm run tsc`: passed
+- `npm run lint`: passed

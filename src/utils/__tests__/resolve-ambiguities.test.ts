@@ -123,4 +123,34 @@ meeting`
             ],
         )
     })
+
+    it("should not request AI for Korean particle forms that replacement skips", async () => {
+        const koreanCandidateMap = new Map<string, CandidateData>([
+            [
+                "문서",
+                {
+                    candidates: [
+                        { canonical: "work/문서", scoped: false, namespace: "work" },
+                        { canonical: "private/문서", scoped: false, namespace: "private" },
+                    ],
+                },
+            ],
+        ])
+        const koreanTrie: TrieNode = buildTrie(["문서"], true)
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockClear()
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(new Map())
+
+        const result = await resolveAmbiguities(
+            "문서는 문서은",
+            koreanCandidateMap,
+            koreanTrie,
+            mockSettings,
+        )
+
+        expect(aiClient.resolveAmbiguitiesBatch).toHaveBeenCalledWith(
+            mockSettings,
+            [],
+        )
+        expect(result.size).toBe(0)
+    })
 })

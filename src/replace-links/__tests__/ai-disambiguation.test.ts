@@ -53,4 +53,30 @@ describe("replaceLinks with AI disambiguation", () => {
 
         expect(result).toBe("Check [[work/meeting|private/meeting]] notes.")
     })
+
+    it("should honor AI-resolved Korean suffix choices", () => {
+        const koreanFiles = [
+            { path: "work/문서", scoped: false, aliases: [] },
+            { path: "private/문서", scoped: false, aliases: [] },
+        ]
+        const { candidateMap: koreanCandidateMap, trie: koreanTrie } = buildCandidateTrie(
+            koreanFiles,
+            undefined,
+            true,
+        )
+        const body = "문서이다."
+        const resolvedAmbiguities = new Map([["문서", "private/문서"]])
+
+        const result = replaceLinks({
+            body,
+            linkResolverContext: {
+                filePath: "test.md",
+                trie: koreanTrie,
+                candidateMap: koreanCandidateMap,
+            },
+            resolvedAmbiguities,
+        })
+
+        expect(result).toBe("[[private/문서|문서]]이다.")
+    })
 })

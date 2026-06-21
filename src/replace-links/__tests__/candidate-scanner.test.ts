@@ -216,6 +216,40 @@ meeting`,
             },
         ])
     })
+
+    it("does not emit Korean particle forms that replaceLinks currently skips", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [
+                { path: "work/문서" },
+                { path: "private/문서" },
+            ],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const occurrences = scanCandidateOccurrences({
+            text: "문서는 문서은 문서이다",
+            filePath: "notes/today",
+            trie,
+            candidateMap,
+            settings: { ignoreCase: true, proximityBasedLinking: true },
+        })
+
+        expect(occurrences.map(o => ({
+            text: o.text,
+            start: o.start,
+            end: o.end,
+        }))).toEqual([
+            {
+                text: "문서",
+                start: 8,
+                end: 10,
+            },
+        ])
+    })
 })
 
 describe("getOccurrenceContext", () => {

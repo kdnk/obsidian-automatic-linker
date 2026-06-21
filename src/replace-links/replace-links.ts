@@ -157,6 +157,24 @@ const createLinkContent = (
     }
 }
 
+const resolveLinkContent = (
+    candidateData: CandidateData,
+    originalMatchedText: string,
+    settings: ReplaceLinksSettings,
+    resolvedAmbiguities?: Map<string, string>,
+): { linkPath: string, alias?: string } => {
+    if (resolvedAmbiguities?.has(originalMatchedText)) {
+        const resolvedPath = resolvedAmbiguities.get(originalMatchedText)!
+        const parts = extractLinkParts(resolvedPath)
+        return {
+            linkPath: parts.linkPath,
+            alias: parts.alias || originalMatchedText,
+        }
+    }
+
+    return createLinkContent(candidateData, originalMatchedText, settings)
+}
+
 // Default link generator that creates standard Obsidian wikilinks
 export const escapeLinkForMarkdownTable = (
     link: string,
@@ -350,6 +368,7 @@ const handleKoreanSpecialCases = (
     filePath: string,
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings = {},
+    resolvedAmbiguities?: Map<string, string>,
 ): { result: string, newIndex: number } | null => {
     const remaining = text.slice(i + candidate.length)
 
@@ -364,10 +383,11 @@ const handleKoreanSpecialCases = (
             }
         }
 
-        const { linkPath, alias } = createLinkContent(
+        const { linkPath, alias } = resolveLinkContent(
             candidateData,
             candidate,
             settings,
+            resolvedAmbiguities,
         )
         const finalLink = linkGenerator({
             linkPath,
@@ -496,6 +516,7 @@ const processStandardText = (
                         filePath,
                         linkGenerator,
                         settings,
+                        resolvedAmbiguities,
                     )
                     if (koreanResult) {
                         result += koreanResult.result
@@ -548,24 +569,12 @@ const processStandardText = (
                 }
 
                 // Create the link
-                let linkPath = ""
-                let alias: string | undefined
-
-                if (resolvedAmbiguities?.has(candidate)) {
-                    const resolvedPath = resolvedAmbiguities.get(candidate)!
-                    const parts = extractLinkParts(resolvedPath)
-                    linkPath = parts.linkPath
-                    alias = parts.alias || candidate
-                }
-                else {
-                    const content = createLinkContent(
-                        candidateData,
-                        candidate,
-                        settings,
-                    )
-                    linkPath = content.linkPath
-                    alias = content.alias
-                }
+                const { linkPath, alias } = resolveLinkContent(
+                    candidateData,
+                    candidate,
+                    settings,
+                    resolvedAmbiguities,
+                )
 
                 const isInTable = isIndexInsideMarkdownTable(text, i)
                 const finalLink = linkGenerator({

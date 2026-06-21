@@ -582,6 +582,19 @@ const collectFallbackOccurrence = ({
     }
 }
 
+const shouldSkipKoreanTrieOccurrence = (
+    text: string,
+    startIndex: number,
+    candidate: string,
+): boolean => {
+    if (!isKoreanText(candidate)) {
+        return false
+    }
+
+    const remaining = text.slice(startIndex + candidate.length)
+    return REGEX_PATTERNS.KOREAN_PARTICLES.test(remaining)
+}
+
 const collectUnlinkedOccurrences = ({
     text,
     filePath,
@@ -654,6 +667,11 @@ const collectUnlinkedOccurrences = ({
 
             if (candidateData) {
                 if (isSelfLink(candidateData, filePath, settings)) {
+                    i += candidate.length
+                    continue
+                }
+
+                if (shouldSkipKoreanTrieOccurrence(text, i, candidate)) {
                     i += candidate.length
                     continue
                 }
