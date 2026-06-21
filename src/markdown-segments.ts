@@ -1,4 +1,3 @@
-import { isMarkdownTableLine } from "./replace-links/candidate-scanner"
 import { RAW_URL_SOURCE } from "./markdown-protection"
 
 export type MarkdownSegmentKind = "prose" | "protected"
@@ -32,6 +31,23 @@ interface ProtectedRange {
     start: number
     end: number
     protectedKind: MarkdownProtectedKind
+}
+
+export const isMarkdownTableLine = (line: string): boolean => {
+    const trimmedLine = line.trim()
+    if (!trimmedLine || !trimmedLine.includes("|")) {
+        return false
+    }
+
+    if (
+        trimmedLine.startsWith("|")
+        && trimmedLine.endsWith("|")
+        && /^[|:\s-]+$/.test(trimmedLine)
+    ) {
+        return true
+    }
+
+    return trimmedLine.startsWith("|") && trimmedLine.endsWith("|")
 }
 
 const collectHeadingRanges = (text: string): ProtectedRange[] => {

@@ -1,5 +1,6 @@
 import { CandidateData, getTopLevelDirectoryName, TrieNode } from "../trie"
 import { RAW_URL_AT_START_PATTERN, RAW_URL_SOURCE } from "../markdown-protection"
+import { isMarkdownTableLine, segmentMarkdown } from "../markdown-segments"
 import type { ReplaceLinksSettings } from "./replace-links"
 
 export type CandidateOccurrenceKind = "unlinked" | "existing-wikilink"
@@ -44,7 +45,6 @@ export const REGEX_PATTERNS = {
     KOREAN_SUFFIX: /^(이다\.?)/,
     KOREAN_PARTICLES: /^(는|은)/,
     KOREAN_PARTICLES_EXTENDED: /^(가|는|을|에|서|와|로부터|까지|보다|로|의|나|도|또한)/,
-    TABLE_SEPARATOR: /^[|:\s-]+$/,
     WORD_BOUNDARY: /[\p{L}\p{N}_/-]/u,
     WHITESPACE: /[\t\n\r ]/,
 } as const
@@ -249,22 +249,6 @@ export const shouldSkipCandidate = (
     return isMonthNote(candidate)
 }
 
-export const isMarkdownTableLine = (line: string): boolean => {
-    const trimmedLine = line.trim()
-    if (!trimmedLine || !trimmedLine.includes("|")) {
-        return false
-    }
-
-    if (trimmedLine.startsWith("|")
-        && trimmedLine.endsWith("|")
-        && REGEX_PATTERNS.TABLE_SEPARATOR.test(trimmedLine)
-    ) {
-        return true
-    }
-
-    return trimmedLine.startsWith("|") && trimmedLine.endsWith("|")
-}
-
 export const isIndexInsideMarkdownTable = (text: string, index: number): boolean => {
     let lineStart = text.lastIndexOf("\n", index - 1) + 1
     if (lineStart === 0 && text[0] !== "\n") {
@@ -366,109 +350,22 @@ const dedupeCandidates = (candidates: CandidateData["candidates"]): CandidateDat
     }
 }
 
-const findProtectedBlockRanges = (
-    text: string,
-    settings: ReplaceLinksSettings,
-): Array<{ start: number, end: number }> => {
-    const ranges: Array<{ start: number, end: number }> = [
-        ...findFencedCodeBlockRanges(text),
-    ]
-
-    if (settings.ignoreHeadings) {
-        const headingPattern = /^#{1,6}\s+.*$/gm
-        let headingMatch: RegExpExecArray | null
-
-        while ((headingMatch = headingPattern.exec(text)) !== null) {
-            ranges.push({
-                start: headingMatch.index,
-                end: headingMatch.index + headingMatch[0].length,
-            })
-        }
-    }
-
-    const calloutPattern = /^>[ \t]*\[![\w-]+\].*?(\n>.*?)*(?=\n(?!>)|$)/gm
-    let calloutMatch: RegExpExecArray | null
-
-    while ((calloutMatch = calloutPattern.exec(text)) !== null) {
-        ranges.push({
-            start: calloutMatch.index,
-            end: calloutMatch.index + calloutMatch[0].length,
-        })
-    }
-
-    ranges.sort((a, b) => a.start - b.start)
-
-    const merged: Array<{ start: number, end: number }> = []
-    for (const range of ranges) {
-        const lastRange = merged[merged.length - 1]
-        if (!lastRange || range.start > lastRange.end) {
-            merged.push({ ...range })
-            continue
-        }
-
-        lastRange.end = Math.max(lastRange.end, range.end)
-    }
-
-    return merged
-}
-
-const sortAndMergeRanges = (
-    ranges: Array<{ start: number, end: number }>,
-): Array<{ start: number, end: number }> => {
-    const sortedRanges = ranges.slice().sort((a, b) => a.start - b.start)
-    const merged: Array<{ start: number, end: number }> = []
-
-    for (const range of sortedRanges) {
-        const lastRange = merged[merged.length - 1]
-        if (!lastRange || range.start > lastRange.end) {
-            merged.push({ ...range })
-            continue
-        }
-
-        lastRange.end = Math.max(lastRange.end, range.end)
-    }
-
-    return merged
-}
-
-const findInlineCodeRanges = (text: string): Array<{ start: number, end: number }> => {
-    if (!text.includes("`")) {
-        return []
-    }
-
-    const ranges: Array<{ start: number, end: number }> = []
-    const inlineCodePattern = /`[^`]*`/g
-    let inlineCodeMatch: RegExpExecArray | null
-
-    while ((inlineCodeMatch = inlineCodePattern.exec(text)) !== null) {
-        ranges.push({
-            start: inlineCodeMatch.index,
-            end: inlineCodeMatch.index + inlineCodeMatch[0].length,
-        })
-    }
-
-    return ranges
-}
-
-const isIndexProtected = (
-    index: number,
-    protectedRanges: Array<{ start: number, end: number }>,
-): boolean => {
-    return protectedRanges.some(range => index >= range.start && index < range.end)
-}
-
 const collectExistingWikilinks = (
     text: string,
+    segments: ReturnType<typeof segmentMarkdown>,
     candidateMap: Map<string, CandidateData>,
     occurrences: CandidateOccurrence[],
     settings: ReplaceLinksSettings,
-    protectedRanges: Array<{ start: number, end: number }>,
 ): void => {
-    const existingLinkRegex = /\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/g
-    let match: RegExpExecArray | null
+    const existingLinkRegex = /^\[\[([^|\]]+)(?:\|([^\]]+))?\]\]$/
 
-    while ((match = existingLinkRegex.exec(text)) !== null) {
-        if (isIndexProtected(match.index, protectedRanges)) {
+    for (const segment of segments) {
+        if (segment.kind !== "protected" || segment.protectedKind !== "wikilink") {
+            continue
+        }
+
+        const match = segment.text.match(existingLinkRegex)
+        if (!match) {
             continue
         }
 
@@ -484,12 +381,12 @@ const collectExistingWikilinks = (
 
         occurrences.push({
             kind: "existing-wikilink",
-            start: match.index,
-            end: match.index + fullMatch.length,
+            start: segment.start,
+            end: segment.end,
             text: fullMatch,
             candidateKey,
             candidateData: dedupeCandidates(candidateData.candidates),
-            isInTable: isIndexInsideMarkdownTable(text, match.index),
+            isInTable: isIndexInsideMarkdownTable(text, segment.start),
         })
     }
 }
@@ -836,95 +733,46 @@ export const scanCandidateOccurrences = ({
     const normalizedText = text.normalize("NFC")
     const fallbackIndex = buildFallbackIndex(candidateMap, settings.ignoreCase)
     const currentNamespace = getCurrentNamespace(filePath, settings.baseDir)
-    const protectedRanges = sortAndMergeRanges([
-        ...findProtectedBlockRanges(normalizedText, settings),
-        ...findInlineCodeRanges(normalizedText),
-    ])
+    const markdownSegments = segmentMarkdown(normalizedText, {
+        protectHeadings: settings.ignoreHeadings,
+        protectCallouts: true,
+        protectTableRows: settings.ignoreMarkdownTables,
+        protectUrls: true,
+    })
 
     collectExistingWikilinks(
         normalizedText,
+        markdownSegments,
         candidateMap,
         occurrences,
         settings,
-        protectedRanges,
     )
 
-    const scanUnprotectedSegment = (
-        segment: string,
-        offset: number,
-        segmentOccurrences: CandidateOccurrence[],
-    ): void => {
-        REGEX_PATTERNS.PROTECTED.lastIndex = 0
-        let lastProtectedIndex = 0
-        let match: RegExpExecArray | null
-
-        while ((match = REGEX_PATTERNS.PROTECTED.exec(segment)) !== null) {
-            const unprotectedSegment = segment.slice(lastProtectedIndex, match.index)
-            const nestedOccurrences: CandidateOccurrence[] = []
-            collectUnlinkedOccurrences({
-                text: unprotectedSegment,
-                filePath,
-                trie,
-                candidateMap,
-                fallbackIndex,
-                currentNamespace,
-                settings,
-                occurrences: nestedOccurrences,
-            })
-            for (const occurrence of nestedOccurrences) {
-                segmentOccurrences.push({
-                    ...occurrence,
-                    start: occurrence.start + offset + lastProtectedIndex,
-                    end: occurrence.end + offset + lastProtectedIndex,
-                })
-            }
-            lastProtectedIndex = match.index + match[0].length
-
-            if (match[0].length === 0) {
-                REGEX_PATTERNS.PROTECTED.lastIndex++
-            }
+    for (const segment of markdownSegments) {
+        if (segment.kind !== "prose") {
+            continue
         }
 
-        const nestedOccurrences: CandidateOccurrence[] = []
+        const segmentOccurrences: CandidateOccurrence[] = []
         collectUnlinkedOccurrences({
-            text: segment.slice(lastProtectedIndex),
+            text: segment.text,
             filePath,
             trie,
             candidateMap,
             fallbackIndex,
             currentNamespace,
             settings,
-            occurrences: nestedOccurrences,
+            occurrences: segmentOccurrences,
         })
-        for (const occurrence of nestedOccurrences) {
-            segmentOccurrences.push({
+
+        for (const occurrence of segmentOccurrences) {
+            occurrences.push({
                 ...occurrence,
-                start: occurrence.start + offset + lastProtectedIndex,
-                end: occurrence.end + offset + lastProtectedIndex,
+                start: occurrence.start + segment.start,
+                end: occurrence.end + segment.start,
             })
         }
     }
-
-    const protectedFreeOccurrences: CandidateOccurrence[] = []
-    let lastIndex = 0
-    for (const range of protectedRanges) {
-        const segmentOccurrences: CandidateOccurrence[] = []
-        scanUnprotectedSegment(
-            normalizedText.slice(lastIndex, range.start),
-            lastIndex,
-            segmentOccurrences,
-        )
-        protectedFreeOccurrences.push(...segmentOccurrences)
-        lastIndex = range.end
-    }
-
-    const tailOccurrences: CandidateOccurrence[] = []
-    scanUnprotectedSegment(
-        normalizedText.slice(lastIndex),
-        lastIndex,
-        tailOccurrences,
-    )
-    occurrences.push(...protectedFreeOccurrences, ...tailOccurrences)
 
     return occurrences.sort((a, b) => a.start - b.start)
 }

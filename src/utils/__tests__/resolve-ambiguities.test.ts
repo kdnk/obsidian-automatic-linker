@@ -263,4 +263,29 @@ meeting`
         )
         expect(result.size).toBe(0)
     })
+
+    it("does not request AI for candidates inside ignored Markdown table rows", async () => {
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockClear()
+        vi.mocked(aiClient.resolveAmbiguitiesBatch).mockResolvedValue(new Map())
+
+        const result = await resolveAmbiguities(
+            `| Topic |
+| --- |
+| meeting |`,
+            candidateMap,
+            trie,
+            {
+                ...mockSettings,
+                ignoreMarkdownTables: true,
+            },
+        )
+
+        expect(aiClient.resolveAmbiguitiesBatch).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ignoreMarkdownTables: true,
+            }),
+            [],
+        )
+        expect(result.size).toBe(0)
+    })
 })

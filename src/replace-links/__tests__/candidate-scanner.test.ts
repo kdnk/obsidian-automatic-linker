@@ -352,6 +352,82 @@ meeting`,
         ])
     })
 
+    it("skips ignored Markdown table rows but still finds prose outside the table", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [
+                { path: "work/meeting" },
+                { path: "private/meeting" },
+            ],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const text = `| Topic |
+| --- |
+| meeting |
+
+meeting`
+
+        const occurrences = scanCandidateOccurrences({
+            text,
+            filePath: "notes/today",
+            trie,
+            candidateMap,
+            settings: {
+                ignoreCase: true,
+                ignoreMarkdownTables: true,
+                proximityBasedLinking: true,
+            },
+        })
+
+        expect(occurrences.map(o => ({
+            kind: o.kind,
+            text: o.text,
+            start: o.start,
+            end: o.end,
+        }))).toEqual([
+            {
+                kind: "unlinked",
+                text: "meeting",
+                start: text.lastIndexOf("meeting"),
+                end: text.lastIndexOf("meeting") + "meeting".length,
+            },
+        ])
+    })
+
+    it("skips existing wikilinks inside ignored Markdown table rows", () => {
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [
+                { path: "work/meeting" },
+                { path: "private/meeting" },
+            ],
+            settings: {
+                scoped: false,
+                baseDir: undefined,
+                ignoreCase: true,
+            },
+        })
+
+        const occurrences = scanCandidateOccurrences({
+            text: `| Topic |
+| --- |
+| [[private/meeting|meeting]] |`,
+            filePath: "notes/today",
+            trie,
+            candidateMap,
+            settings: {
+                ignoreCase: true,
+                ignoreMarkdownTables: true,
+                proximityBasedLinking: true,
+            },
+        })
+
+        expect(occurrences).toEqual([])
+    })
+
     it("skips Korean particle hits but still finds overlapping follow-on candidates", () => {
         const isolatedFixture = buildCandidateTrieForTest({
             files: [
