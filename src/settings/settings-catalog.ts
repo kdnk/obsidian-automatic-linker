@@ -41,6 +41,8 @@ export interface SettingCatalogEntry<K extends keyof AutomaticLinkerSettings = k
     control: SettingControl
     placeholder?: string
     multiline?: boolean
+    rows?: number
+    cols?: number
     refreshesIndex: boolean
     runtimeOnly?: boolean
 }
@@ -235,6 +237,8 @@ export const SETTINGS_CATALOG = [
         control: "textarea",
         placeholder: "",
         multiline: true,
+        rows: 4,
+        cols: 50,
         refreshesIndex: false,
     },
     {
@@ -255,6 +259,8 @@ export const SETTINGS_CATALOG = [
         control: "textarea",
         placeholder: "github.enterprise.com\ngithub.company.com",
         multiline: true,
+        rows: 4,
+        cols: 50,
         refreshesIndex: false,
     },
     {
@@ -275,6 +281,8 @@ export const SETTINGS_CATALOG = [
         control: "textarea",
         placeholder: "jira.enterprise.com\njira.company.com",
         multiline: true,
+        rows: 4,
+        cols: 50,
         refreshesIndex: false,
     },
     {

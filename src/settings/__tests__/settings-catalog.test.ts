@@ -16,6 +16,20 @@ describe("SETTINGS_CATALOG", () => {
         expect(new Set(catalogKeys).size).toBe(catalogKeys.length)
     })
 
+    it("marks only the URL textarea settings for explicit sizing", () => {
+        const sizedTextareaKeys = SETTINGS_CATALOG
+            .filter(entry => entry.control === "textarea")
+            .filter(entry => (entry as { rows?: number }).rows === 4)
+            .filter(entry => (entry as { cols?: number }).cols === 50)
+            .map(entry => entry.key)
+
+        expect(sizedTextareaKeys).toEqual([
+            "replaceUrlWithTitleIgnoreDomains",
+            "githubEnterpriseURLs",
+            "jiraURLs",
+        ])
+    })
+
     it("marks current index-refresh settings", () => {
         expect(settingRefreshesIndex("respectNewFileFolderPath")).toBe(true)
         expect(settingRefreshesIndex("includeAliases")).toBe(true)

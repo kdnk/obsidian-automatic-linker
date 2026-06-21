@@ -99,8 +99,12 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                             .filter(Boolean) as never,
                     )
                 })
-            text.inputEl.rows = 4
-            text.inputEl.cols = 50
+            if (entry.rows !== undefined) {
+                text.inputEl.rows = entry.rows
+            }
+            if (entry.cols !== undefined) {
+                text.inputEl.cols = entry.cols
+            }
         })
     }
 
