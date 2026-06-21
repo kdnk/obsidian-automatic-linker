@@ -108,7 +108,7 @@ The formatting-run module should return transformed text and avoid direct Obsidi
 
 ### Testing
 
-Tests should exercise the formatting run without constructing `AutomaticLinkerPlugin` or mocking Obsidian. Existing `main.ts` tests that only verify pure transformation behavior should move toward the formatting-run module where practical.
+Tests should exercise the formatting run without constructing `AutomaticLinkerPlugin` or mocking Obsidian. Move the existing `main.ts` tests that only verify pure transformation behavior to formatting-run tests; keep `main.ts` tests only for Obsidian adapter behavior such as link generator integration.
 
 ## Candidate 3: Deepen The Settings Catalog
 
@@ -133,7 +133,7 @@ The catalog should centralize:
 - setting groups and display metadata used by the settings tab
 - whether changing a setting requires index refresh
 - projection from `AutomaticLinkerSettings` to link replacement settings
-- projection from `AutomaticLinkerSettings` to URL formatting settings, if needed
+- projection from `AutomaticLinkerSettings` to URL formatting adapter settings, including format flags and configured domains
 
 The settings tab remains an Obsidian UI adapter that renders catalog entries into `Setting` controls.
 
@@ -166,7 +166,7 @@ The module should preserve exact text and ordering. Adapters can then transform 
 - URL discovery adapter
 - URL title replacement adapter
 
-This stage should be conservative. If extracting all segment rules at once is too risky, start with fenced code, inline code, Markdown links, and wikilinks, then fold headings, tables, and callouts into the same module after tests are in place.
+This stage should be conservative. First extract fenced code, inline code, Markdown links, and wikilinks. Then add headings, tables, and callouts to the same module after exact round-trip segment tests are passing.
 
 ### Testing
 
