@@ -12,6 +12,11 @@ import {
 } from "obsidian"
 import { excludeLinks } from "./exclude-links"
 import {
+    formatMarkdownDocument,
+    formatMarkdownSelection,
+    toReplaceLinksSettings,
+} from "./formatting-run"
+import {
     isLinkingOff,
     isLinkingExcluded,
     isNamespaceScoped,
@@ -26,13 +31,8 @@ import {
     LinkGeneratorParams,
     replaceLinks,
 } from "./replace-links/replace-links"
-import { replaceUrlWithTitle } from "./replace-url-with-title"
 import { getTitleFromHtml } from "./replace-url-with-title/utils/get-title-from-html"
 import { listupAllUrls } from "./replace-url-with-title/utils/list-up-all-urls"
-import { formatGitHubURL } from "./replace-urls/github"
-import { formatJiraURL } from "./replace-urls/jira"
-import { formatLinearURL } from "./replace-urls/linear"
-import { replaceURLs } from "./replace-urls/replace-urls"
 import { AutomaticLinkerPluginSettingsTab } from "./settings/settings"
 import {
     AutomaticLinkerSettings,
@@ -98,35 +98,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
         filePath: string,
         frontmatter?: Record<string, unknown>,
     ): string {
-        if (this.settings.formatGitHubURLs) {
-            fileContent = replaceURLs(fileContent, this.settings, formatGitHubURL)
-        }
-
-        if (this.settings.formatJiraURLs) {
-            fileContent = replaceURLs(fileContent, this.settings, formatJiraURL)
-        }
-
-        if (this.settings.formatLinearURLs) {
-            fileContent = replaceURLs(
-                fileContent,
-                this.settings,
-                formatLinearURL,
-            )
-        }
-
-        if (
-            this.settings.replaceUrlWithTitle
-            && !isUrlTitleReplacementOff(frontmatter)
-        ) {
-            const { contentStart } = getFrontMatterInfo(fileContent)
-            const frontmatterText = fileContent.slice(0, contentStart)
-            const body = fileContent.slice(contentStart)
-            const updatedBody = replaceUrlWithTitle({ body, urlTitleMap: this.urlTitleMap })
-            fileContent = frontmatterText + updatedBody
-        }
-
         if (!this.trie || !this.candidateMap) {
-            return fileContent
+            return formatMarkdownDocument({
+                content: fileContent,
+                filePath,
+                contentStart: getFrontMatterInfo(fileContent).contentStart,
+                frontmatter,
+                settings: this.settings,
+                urlTitleMap: this.urlTitleMap,
+            })
         }
 
         if (this.settings.debug) {
@@ -136,31 +116,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
             new Notice(`Automatic Linker: ${new Date().toISOString()} modifyLinks started.`)
         }
 
-        const { contentStart } = getFrontMatterInfo(fileContent)
-        const frontmatterText = fileContent.slice(0, contentStart)
-        const linkGenerator = this.createLinkGenerator(filePath)
         const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
-        const updatedBody = replaceLinks({
-            body: fileContent.slice(contentStart),
-            linkResolverContext: {
-                filePath: filePath.replace(/\.md$/, ""),
-                trie: this.trie,
-                candidateMap: this.candidateMap,
-            },
-            settings: {
-                proximityBasedLinking: this.settings.proximityBasedLinking,
-                baseDir,
-                ignoreDateFormats: this.settings.ignoreDateFormats,
-                ignoreCase: this.settings.ignoreCase,
-                matchSentenceCase: this.settings.matchSentenceCase,
-                preventSelfLinking: this.settings.preventSelfLinking,
-                removeAliasInDirs: this.settings.removeAliasInDirs,
-                ignoreHeadings: this.settings.ignoreHeadings,
-                ignoreMarkdownTables: this.settings.ignoreMarkdownTables,
-            },
-            linkGenerator,
+        const candidateIndex = this.trie && this.candidateMap
+            ? { trie: this.trie, candidateMap: this.candidateMap }
+            : undefined
+        fileContent = formatMarkdownDocument({
+            content: fileContent,
+            filePath,
+            contentStart: getFrontMatterInfo(fileContent).contentStart,
+            frontmatter,
+            settings: this.settings,
+            baseDir,
+            candidateIndex,
+            urlTitleMap: this.urlTitleMap,
+            linkGenerator: candidateIndex ? this.createLinkGenerator(filePath) : undefined,
         })
-        fileContent = frontmatterText + updatedBody
 
         if (this.settings.debug) {
             console.log(new Date().toISOString(), "modifyLinks finished")
@@ -263,23 +233,14 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
         const linkGenerator = this.createLinkGenerator(activeFile.path)
         const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
-        const updatedText = replaceLinks({
+        const updatedText = formatMarkdownSelection({
             body: selectedText,
-            linkResolverContext: {
-                filePath: activeFile.path.replace(/\.md$/, ""),
+            filePath: activeFile.path,
+            settings: this.settings,
+            baseDir,
+            candidateIndex: {
                 trie: this.trie,
                 candidateMap: this.candidateMap,
-            },
-            settings: {
-                proximityBasedLinking: this.settings.proximityBasedLinking,
-                baseDir,
-                ignoreDateFormats: this.settings.ignoreDateFormats,
-                ignoreCase: this.settings.ignoreCase,
-                matchSentenceCase: this.settings.matchSentenceCase,
-                preventSelfLinking: this.settings.preventSelfLinking,
-                removeAliasInDirs: this.settings.removeAliasInDirs,
-                ignoreHeadings: this.settings.ignoreHeadings,
-                ignoreMarkdownTables: this.settings.ignoreMarkdownTables,
             },
             linkGenerator,
         })
@@ -516,6 +477,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
                     const fileContent = await this.app.vault.read(activeFile)
                     const { contentStart } = getFrontMatterInfo(fileContent)
                     const body = fileContent.slice(contentStart)
+                    const normalizedActiveFilePath = activeFile.path.replace(/\.md$/, "")
+                    const baseDir = this.settings.respectNewFileFolderPath
+                        ? this.app.vault.getConfig("newFileFolderPath")
+                        : undefined
 
                     if (!this.candidateMap || !this.trie) {
                         this.refreshFileDataAndTrie()
@@ -531,16 +496,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
                         this.candidateMap,
                         this.trie,
                         this.settings,
+                        normalizedActiveFilePath,
+                        baseDir,
                     )
 
                     const resultBody = replaceLinks({
                         body,
                         linkResolverContext: {
-                            filePath: activeFile.path,
+                            filePath: normalizedActiveFilePath,
                             trie: this.trie,
                             candidateMap: this.candidateMap,
                         },
-                        settings: this.settings,
+                        settings: toReplaceLinksSettings(
+                            this.settings,
+                            baseDir,
+                        ),
                         resolvedAmbiguities: resolvedAmbiguitiesResult,
                     })
 

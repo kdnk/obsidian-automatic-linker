@@ -110,4 +110,33 @@ note1
 | [[note1]] | |
 `)
     })
+
+    it("escapes table aliases after earlier resolved wikilinks change segment offsets", () => {
+        const settings = {
+            scoped: false,
+            baseDir: undefined,
+            proximityBasedLinking: true,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "ns/note1" }],
+            settings,
+        })
+        const result = replaceLinks({
+            body: `[[note1]]
+| note1 | |
+`,
+            linkResolverContext: {
+                filePath: "journals/2022-01-01",
+                trie,
+                candidateMap,
+            },
+            settings,
+            resolvedAmbiguities: new Map([
+                ["[[note1]]", "very/long/path/note1|note1"],
+            ]),
+        })
+        expect(result).toBe(`[[very/long/path/note1|note1]]
+| [[ns/note1\\|note1]] | |
+`)
+    })
 })
