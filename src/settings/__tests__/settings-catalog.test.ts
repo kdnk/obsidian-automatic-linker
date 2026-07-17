@@ -16,17 +16,97 @@ describe("SETTINGS_CATALOG", () => {
         expect(new Set(catalogKeys).size).toBe(catalogKeys.length)
     })
 
+    it("groups settings by user workflow in display order", () => {
+        const expectedGroups = [
+            {
+                group: "Formatting Workflow",
+                keys: [
+                    "formatOnSave",
+                    "formatDelayMs",
+                    "runPrettierAfterFormatting",
+                    "runLinterAfterFormatting",
+                ],
+            },
+            {
+                group: "Link Behavior",
+                keys: [
+                    "respectNewFileFolderPath",
+                    "proximityBasedLinking",
+                    "includeAliases",
+                    "removeAliasInDirs",
+                    "ignoreCase",
+                    "matchSentenceCase",
+                ],
+            },
+            {
+                group: "Exclusions",
+                keys: [
+                    "preventSelfLinking",
+                    "ignoreDateFormats",
+                    "ignoreHeadings",
+                    "ignoreMarkdownTables",
+                    "excludeDirsFromAutoLinking",
+                ],
+            },
+            {
+                group: "URL Formatting",
+                keys: [
+                    "formatGitHubURLs",
+                    "githubEnterpriseURLs",
+                    "formatJiraURLs",
+                    "jiraURLs",
+                    "formatLinearURLs",
+                    "replaceUrlWithTitle",
+                    "replaceUrlWithTitleIgnoreDomains",
+                ],
+            },
+            {
+                group: "AI Link Enhancement (Beta)",
+                keys: [
+                    "aiEnabled",
+                    "aiEndpoint",
+                    "aiModel",
+                    "aiMaxContext",
+                ],
+            },
+            {
+                group: "Diagnostics",
+                keys: ["showNotice", "debug"],
+            },
+        ]
+
+        const actualGroups = SETTINGS_CATALOG.reduce<Array<{
+            group: string
+            keys: Array<keyof typeof DEFAULT_SETTINGS>
+        }>>((groups, entry) => {
+            const currentGroup = groups[groups.length - 1]
+            if (currentGroup?.group === entry.group) {
+                currentGroup.keys.push(entry.key)
+                return groups
+            }
+
+            groups.push({
+                group: entry.group,
+                keys: [entry.key],
+            })
+            return groups
+        }, [])
+
+        expect(actualGroups).toEqual(expectedGroups)
+    })
+
     it("marks only the URL textarea settings for explicit sizing", () => {
         const sizedTextareaKeys = SETTINGS_CATALOG
             .filter(entry => entry.control === "textarea")
             .filter(entry => (entry as { rows?: number }).rows === 4)
             .filter(entry => (entry as { cols?: number }).cols === 50)
             .map(entry => entry.key)
+            .sort()
 
         expect(sizedTextareaKeys).toEqual([
-            "replaceUrlWithTitleIgnoreDomains",
             "githubEnterpriseURLs",
             "jiraURLs",
+            "replaceUrlWithTitleIgnoreDomains",
         ])
     })
 
