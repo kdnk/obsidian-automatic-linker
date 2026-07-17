@@ -97,49 +97,51 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 ## Configuration
 
-### General Settings
+### Formatting Workflow
 
-- **Format on Save**: Enable automatic linking when saving files
-- **Format Delay**: Delay in milliseconds before formatting (useful for plugin integration)
-- **Respect 'Folder to create new notes in' setting**: Use Obsidian's "Folder to create new notes in" setting as the base directory for omitting folder prefixes in links
+- **Format on save**: Automatically format links when saving files.
+- **Format delay (ms)**: Delay formatting and post-format integrations by the configured number of milliseconds.
+- **Run Prettier after formatting**: Run the Prettier plugin after Automatic Linker formatting.
+- **Run Obsidian Linter after formatting**: Run Obsidian Linter after Automatic Linker formatting.
 
 ### Link Behavior
 
-- **Include Aliases**: Include frontmatter aliases when matching text
-- **Proximity-based Linking**: Automatically resolve shorthand to full namespaced links
-- **Ignore Case**: Enable case-insensitive link matching
-- **Prevent Self-Linking**: Don't create links from a file to itself
-- **Ignore Date Formats**: Skip date-formatted text like `2025-02-10`
+- **Respect 'Folder to create new notes in' setting**: Use Obsidian's new-note folder as the base directory when omitting folder prefixes from links.
+- **Proximity-based linking**: Resolve shorthand links to the candidate with the most path segments in common with the current file.
+- **Include aliases**: Include frontmatter aliases when matching text.
+- **Remove aliases in directories**: Remove displayed link aliases for links targeting the configured directories.
+- **Ignore case**: Match links without requiring the same letter case.
+- **Match sentence case**: When Ignore case is disabled, match text capitalized only because it starts a sentence.
+
+### Exclusions
+
+- **Prevent self-linking**: Do not link text to the current file.
+- **Ignore date formats**: Skip date-formatted text such as `2025-02-10`.
+- **Ignore headings**: Do not add links inside Markdown headings.
+- **Ignore Markdown tables**: Do not add links inside Markdown table rows.
+- **Exclude directories from automatic linking**: Skip files in the configured directories when building automatic links.
 
 ### URL Formatting
 
-- **Format GitHub URLs**: Convert GitHub links to readable format
-- **GitHub Enterprise URLs**: Add custom GitHub Enterprise domains
-- **Format Jira URLs**: Convert Jira issue links
-- **Jira URLs**: Configure Jira domain(s)
-- **Format Linear URLs**: Convert Linear issue links
+- **Format GitHub URLs on save**: Convert GitHub URLs to readable issue and pull-request links.
+- **GitHub Enterprise URLs**: Add custom GitHub Enterprise domains.
+- **Format JIRA URLs on save**: Convert JIRA issue URLs to readable links.
+- **JIRA URLs**: Add custom JIRA domains.
+- **Format Linear URLs on save**: Convert Linear issue URLs to readable links.
+- **Replace URL with title**: Replace bare URLs with Markdown links using fetched page titles.
+- **Ignore domains**: Exclude configured domains from URL title replacement.
 
 ### AI Link Enhancement (Beta)
 
-- **Enable AI Link Enhancement**: Add a command to resolve links using a local LLM.
-- **AI API Endpoint**: URL of your OpenAI-compatible AI server (e.g., `http://localhost:1234/v1`).
-- **AI Model**: Name of the model to use (e.g., `gemma-2-9b`).
-- **Max Context Length**: Number of characters around the link to provide as context to the AI.
+- **Enable AI Link Enhancement**: Add a command that uses a local LLM to resolve and correct ambiguous links.
+- **AI API Endpoint**: Set the URL of the OpenAI-compatible local AI server.
+- **AI Model**: Set the model name sent to the local AI server.
+- **Max Context Length**: Set the number of surrounding characters sent for each ambiguous link.
 
-### Advanced Options
+### Diagnostics
 
-- **Replace URLs with Titles**: Automatically fetch page titles for bare URLs
-- **Ignored Domains**: Exclude specific domains from URL title replacement
-- **Frontmatter URL Title Opt-out**: Use `automatic-linker-disable-url-title: true` to skip URL title fetching/replacement for a note
-- **Exclude Directories**: List of directories to skip during auto-linking
-- **Remove Alias in Directories**: Strip aliases from links in specified folders
-
-### Integration
-
-- **Run Obsidian Linter After Formatting**: Chain with Obsidian Linter plugin
-- **Run Prettier After Formatting**: Chain with Prettier plugin
-- **Show Load Notice**: Display notifications when files are loaded
-- **Debug Mode**: Enable verbose logging
+- **Show load notice**: Display a notice after the plugin loads Markdown files into its index.
+- **Debug mode**: Log debug information to the developer console.
 
 ## Usage Examples
 
