@@ -23,3 +23,9 @@ data.json
 
 **/.claude/settings.local.json
 .aider*
+
+# Keep project design specifications tracked even when globally ignored.
+!docs/
+!docs/superpowers/
+!docs/superpowers/specs/
+!docs/superpowers/specs/*.md
