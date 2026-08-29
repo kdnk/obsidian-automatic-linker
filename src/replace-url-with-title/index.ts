@@ -7,6 +7,9 @@ interface ReplaceUrlWithTitleOptions {
     urlTitleMap: Map<Url, Title>
 }
 
+const escapeMarkdownLinkTitle = (title: string): string =>
+    title.replace(/[\\[\]]/g, "\\$&")
+
 export const replaceUrlWithTitle = ({
     body,
     urlTitleMap,
@@ -28,7 +31,7 @@ export const replaceUrlWithTitle = ({
             const title = urlTitleMap.get(url)
             if (!title) continue
 
-            const markdownLink = `[${title}](${url})`
+            const markdownLink = `[${escapeMarkdownLinkTitle(title)}](${url})`
             let currentIndex = 0
             const newBodyParts: string[] = []
 

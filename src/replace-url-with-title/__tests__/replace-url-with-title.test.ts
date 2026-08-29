@@ -17,6 +17,19 @@ describe("replaceUrlWithTitle", () => {
         )
     })
 
+    it("should escape Markdown syntax characters in titles", () => {
+        const result = replaceUrlWithTitle({
+            body: "https://example.com",
+            urlTitleMap: new Map([
+                ["https://example.com", String.raw`Docs [Android] \ Guide`],
+            ]),
+        })
+
+        expect(result).toBe(
+            String.raw`[Docs \[Android\] \\ Guide](https://example.com)`,
+        )
+    })
+
     it("should handle multiple URLs", () => {
         const body = "Links: https://example.com and https://another.com"
         const result = replaceUrlWithTitle({
