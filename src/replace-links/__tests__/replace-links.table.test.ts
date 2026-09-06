@@ -101,17 +101,16 @@ note1
                 ...settings,
                 ignoreMarkdownTables: true,
             },
-            resolvedAmbiguities: new Map([["[[note1]]", "ns/note1|note1"]]),
         })
         expect(result).toBe(`
-[[ns/note1|note1]]
+[[note1]]
 | Test Item | |
 | --- | --- |
 | [[note1]] | |
 `)
     })
 
-    it("escapes table aliases after earlier resolved wikilinks change segment offsets", () => {
+    it("escapes table aliases while preserving preceding wikilinks", () => {
         const settings = {
             scoped: false,
             baseDir: undefined,
@@ -131,11 +130,8 @@ note1
                 candidateMap,
             },
             settings,
-            resolvedAmbiguities: new Map([
-                ["[[note1]]", "very/long/path/note1|note1"],
-            ]),
         })
-        expect(result).toBe(`[[very/long/path/note1|note1]]
+        expect(result).toBe(`[[note1]]
 | [[ns/note1\\|note1]] | |
 `)
     })

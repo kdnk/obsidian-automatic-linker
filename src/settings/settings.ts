@@ -34,7 +34,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
         nextValue: string,
     ): AutomaticLinkerSettings[K] | null {
         if (typeof currentValue !== "number") {
-            return nextValue as AutomaticLinkerSettings[K]
+            return null
         }
 
         const parsedValue = parseInt(nextValue)
@@ -42,9 +42,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
             return null
         }
         if (key === "formatDelayMs" && parsedValue < 0) {
-            return null
-        }
-        if (key === "aiMaxContext" && parsedValue <= 0) {
             return null
         }
 

@@ -61,15 +61,6 @@ describe("SETTINGS_CATALOG", () => {
                 ],
             },
             {
-                group: "AI Link Enhancement (Beta)",
-                keys: [
-                    "aiEnabled",
-                    "aiEndpoint",
-                    "aiModel",
-                    "aiMaxContext",
-                ],
-            },
-            {
                 group: "Diagnostics",
                 keys: ["showNotice", "debug"],
             },

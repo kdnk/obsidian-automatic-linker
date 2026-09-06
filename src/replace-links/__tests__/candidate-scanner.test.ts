@@ -3,7 +3,6 @@ import { buildTrie, CandidateData } from "../../trie"
 import { buildCandidateTrieForTest } from "./test-helpers"
 import { replaceLinks } from "../replace-links"
 import {
-    getOccurrenceContext,
     scanCandidateOccurrences,
 } from "../candidate-scanner"
 
@@ -484,23 +483,5 @@ meeting`
                 end: 3,
             },
         ])
-    })
-})
-
-describe("getOccurrenceContext", () => {
-    it("returns bounded surrounding text for AI requests", () => {
-        const occurrence = {
-            kind: "unlinked" as const,
-            start: 10,
-            end: 17,
-            text: "meeting",
-            candidateKey: "meeting",
-            candidateData: { candidates: [] },
-            isInTable: false,
-        }
-
-        expect(getOccurrenceContext("before -- meeting -- after", occurrence, 4)).toBe(
-            " -- meeting -- ",
-        )
     })
 })

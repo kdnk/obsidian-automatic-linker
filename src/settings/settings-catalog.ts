@@ -25,10 +25,6 @@ export type AutomaticLinkerSettings = {
     runLinterAfterFormatting: boolean
     runPrettierAfterFormatting: boolean
     formatDelayMs: number
-    aiEnabled: boolean
-    aiEndpoint: string
-    aiModel: string
-    aiMaxContext: number
 }
 
 export type SettingControl = "toggle" | "text" | "textarea"
@@ -72,10 +68,6 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     runLinterAfterFormatting: false,
     runPrettierAfterFormatting: false,
     formatDelayMs: 1,
-    aiEnabled: false,
-    aiEndpoint: "http://localhost:1234/v1",
-    aiModel: "gemma-4-7b",
-    aiMaxContext: 500,
 }
 
 export const SETTINGS_CATALOG = [
@@ -292,44 +284,6 @@ export const SETTINGS_CATALOG = [
         multiline: true,
         rows: 4,
         cols: 50,
-        refreshesIndex: false,
-    },
-    {
-        key: "aiEnabled",
-        group: "AI Link Enhancement (Beta)",
-        name: "Enable AI Link Enhancement",
-        description:
-            "When enabled, an AI-powered link enhancer command will be available. It uses a local LLM to resolve ambiguous links and correct existing ones.",
-        control: "toggle",
-        refreshesIndex: false,
-    },
-    {
-        key: "aiEndpoint",
-        group: "AI Link Enhancement (Beta)",
-        name: "AI API Endpoint",
-        description:
-            "The URL of your OpenAI-compatible AI server (e.g. LM Studio, Ollama).",
-        control: "text",
-        placeholder: "http://localhost:1234/v1",
-        refreshesIndex: false,
-    },
-    {
-        key: "aiModel",
-        group: "AI Link Enhancement (Beta)",
-        name: "AI Model",
-        description: "The name of the model to use (e.g. gemma-4-7b).",
-        control: "text",
-        placeholder: "gemma-4-7b",
-        refreshesIndex: false,
-    },
-    {
-        key: "aiMaxContext",
-        group: "AI Link Enhancement (Beta)",
-        name: "Max Context Length",
-        description:
-            "Number of characters around the link to provide as context to the AI.",
-        control: "text",
-        placeholder: "500",
         refreshesIndex: false,
     },
     {

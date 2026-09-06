@@ -1,5 +1,5 @@
 import { CandidateData, TrieNode } from "../trie"
-import { mapMarkdownProse, segmentMarkdown } from "../markdown-segments"
+import { mapMarkdownProse } from "../markdown-segments"
 import {
     buildFallbackIndex,
     extractLinkParts,
@@ -44,7 +44,6 @@ export interface ReplaceLinksOptions {
     linkResolverContext: LinkResolverContext
     settings?: ReplaceLinksSettings
     linkGenerator?: LinkGenerator
-    resolvedAmbiguities?: Map<string, string>
 }
 
 // Helper function to check if a path should have its alias removed
@@ -148,24 +147,6 @@ const createLinkContent = (
     }
 }
 
-const resolveLinkContent = (
-    candidateData: CandidateData,
-    originalMatchedText: string,
-    settings: ReplaceLinksSettings,
-    resolvedAmbiguities?: Map<string, string>,
-): { linkPath: string, alias?: string } => {
-    if (resolvedAmbiguities?.has(originalMatchedText)) {
-        const resolvedPath = resolvedAmbiguities.get(originalMatchedText)!
-        const parts = extractLinkParts(resolvedPath)
-        return {
-            linkPath: parts.linkPath,
-            alias: parts.alias || originalMatchedText,
-        }
-    }
-
-    return createLinkContent(candidateData, originalMatchedText, settings)
-}
-
 // Default link generator that creates standard Obsidian wikilinks
 export const escapeLinkForMarkdownTable = (
     link: string,
@@ -201,7 +182,6 @@ const processCjkText = (
     filePath: string,
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings = {},
-    resolvedAmbiguities?: Map<string, string>,
     forceIsInTable?: boolean,
 ): string => {
     // For CJK texts that might contain non-CJK terms like "taro-san", ensure we use a consistent approach
@@ -215,7 +195,6 @@ const processCjkText = (
         currentNamespace,
         linkGenerator,
         settings,
-        resolvedAmbiguities,
         forceIsInTable,
     )
 }
@@ -229,7 +208,6 @@ const processStandardText = (
     currentNamespace: string,
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings = {},
-    resolvedAmbiguities?: Map<string, string>,
     forceIsInTable?: boolean,
 ): string => {
     let result = ""
@@ -257,11 +235,10 @@ const processStandardText = (
             const occurrence = scanResult.occurrence
             const candidateData = occurrence.replacementCandidateData
                 ?? occurrence.candidateData
-            const { linkPath, alias } = resolveLinkContent(
+            const { linkPath, alias } = createLinkContent(
                 candidateData,
                 occurrence.text,
                 settings,
-                resolvedAmbiguities,
             )
             const finalLink = linkGenerator({
                 linkPath,
@@ -291,7 +268,6 @@ export const replaceLinks = ({
         ignoreDateFormats: true,
     },
     linkGenerator = defaultLinkGenerator,
-    resolvedAmbiguities,
 }: ReplaceLinksOptions): string => {
     // Normalize the body text to NFC
     body = body.normalize("NFC")
@@ -306,38 +282,12 @@ export const replaceLinks = ({
 
     // Get the current namespace
     const currentNamespace = getCurrentNamespace(filePath, settings.baseDir)
-    let bodyWithResolvedWikilinks = body
 
     const markdownOptions = {
         protectHeadings: settings.ignoreHeadings,
         protectCallouts: true,
         protectTableRows: settings.ignoreMarkdownTables,
         protectUrls: true,
-    }
-
-    const replaceResolvedWikilink = (
-        wikilink: string,
-        start: number,
-    ): string => {
-        if (!resolvedAmbiguities?.has(wikilink)) {
-            return wikilink
-        }
-
-        const resolvedPath = resolvedAmbiguities.get(wikilink)!
-        const { linkPath, alias: resolvedAlias } = extractLinkParts(resolvedPath)
-        const existingLinkRegex = /\[\[([^|\]]+)(?:\|([^\]]+))?\]\]/
-        const linkMatch = wikilink.match(existingLinkRegex)
-        const existingPath = linkMatch ? linkMatch[1] : ""
-        const existingAlias = linkMatch ? linkMatch[2] : undefined
-        const finalAlias = resolvedAlias || existingAlias || (wikilink.includes("|") ? undefined : existingPath)
-
-        return linkGenerator({
-            linkPath,
-            sourcePath: filePath,
-            alias: finalAlias,
-            isInTable: !settings.ignoreMarkdownTables
-                && isIndexInsideMarkdownTable(body, start),
-        })
     }
 
     // Process segments of text
@@ -357,7 +307,6 @@ export const replaceLinks = ({
                 filePath,
                 linkGenerator,
                 settings,
-                resolvedAmbiguities,
                 forceIsInTable,
             )
         }
@@ -371,7 +320,6 @@ export const replaceLinks = ({
                 currentNamespace,
                 linkGenerator,
                 settings,
-                resolvedAmbiguities,
                 forceIsInTable,
             )
         }
@@ -383,7 +331,7 @@ export const replaceLinks = ({
     ): string => {
         if (!text.includes("\n")) {
             const isInTable = !settings.ignoreMarkdownTables
-                && isIndexInsideMarkdownTable(bodyWithResolvedWikilinks, segment.start)
+                && isIndexInsideMarkdownTable(body, segment.start)
             return processTextSegment(text, isInTable)
         }
 
@@ -402,29 +350,14 @@ export const replaceLinks = ({
 
             const absoluteIndex = segment.start + offset
             const isInTable = !settings.ignoreMarkdownTables
-                && isIndexInsideMarkdownTable(bodyWithResolvedWikilinks, absoluteIndex)
+                && isIndexInsideMarkdownTable(body, absoluteIndex)
 
             return processTextSegment(line, isInTable)
         })
     }
 
-    if (resolvedAmbiguities) {
-        bodyWithResolvedWikilinks = segmentMarkdown(body, markdownOptions)
-            .map((segment) => {
-                if (
-                    segment.kind === "protected"
-                    && segment.protectedKind === "wikilink"
-                ) {
-                    return replaceResolvedWikilink(segment.text, segment.start)
-                }
-
-                return segment.text
-            })
-            .join("")
-    }
-
     return mapMarkdownProse(
-        bodyWithResolvedWikilinks,
+        body,
         processTableAwareTextSegment,
         markdownOptions,
     )

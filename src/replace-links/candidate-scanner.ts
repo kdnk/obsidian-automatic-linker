@@ -776,13 +776,3 @@ export const scanCandidateOccurrences = ({
 
     return occurrences.sort((a, b) => a.start - b.start)
 }
-
-export const getOccurrenceContext = (
-    text: string,
-    occurrence: CandidateOccurrence,
-    maxContext: number,
-): string => {
-    const start = Math.max(0, occurrence.start - maxContext)
-    const end = Math.min(text.length, occurrence.end + maxContext)
-    return text.slice(start, end)
-}
