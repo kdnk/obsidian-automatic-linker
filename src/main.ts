@@ -40,6 +40,12 @@ import { buildCandidateTrie, CandidateData, TrieNode } from "./trie"
 import { updateEditor } from "./update-editor"
 import { runAsyncSafely, sleep } from "./plugin-compat"
 
+interface FormattingTarget {
+    file: TFile
+    path: string
+    editor: Editor
+}
+
 export default class AutomaticLinkerPlugin extends Plugin {
     settings: AutomaticLinkerSettings
     // Pre-built Trie for link candidate lookup
@@ -68,16 +74,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
     private createLinkGenerator(sourcePath: string): LinkGenerator {
         return ({
             linkPath,
+            targetPath,
             alias,
             isInTable,
         }: LinkGeneratorParams): string => {
             // Try to get the TFile for the link path
-            const targetFile = this.app.vault.getAbstractFileByPath(linkPath + ".md")
+            const targetFile = this.app.vault.getAbstractFileByPath((targetPath ?? linkPath) + ".md")
 
             if (targetFile instanceof TFile) {
                 // File exists, use Obsidian's generateMarkdownLink API
                 try {
-                    const link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", alias || "")
+                    const targetBasename = (targetPath ?? linkPath).split("/").pop()
+                    const displayAlias = alias ?? (
+                        !linkPath.includes("/") && targetBasename !== linkPath ? linkPath : ""
+                    )
+                    const link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", displayAlias)
                     return escapeLinkForMarkdownTable(link, isInTable)
                 }
                 catch (error) {
@@ -136,20 +147,30 @@ export default class AutomaticLinkerPlugin extends Plugin {
         return fileContent
     }
 
-    modifyLinksForActiveFile() {
-        const activeFile = this.app.workspace.getActiveFile()
-        if (!activeFile) return
-
-        const metadata = this.app.metadataCache.getFileCache(activeFile)?.frontmatter
-        if (isLinkingOff(metadata)) return
-
+    private captureFormattingTarget(): FormattingTarget | null {
+        const file = this.app.workspace.getActiveFile()
         const editor = this.getEditor()
-        if (!editor) return
+        return file && editor ? { file, path: file.path, editor } : null
+    }
 
-        const fileContent = editor.getValue()
-        const oldText = fileContent
-        const newText = this.modifyLinks(fileContent, activeFile.path, metadata)
-        updateEditor(oldText, newText, editor)
+    private canFormatTarget(target: FormattingTarget): boolean {
+        return this.app.workspace.getActiveFile() === target.file
+            && target.file.path === target.path
+            && this.getEditor() === target.editor
+            && !isLinkingOff(this.app.metadataCache.getFileCache(target.file)?.frontmatter)
+    }
+
+    private modifyLinksForTarget(target: FormattingTarget) {
+        if (!this.canFormatTarget(target)) return
+        const metadata = this.app.metadataCache.getFileCache(target.file)?.frontmatter
+        const oldText = target.editor.getValue()
+        const newText = this.modifyLinks(oldText, target.path, metadata)
+        updateEditor(oldText, newText, target.editor)
+    }
+
+    modifyLinksForActiveFile() {
+        const target = this.captureFormattingTarget()
+        if (target) this.modifyLinksForTarget(target)
     }
 
     async modifyLinksForVault() {
@@ -163,18 +184,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
         }
     }
 
-    async buildUrlTitleMap() {
-        const activeFile = this.app.workspace.getActiveFile()
+    async buildUrlTitleMap(target?: FormattingTarget) {
+        const activeFile = target?.file ?? this.app.workspace.getActiveFile()
         if (!activeFile) return
         const metadata = this.app.metadataCache.getFileCache(activeFile)?.frontmatter
-        if (isUrlTitleReplacementOff(metadata)) return
+        if (isLinkingOff(metadata) || isUrlTitleReplacementOff(metadata)) return
 
-        const fileContent = await this.app.vault.read(activeFile)
+        const fileContent = target
+            ? target.editor.getValue()
+            : await this.app.vault.read(activeFile)
         const { contentStart } = getFrontMatterInfo(fileContent)
         const body = fileContent.slice(contentStart)
 
         const urls = listupAllUrls(body, this.settings.replaceUrlWithTitleIgnoreDomains)
         for (const url of urls) {
+            if (target && !this.canFormatTarget(target)) return
             if (this.urlTitleMap.has(url)) continue
 
             try {
@@ -198,19 +222,23 @@ export default class AutomaticLinkerPlugin extends Plugin {
         }
     }
 
-    async formatThenRunPrettierAndLinter() {
+    async formatThenRunPrettierAndLinter(target = this.captureFormattingTarget()) {
+        if (!target || !this.canFormatTarget(target)) return
         if (this.settings.replaceUrlWithTitle) {
-            await this.buildUrlTitleMap()
+            await this.buildUrlTitleMap(target)
         }
-        this.modifyLinksForActiveFile()
+        if (!this.canFormatTarget(target)) return
+        this.modifyLinksForTarget(target)
 
         if (this.settings.runPrettierAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
+            if (!this.canFormatTarget(target)) return
             // @ts-expect-error
             await this.app?.commands?.executeCommandById("prettier-format:format-file")
         }
         if (this.settings.runLinterAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
+            if (!this.canFormatTarget(target)) return
             // @ts-expect-error
             await this.app?.commands?.executeCommandById("obsidian-linter:lint-file")
         }
@@ -219,19 +247,26 @@ export default class AutomaticLinkerPlugin extends Plugin {
     async mofifyLinksSelection() {
         const activeFile = this.app.workspace.getActiveFile()
         if (!activeFile) return
+        const frontmatter = this.app.metadataCache.getFileCache(activeFile)?.frontmatter
+        if (isLinkingOff(frontmatter)) return
         const editor = this.app.workspace.activeEditor
         if (!editor) return
         const cm = editor.editor
         if (!cm) return
 
         const selectedText = cm.getSelection()
+        const { contentStart } = getFrontMatterInfo(cm.getValue())
+        const selectionStart = contentStart > 0 ? cm.posToOffset(cm.getCursor("from")) : 0
+        const protectedLength = Math.max(0, contentStart - selectionStart)
+        if (protectedLength >= selectedText.length) return
 
         if (!this.trie || !this.candidateMap) return
 
         const linkGenerator = this.createLinkGenerator(activeFile.path)
         const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
         const updatedText = formatMarkdownSelection({
-            body: selectedText,
+            body: selectedText.slice(protectedLength),
+            frontmatter,
             filePath: activeFile.path,
             settings: this.settings,
             baseDir,
@@ -241,7 +276,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             },
             linkGenerator,
         })
-        cm.replaceSelection(updatedText)
+        cm.replaceSelection(selectedText.slice(0, protectedLength) + updatedText)
     }
 
     refreshFileDataAndTrie() {
@@ -464,9 +499,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
             }
             else {
                 if (!this.settings.formatOnSave) return
+                const target = this.captureFormattingTarget()
+                if (!target) return
                 runAsyncSafely(async () => {
                     await sleep(this.settings.formatDelayMs ?? 100)
-                    await this.formatThenRunPrettierAndLinter()
+                    await this.formatThenRunPrettierAndLinter(target)
                 })
             }
         }

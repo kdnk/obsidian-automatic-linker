@@ -32,6 +32,8 @@ export interface ReplaceLinksSettings {
 
 export interface LinkGeneratorParams {
     linkPath: string
+    /** Canonical vault-relative file path without the .md extension. */
+    targetPath?: string
     sourcePath: string
     alias?: string
     isInTable?: boolean
@@ -75,13 +77,14 @@ const createLinkContent = (
     candidateData: CandidateData,
     originalMatchedText: string,
     settings: ReplaceLinksSettings = {},
-): { linkPath: string, alias?: string } => {
+): { linkPath: string, targetPath: string, alias?: string } => {
     if (candidateData.candidates.length === 0) {
-        return { linkPath: originalMatchedText }
+        return { linkPath: originalMatchedText, targetPath: originalMatchedText }
     }
     const { linkPath, alias, hasAlias } = extractLinkParts(
         candidateData.candidates[0].canonical,
     )
+    const targetPath = linkPath
     const normalizedPath = normalizeCanonicalPath(linkPath, settings.baseDir)
 
     // Check if alias should be removed for this directory
@@ -93,17 +96,17 @@ const createLinkContent = (
     if (hasAlias) {
         // If alias removal is enabled for this directory, return path without alias
         if (removeAlias) {
-            return { linkPath: normalizedPath }
+            return { linkPath: normalizedPath, targetPath }
         }
         // Use originalMatchedText to preserve case when ignoreCase or matchSentenceCase is enabled
         const displayAlias = (settings.ignoreCase || settings.matchSentenceCase) ? originalMatchedText : alias
-        return { linkPath: normalizedPath, alias: displayAlias }
+        return { linkPath: normalizedPath, targetPath, alias: displayAlias }
     }
 
     if (normalizedPath.includes("/")) {
         // If alias removal is enabled for this directory, return path without alias
         if (removeAlias) {
-            return { linkPath: normalizedPath }
+            return { linkPath: normalizedPath, targetPath }
         }
 
         // For paths with slashes, use the last segment as the display text
@@ -123,7 +126,7 @@ const createLinkContent = (
             displayText = originalMatchedText
         }
 
-        return { linkPath: normalizedPath, alias: displayText }
+        return { linkPath: normalizedPath, targetPath, alias: displayText }
     }
 
     // No explicit alias, no '/' in normalizedPath
@@ -131,18 +134,18 @@ const createLinkContent = (
         if (
             originalMatchedText.toLowerCase() === normalizedPath.toLowerCase()
         ) {
-            return { linkPath: originalMatchedText }
+            return { linkPath: originalMatchedText, targetPath }
         }
         else {
-            return { linkPath: normalizedPath, alias: originalMatchedText }
+            return { linkPath: normalizedPath, targetPath, alias: originalMatchedText }
         }
     }
     else {
         if (originalMatchedText !== normalizedPath) {
-            return { linkPath: normalizedPath, alias: originalMatchedText }
+            return { linkPath: normalizedPath, targetPath, alias: originalMatchedText }
         }
         else {
-            return { linkPath: normalizedPath }
+            return { linkPath: normalizedPath, targetPath }
         }
     }
 }
@@ -235,13 +238,14 @@ const processStandardText = (
             const occurrence = scanResult.occurrence
             const candidateData = occurrence.replacementCandidateData
                 ?? occurrence.candidateData
-            const { linkPath, alias } = createLinkContent(
+            const { linkPath, targetPath, alias } = createLinkContent(
                 candidateData,
                 occurrence.text,
                 settings,
             )
             const finalLink = linkGenerator({
                 linkPath,
+                targetPath,
                 sourcePath: filePath,
                 alias,
                 isInTable: forceIsInTable ?? occurrence.isInTable,

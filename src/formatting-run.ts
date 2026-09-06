@@ -1,4 +1,4 @@
-import { isUrlTitleReplacementOff } from "./frontmatter-utils"
+import { isLinkingOff, isUrlTitleReplacementOff } from "./frontmatter-utils"
 import {
     LinkGenerator,
     replaceLinks,
@@ -49,6 +49,8 @@ export const formatMarkdownBody = ({
     urlTitleMap = new Map(),
     linkGenerator,
 }: Omit<FormattingRunOptions, "content"> & { body: string }): string => {
+    if (isLinkingOff(frontmatter)) return body
+
     let updatedBody = formatMarkdownURLs(body, settings)
 
     if (settings.replaceUrlWithTitle && !isUrlTitleReplacementOff(frontmatter)) {
@@ -72,13 +74,14 @@ export const formatMarkdownBody = ({
 
 export const formatMarkdownSelection = ({
     body,
+    frontmatter,
     filePath,
     settings,
     baseDir,
     candidateIndex,
     linkGenerator,
-}: Omit<FormattingRunOptions, "content" | "frontmatter" | "urlTitleMap"> & { body: string }): string => {
-    if (!candidateIndex) {
+}: Omit<FormattingRunOptions, "content" | "urlTitleMap"> & { body: string }): string => {
+    if (isLinkingOff(frontmatter) || !candidateIndex) {
         return body
     }
 
@@ -104,10 +107,9 @@ export const formatMarkdownDocument = ({
     contentStart = inferContentStart(content),
     ...options
 }: FormattingRunOptions): string => {
-    const frontmatterText = formatMarkdownURLs(
-        content.slice(0, contentStart),
-        options.settings,
-    )
+    if (isLinkingOff(options.frontmatter)) return content
+
+    const frontmatterText = content.slice(0, contentStart)
     const body = content.slice(contentStart)
     return frontmatterText + formatMarkdownBody({ ...options, body })
 }

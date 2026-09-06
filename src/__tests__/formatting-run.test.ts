@@ -55,7 +55,7 @@ describe("formatMarkdownDocument", () => {
         )
     })
 
-    it("formats GitHub URLs in frontmatter without moving body-only formatting into frontmatter", () => {
+    it("preserves GitHub URLs and text in frontmatter byte-for-byte", () => {
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [{ path: "notes/TypeScript" }],
             settings: {
@@ -84,7 +84,7 @@ describe("formatMarkdownDocument", () => {
         })
 
         expect(result).toBe(
-            "---\nautomatic-linker-disable-url-title: true\nreference: [[github/openai/openai/issues/1]] [🔗](https://github.com/openai/openai/issues/1)\nterm: TypeScript\n---\n[[notes/TypeScript|TypeScript]] https://example.com",
+            "---\nautomatic-linker-disable-url-title: true\nreference: https://github.com/openai/openai/issues/1\nterm: TypeScript\n---\n[[notes/TypeScript|TypeScript]] https://example.com",
         )
     })
 
@@ -204,5 +204,26 @@ describe("formatMarkdownSelection", () => {
         })
 
         expect(result).toBe("linear://workspace/issue/ACME-123")
+    })
+})
+
+describe("formatting safety", () => {
+    it("preserves CRLF frontmatter while formatting the body", () => {
+        const header = "---\r\nreference: https://github.com/a/b/issues/1\r\n---\r\n"
+        expect(formatMarkdownDocument({
+            content: header + "https://github.com/a/b/issues/1",
+            filePath: "note.md",
+            settings: DEFAULT_SETTINGS,
+        })).toBe(header + "[[github/a/b/issues/1]] [🔗](https://github.com/a/b/issues/1)")
+    })
+
+    it.each(["automatic-linker-off", "automatic-linker-disabled"])("skips all document formatting with %s", (key) => {
+        const content = "https://github.com/a/b/issues/1"
+        expect(formatMarkdownDocument({
+            content,
+            filePath: "note.md",
+            frontmatter: { [key]: true },
+            settings: DEFAULT_SETTINGS,
+        })).toBe(content)
     })
 })

@@ -172,9 +172,9 @@ export const buildCandidateTrie = (
                 short = file.path.slice(basePrefixLength)
             }
             for (const alias of file.aliases) {
-                // If alias equals the shorthand, use alias as canonical; otherwise use "full|alias".
+                // A shorthand alias still refers to the original vault file.
                 const canonicalForAlias
-                    = short && alias === short ? alias : `${file.path}|${alias}`
+                    = short && alias === short ? file.path : `${file.path}|${alias}`
                 const item = {
                     canonical: canonicalForAlias,
                     scoped: file.scoped,

@@ -28,8 +28,8 @@ Automatic Linker scans your notes and intelligently converts text that matches f
 The plugin automatically detects file names in your text and converts them to wiki links. It works seamlessly with:
 
 - **Format on Save**: Automatically convert links when saving files
-- **Selected Text**: Convert only highlighted text via command palette
-- **Entire Vault**: Batch process all files in your vault at once
+- **Selected Text**: Convert only highlighted body text via command palette; frontmatter is preserved
+- **Entire Vault**: Batch process files in your vault while respecting each note's `automatic-linker-off` setting
 - **CJK Support**: Full support for Japanese, Chinese, Korean, and other CJK languages
 - **Case Sensitivity**: Optional case-insensitive matching
 
@@ -93,6 +93,8 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 - **Format delay (ms)**: Delay formatting and post-format integrations by the configured number of milliseconds.
 - **Run Prettier after formatting**: Run the Prettier plugin after Automatic Linker formatting.
 - **Run Obsidian Linter after formatting**: Run Obsidian Linter after Automatic Linker formatting.
+
+Formatting preserves frontmatter exactly. If you switch to another note or editor while formatting waits for page titles or integrations, the pending operation stops before applying further changes. Text you add to the same editor while titles are fetched is preserved.
 
 ### Link Behavior
 
@@ -231,7 +233,7 @@ Add these to individual note frontmatter:
 
 ```yaml
 ---
-# Disable automatic linking in this file
+# Disable formatting and URL title fetching in this file (including vault and selection commands)
 automatic-linker-off: true
 
 # Exclude this file from being automatically linked from other files
