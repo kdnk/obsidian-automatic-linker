@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import { replaceLinks } from "../replace-links"
 import { buildCandidateTrieForTest } from "./test-helpers"
 
@@ -300,7 +300,7 @@ Final paragraph mentions ${linkWords[9]} again.
     })
 
     describe("memory usage optimization", () => {
-        it("should handle fallback index caching efficiently", () => {
+        it("reuses the fallback index without rescanning candidates", () => {
             const settings = {
                 scoped: false,
                 baseDir: undefined,
@@ -312,9 +312,8 @@ Final paragraph mentions ${linkWords[9]} again.
                 settings,
             })
 
-            // First call should build cache
-            const startTime1 = performance.now()
-            replaceLinks({
+            const candidateScans = vi.spyOn(candidateMap, "entries")
+            const firstResult = replaceLinks({
                 body: "test file0 file1",
                 linkResolverContext: {
                     filePath: "test/document",
@@ -323,12 +322,10 @@ Final paragraph mentions ${linkWords[9]} again.
                 },
                 settings,
             })
-            const endTime1 = performance.now()
-            const duration1 = endTime1 - startTime1
+            expect(firstResult).toBe("test [[file0]] [[file1]]")
+            expect(candidateScans).toHaveBeenCalledTimes(1)
 
-            // Second call should use cache
-            const startTime2 = performance.now()
-            replaceLinks({
+            const secondResult = replaceLinks({
                 body: "test file2 file3",
                 linkResolverContext: {
                     filePath: "test/document",
@@ -337,14 +334,8 @@ Final paragraph mentions ${linkWords[9]} again.
                 },
                 settings,
             })
-            const endTime2 = performance.now()
-            const duration2 = endTime2 - startTime2
-
-            console.log(`First call (cache build): ${duration1.toFixed(2)}ms`)
-            console.log(`Second call (cache hit): ${duration2.toFixed(2)}ms`)
-
-            // Second call should be faster or similar (cache benefit)
-            expect(duration2).toBeLessThanOrEqual(duration1 * 1.2) // Allow 20% variance
+            expect(secondResult).toBe("test [[file2]] [[file3]]")
+            expect(candidateScans).toHaveBeenCalledTimes(1)
         })
     })
 })
