@@ -147,6 +147,20 @@ describe("formatMarkdownBody", () => {
 })
 
 describe("formatMarkdownSelection", () => {
+    it("escapes aliases when only a table cell is selected", () => {
+        const candidateIndex = buildCandidateTrieForTest({
+            files: [{ path: "notes/TypeScript" }],
+            settings: { scoped: false, baseDir: undefined, ignoreCase: true },
+        })
+        expect(formatMarkdownSelection({
+            body: "| TypeScript | other |\nTypeScript",
+            selection: { start: 2, end: 12 },
+            filePath: "current.md",
+            settings: DEFAULT_SETTINGS,
+            candidateIndex,
+        })).toBe("[[notes/TypeScript\\|TypeScript]]")
+    })
+
     it("keeps selection formatting to link replacement only", () => {
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [{ path: "notes/TypeScript" }],

@@ -191,6 +191,80 @@ describe("selection frontmatter safety", () => {
     })
 })
 
+describe("selection Markdown context", () => {
+    it.each([
+        "```ts\nA\n```",
+        "~~~\nA\n~~~",
+        "```ts\nA",
+        "`A`",
+        "[[A]]",
+        "[A](https://example.com)",
+        "https://example.com/A",
+        "# A",
+        "| A | other |",
+        "> [!note]\n> A",
+    ])("preserves a partial selection in protected Markdown: %s", async (content) => {
+        const f = fixture()
+        f.setContent(content)
+        f.editor.getSelection = () => "A"
+        f.editor.posToOffset = () => content.indexOf("A")
+        f.plugin.settings.ignoreHeadings = true
+        f.plugin.settings.ignoreMarkdownTables = true
+        f.plugin.refreshFileDataAndTrie()
+
+        await f.plugin.mofifyLinksSelection()
+
+        expect(f.editor.replaceSelection).not.toHaveBeenCalled()
+    })
+
+    it("formats only selected prose when a selection starts inside code", async () => {
+        const f = fixture()
+        const content = "A\n```\nA\n```\nA\nA"
+        f.setContent(content)
+        f.editor.getSelection = () => "A\n```\nA"
+        f.editor.posToOffset = () => 6
+        f.plugin.refreshFileDataAndTrie()
+
+        await f.plugin.mofifyLinksSelection()
+
+        expect(f.editor.replaceSelection).toHaveBeenCalledWith("A\n```\n[[A]]")
+    })
+
+    it("formats body selections after frontmatter using document offsets", async () => {
+        const f = fixture()
+        const content = "---\naliases: A\n---\n`A` and A"
+        f.setContent(content)
+        f.editor.getSelection = () => "A"
+        f.editor.posToOffset = () => content.lastIndexOf("A")
+        f.plugin.refreshFileDataAndTrie()
+
+        await f.plugin.mofifyLinksSelection()
+
+        expect(f.editor.replaceSelection).toHaveBeenCalledWith("[[A]]")
+    })
+})
+
+describe("URL title domain exclusions", () => {
+    it("honors new exclusions even when a URL title is already cached", async () => {
+        const f = fixture()
+        requestMock.mockResolvedValue("<title>Example</title>")
+        await f.plugin.formatThenRunPrettierAndLinter()
+        expect(f.editor.getValue()).toBe("[Example](https://example.com)")
+
+        f.setContent("https://example.com")
+        f.plugin.settings.replaceUrlWithTitleIgnoreDomains = ["example.com"]
+        await f.plugin.formatThenRunPrettierAndLinter()
+
+        expect(f.editor.getValue()).toBe("https://example.com")
+        expect(requestMock).toHaveBeenCalledTimes(1)
+
+        f.plugin.settings.replaceUrlWithTitleIgnoreDomains = []
+        await f.plugin.formatThenRunPrettierAndLinter()
+        expect(f.editor.getValue()).toBe("[Example](https://example.com)")
+        expect(requestMock).toHaveBeenCalledTimes(1)
+    })
+})
+
 describe("formatting target validation", () => {
     it.each(["editor", "rename", "disable"])("cancels pending formatting on %s changes", async (change) => {
         const f = fixture()

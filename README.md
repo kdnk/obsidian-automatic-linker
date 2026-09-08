@@ -28,7 +28,7 @@ Automatic Linker scans your notes and intelligently converts text that matches f
 The plugin automatically detects file names in your text and converts them to wiki links. It works seamlessly with:
 
 - **Format on Save**: Automatically convert links when saving files
-- **Selected Text**: Convert only highlighted body text via command palette; frontmatter is preserved
+- **Selected Text**: Convert only highlighted body text via command palette; frontmatter, code, and existing links stay protected even when only part of them is selected
 - **Entire Vault**: Batch process files in your vault while respecting each note's `automatic-linker-off` setting
 - **CJK Support**: Full support for Japanese, Chinese, Korean, and other CJK languages
 - **Case Sensitivity**: Optional case-insensitive matching
@@ -121,7 +121,7 @@ Formatting preserves frontmatter exactly. If you switch to another note or edito
 - **JIRA URLs**: Add custom JIRA domains.
 - **Format Linear URLs on save**: Convert Linear issue URLs to readable links.
 - **Replace URL with title**: Replace bare URLs with Markdown links using fetched page titles.
-- **Ignore domains**: Exclude configured domains from URL title replacement.
+- **Ignore domains**: Exclude configured domains and their subdomains from URL title replacement, including URLs whose titles have already been cached.
 
 ### Diagnostics
 

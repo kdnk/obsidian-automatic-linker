@@ -142,6 +142,8 @@ describe("AutomaticLinkerPlugin link generator", () => {
                     editor: {
                         getValue: vi.fn(() => "TypeScript https://github.com/openai/openai/issues/1"),
                         getSelection: vi.fn(() => "TypeScript https://github.com/openai/openai/issues/1"),
+                        getCursor: vi.fn(() => ({ line: 0, ch: 0 })),
+                        posToOffset: vi.fn(() => 0),
                         replaceSelection,
                     },
                 },

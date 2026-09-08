@@ -1,5 +1,8 @@
 import { isLinkingOff, isUrlTitleReplacementOff } from "./frontmatter-utils"
+import { segmentMarkdown } from "./markdown-segments"
+import { isIndexInsideMarkdownTable } from "./replace-links/candidate-scanner"
 import {
+    defaultLinkGenerator,
     LinkGenerator,
     replaceLinks,
 } from "./replace-links/replace-links"
@@ -54,7 +57,11 @@ export const formatMarkdownBody = ({
     let updatedBody = formatMarkdownURLs(body, settings)
 
     if (settings.replaceUrlWithTitle && !isUrlTitleReplacementOff(frontmatter)) {
-        updatedBody = replaceUrlWithTitle({ body: updatedBody, urlTitleMap })
+        updatedBody = replaceUrlWithTitle({
+            body: updatedBody,
+            urlTitleMap,
+            ignoredDomains: settings.replaceUrlWithTitleIgnoreDomains,
+        })
     }
     if (candidateIndex) {
         updatedBody = replaceLinks({
@@ -74,27 +81,50 @@ export const formatMarkdownBody = ({
 
 export const formatMarkdownSelection = ({
     body,
+    selection = { start: 0, end: body.length },
     frontmatter,
     filePath,
     settings,
     baseDir,
     candidateIndex,
-    linkGenerator,
-}: Omit<FormattingRunOptions, "content" | "urlTitleMap"> & { body: string }): string => {
+    linkGenerator = defaultLinkGenerator,
+}: Omit<FormattingRunOptions, "content" | "urlTitleMap"> & {
+    /** Full document body, so protection rules can see outside the selection. */
+    body: string
+    /** Offsets into body; the returned text contains only this range. */
+    selection?: { start: number, end: number }
+}): string => {
     if (isLinkingOff(frontmatter) || !candidateIndex) {
-        return body
+        return body.slice(selection.start, selection.end)
     }
 
-    return replaceLinks({
-        body,
-        linkResolverContext: {
-            filePath: filePath.replace(/\.md$/, ""),
-            trie: candidateIndex.trie,
-            candidateMap: candidateIndex.candidateMap,
-        },
-        settings: projectReplaceLinksSettings(settings, baseDir),
-        linkGenerator,
-    })
+    const replacementSettings = projectReplaceLinksSettings(settings, baseDir)
+    return segmentMarkdown(body, {
+        protectHeadings: settings.ignoreHeadings,
+        protectCallouts: true,
+        protectTableRows: settings.ignoreMarkdownTables,
+        protectUrls: true,
+    }).map((segment) => {
+        const start = Math.max(segment.start, selection.start)
+        const end = Math.min(segment.end, selection.end)
+        if (start >= end) return ""
+        const selectedText = body.slice(start, end)
+        if (segment.kind === "protected") return selectedText
+
+        return selectedText.replace(/[^\n]+/g, (line, offset: number) => replaceLinks({
+            body: line,
+            linkResolverContext: {
+                filePath: filePath.replace(/\.md$/, ""),
+                trie: candidateIndex.trie,
+                candidateMap: candidateIndex.candidateMap,
+            },
+            settings: replacementSettings,
+            linkGenerator: params => linkGenerator({
+                ...params,
+                isInTable: isIndexInsideMarkdownTable(body, start + offset),
+            }),
+        }))
+    }).join("")
 }
 
 const inferContentStart = (content: string): number => {

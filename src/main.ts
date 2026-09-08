@@ -255,8 +255,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
         if (!cm) return
 
         const selectedText = cm.getSelection()
-        const { contentStart } = getFrontMatterInfo(cm.getValue())
-        const selectionStart = contentStart > 0 ? cm.posToOffset(cm.getCursor("from")) : 0
+        const content = cm.getValue()
+        const { contentStart } = getFrontMatterInfo(content)
+        const selectionStart = cm.posToOffset(cm.getCursor("from"))
         const protectedLength = Math.max(0, contentStart - selectionStart)
         if (protectedLength >= selectedText.length) return
 
@@ -265,7 +266,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
         const linkGenerator = this.createLinkGenerator(activeFile.path)
         const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
         const updatedText = formatMarkdownSelection({
-            body: selectedText.slice(protectedLength),
+            body: content.slice(contentStart),
+            selection: {
+                start: Math.max(0, selectionStart - contentStart),
+                end: selectionStart + selectedText.length - contentStart,
+            },
             frontmatter,
             filePath: activeFile.path,
             settings: this.settings,
@@ -276,43 +281,33 @@ export default class AutomaticLinkerPlugin extends Plugin {
             },
             linkGenerator,
         })
-        cm.replaceSelection(selectedText.slice(0, protectedLength) + updatedText)
+        const replacement = selectedText.slice(0, protectedLength) + updatedText
+        if (replacement !== selectedText) cm.replaceSelection(replacement)
+    }
+
+    private getIndexMetadata(file: TFile): Pick<PathAndAliases, "aliases" | "scoped" | "exclude"> {
+        const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
+        return {
+            aliases: this.settings.includeAliases ? parseFrontMatterAliases(frontmatter) : null,
+            scoped: isNamespaceScoped(frontmatter),
+            exclude: isLinkingExcluded(frontmatter),
+        }
     }
 
     refreshFileDataAndTrie() {
         const allMarkdownFiles = this.app.vault.getMarkdownFiles()
+        const frontmatterCache = new Map<string, string>()
         const allFiles: PathAndAliases[] = allMarkdownFiles
+            .map((file) => {
+                const metadata = this.getIndexMetadata(file)
+                frontmatterCache.set(file.path, JSON.stringify(metadata))
+                return { path: file.path.replace(/\.md$/, ""), ...metadata }
+            })
             .filter((file) => {
                 // Filter out files in excluded directories
-                const path = file.path.replace(/\.md$/, "")
                 return !this.settings.excludeDirsFromAutoLinking.some((excludeDir) => {
-                    return (path.startsWith(excludeDir + "/") || path === excludeDir)
+                    return (file.path.startsWith(excludeDir + "/") || file.path === excludeDir)
                 })
-            })
-            .map((file) => {
-                // Remove the .md extension
-                const path = file.path.replace(/\.md$/, "")
-                const metadata = this.app.metadataCache.getFileCache(file)?.frontmatter
-                const scoped = isNamespaceScoped(metadata)
-                // if this property exists, prevent this file from being linked from other files
-                const exclude = isLinkingExcluded(metadata)
-
-                const aliases = (() => {
-                    if (this.settings.includeAliases) {
-                        const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter
-                        const aliases = parseFrontMatterAliases(frontmatter)
-                        return aliases
-                    }
-                    else {
-                        return null
-                    }
-                })()
-                return {
-                    path,
-                    aliases,
-                    scoped,
-                    exclude,
-                }
             })
         // Sort filenames in descending order (longer paths first)
         allFiles.sort((a, b) => b.path.length - a.path.length)
@@ -326,6 +321,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         const { candidateMap, trie } = buildCandidateTrie(allFiles, baseDir, this.settings.ignoreCase ?? false)
         this.candidateMap = candidateMap
         this.trie = trie
+        this.frontmatterCache = frontmatterCache
 
         if (this.settings.showNotice) {
             new Notice(`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`)
@@ -336,22 +332,11 @@ export default class AutomaticLinkerPlugin extends Plugin {
     }
 
     private refreshFileDataAndTrieOnFrontmatterChange(file: TFile) {
-        const metadata = this.app.metadataCache.getFileCache(file)?.frontmatter
-
-        // Extract frontmatter fields that affect the Trie
-        const relevantFields = {
-            aliases: metadata?.aliases ? JSON.stringify(metadata.aliases) : undefined,
-            scoped: isNamespaceScoped(metadata),
-            exclude: isLinkingExcluded(metadata),
-        }
-
-        // Create a hash of the relevant fields
-        const currentHash = JSON.stringify(relevantFields)
+        const currentHash = JSON.stringify(this.getIndexMetadata(file))
         const cachedHash = this.frontmatterCache.get(file.path)
 
         // If the hash has changed, refresh the Trie
         if (currentHash !== cachedHash) {
-            this.frontmatterCache.set(file.path, currentHash)
             this.refreshFileDataAndTrie()
 
             if (this.settings.debug) {
