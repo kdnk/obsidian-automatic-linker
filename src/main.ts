@@ -39,6 +39,7 @@ import {
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie"
 import { updateEditor } from "./update-editor"
 import { runAsyncSafely, sleep } from "./plugin-compat"
+import { formatterSaveConflicts, runFormatter } from "./formatter-integrations"
 
 interface FormattingTarget {
     file: TFile
@@ -56,6 +57,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
     private urlTitleMap: Map<string, string> = new Map()
     // Cache of frontmatter values that affect the Trie
     private frontmatterCache: Map<string, string> = new Map()
+    private formattingTask: Promise<void> | null = null
+    private pendingFormattingTarget: FormattingTarget | null = null
+    private unloaded = false
+    private warnedSaveConflicts = ""
 
     constructor(app: App, pluginManifest: PluginManifest) {
         super(app, pluginManifest)
@@ -154,7 +159,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
     }
 
     private canFormatTarget(target: FormattingTarget): boolean {
-        return this.app.workspace.getActiveFile() === target.file
+        return !this.unloaded
+            && this.app.workspace.getActiveFile() === target.file
             && target.file.path === target.path
             && this.getEditor() === target.editor
             && !isLinkingOff(this.app.metadataCache.getFileCache(target.file)?.frontmatter)
@@ -224,6 +230,38 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
     async formatThenRunPrettierAndLinter(target = this.captureFormattingTarget()) {
         if (!target || !this.canFormatTarget(target)) return
+        // All integrations use active-editor APIs. Serialize the whole workflow,
+        // including URL fetching, and retain only the latest trailing request.
+        this.pendingFormattingTarget = target
+        if (!this.formattingTask) {
+            this.formattingTask = Promise.resolve().then(async () => {
+                try {
+                    while (this.pendingFormattingTarget && !this.unloaded) {
+                        const next = this.pendingFormattingTarget
+                        this.pendingFormattingTarget = null
+                        await this.formatTarget(next)
+                    }
+                }
+                catch (error) {
+                    new Notice(`Automatic Linker: ${error instanceof Error ? error.message : "Formatting failed."}`)
+                    throw error
+                }
+                finally {
+                    this.formattingTask = null
+                    this.pendingFormattingTarget = null
+                }
+            })
+        }
+        await this.formattingTask
+    }
+
+    private async formatTarget(target: FormattingTarget) {
+        if (!this.canFormatTarget(target)) return
+        const conflicts = formatterSaveConflicts(this.app, this.settings).join(" and ")
+        if (conflicts && conflicts !== this.warnedSaveConflicts) {
+            new Notice(`Automatic Linker: ${conflicts} also format on save. Turn off their own save triggers to avoid duplicate runs; keep the Automatic Linker integrations enabled.`, 10000)
+        }
+        this.warnedSaveConflicts = conflicts
         if (this.settings.replaceUrlWithTitle) {
             await this.buildUrlTitleMap(target)
         }
@@ -233,14 +271,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
         if (this.settings.runPrettierAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
             if (!this.canFormatTarget(target)) return
-            // @ts-expect-error
-            await this.app?.commands?.executeCommandById("prettier-format:format-file")
+            await runFormatter(this.app, "prettier-format", target.editor)
         }
         if (this.settings.runLinterAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
             if (!this.canFormatTarget(target)) return
-            // @ts-expect-error
-            await this.app?.commands?.executeCommandById("obsidian-linter:lint-file")
+            await runFormatter(this.app, "obsidian-linter", target.editor)
         }
     }
 
@@ -495,6 +531,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
     }
 
     onunload() {
+        this.unloaded = true
+        this.pendingFormattingTarget = null
         // Restore original save command callback
         const saveCommandDefinition = this.app?.commands?.commands?.["editor:save-file"]
         if (saveCommandDefinition && this.originalSaveCallback) {

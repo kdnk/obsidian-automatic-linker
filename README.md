@@ -90,11 +90,17 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 ### Formatting Workflow
 
 - **Format on save**: Automatically format links when saving files.
-- **Format delay (ms)**: Delay formatting and post-format integrations by the configured number of milliseconds.
-- **Run Prettier after formatting**: Run the Prettier plugin after Automatic Linker formatting.
-- **Run Obsidian Linter after formatting**: Run Obsidian Linter after Automatic Linker formatting.
+- **Format delay (ms)**: Delay formatting stages by the configured number of milliseconds. This is not a completion timeout: each formatter's completion is awaited separately.
+- **Run Prettier after formatting**: Run Prettier after link formatting, and wait for it to finish before starting Linter.
+- **Run Obsidian Linter after formatting**: Run Obsidian Linter after link formatting and Prettier have completed.
 
 Formatting preserves frontmatter exactly. If you switch to another note or editor while formatting waits for page titles or integrations, the pending operation stops before applying further changes. Text you add to the same editor while titles are fetched is preserved.
+
+When Automatic Linker handles formatting on save, disable **Format on save** in Prettier and **Lint on save** in Linter, while leaving the desired integrations enabled here. Otherwise those plugins also run independently and can overlap with this workflow. Automatic Linker warns about this configuration but never changes another plugin's settings.
+
+Formatting requests are serialized. Repeated requests during a run are combined into one trailing run against the latest requested target. An error aborts that batch, including queued requests; a later request can retry. Unloading Automatic Linker discards queued work and prevents further stages; it cannot cancel an external formatter that is already running. It also cannot serialize a formatter started independently by another plugin or command.
+
+The integration uses guarded completion-returning plugin methods, verified with **prettier-format 0.2.0** and **Obsidian Linter 1.32.0**. Missing or incompatible methods stop the chain with a notice; there is no fire-and-forget command fallback. Linter's completion covers its editor formatting, not subsequent metadata-triggered custom commands. The plugins retain their own formatting rules: this coordination does not fix how Prettier interprets mixed indentation, or change tabs/spaces settings.
 
 ### Link Behavior
 

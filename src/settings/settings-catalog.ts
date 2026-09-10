@@ -85,7 +85,7 @@ export const SETTINGS_CATALOG = [
         group: "Formatting Workflow",
         name: "Format delay (ms)",
         description:
-            "Delay in milliseconds before formatting. Increase this value if the linter/prettier runs before the file is fully saved.",
+            "Delay in milliseconds before formatting stages. Formatter completion is awaited separately; this delay is not a completion timeout.",
         control: "text",
         placeholder: "e.g. 100",
         refreshesIndex: false,
@@ -95,7 +95,7 @@ export const SETTINGS_CATALOG = [
         group: "Formatting Workflow",
         name: "Run Prettier after formatting",
         description:
-            "When enabled, Prettier will be executed after Automatic Linker formatting. This requires prettier-format plugin to be installed. https://github.com/dylanarmstrong/obsidian-prettier-plugin",
+            "Run Prettier after link formatting and wait for completion before Linter. Requires a compatible prettier-format plugin. Turn off Prettier's own Format on save when Automatic Linker handles saving.",
         control: "toggle",
         refreshesIndex: false,
     },
@@ -104,7 +104,7 @@ export const SETTINGS_CATALOG = [
         group: "Formatting Workflow",
         name: "Run Obsidian Linter after formatting",
         description:
-            "When enabled, Obsidian Linter will be executed after Automatic Linker formatting. This requires the Obsidian Linter plugin to be installed.",
+            "Run Obsidian Linter after link formatting and Prettier have completed. Requires a compatible Obsidian Linter plugin. Turn off Linter's own Lint on save when Automatic Linker handles saving.",
         control: "toggle",
         refreshesIndex: false,
     },
