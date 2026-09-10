@@ -89,7 +89,6 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 ### Formatting Workflow
 
-- **Normalize list indentation to tabs** (off by default): At the end of the save/Format file workflow, after Prettier and Linter finish, normalize contiguous list indentation using four-column tab stops and discard leftover spaces. For example, six spaces become one tab; a tab, space, and tab become two tabs. **Rounding down can make nesting shallower.** Marker separators, body text, continuation paragraphs, frontmatter, code, and quotes are not normalized. Ambiguous indented runs after blank/prose lines or without a recognizable list root are left alone; this is not a whole-document whitespace cleanup. Format selection and Format vault do not apply this setting. Changes are a single prefix-only editor transaction, and a no-diff run does not create a transaction.
 - **Format on save**: Automatically format links when saving files.
 - **Format delay (ms)**: Delay formatting stages by the configured number of milliseconds. This is not a completion timeout: each formatter's completion is awaited separately.
 - **Run Prettier after formatting**: Run Prettier after link formatting, and wait for it to finish before starting Linter.
@@ -97,7 +96,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 Formatting preserves frontmatter exactly. If you switch to another note or editor while formatting waits for page titles or integrations, the pending operation stops before applying further changes. Text you add to the same editor while titles are fetched is preserved.
 
-With Bullet 5.19.0, indentation cleanup and saving preserve list zoom and the cursor. Native Undo/Redo can exit zoom when restoring indentation outside the focused subtree; the text and cursor are still restored correctly.
+List indentation is owned by the formatter, not Automatic Linker. The former **Normalize list indentation to tabs** setting has been removed; saved values are ignored. Use the kdnk Prettier fork's indentation repair when available. Install and verify that formatter before upgrading from a configuration that relies on Automatic Linker's old cleanup option.
 
 When Automatic Linker handles formatting on save, disable **Format on save** in Prettier and **Lint on save** in Linter, while leaving the desired integrations enabled here. Otherwise those plugins also run independently and can overlap with this workflow. Automatic Linker warns about this configuration but never changes another plugin's settings.
 

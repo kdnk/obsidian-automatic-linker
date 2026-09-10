@@ -115,7 +115,7 @@ function formatterFixture() {
 }
 
 describe("formatter coordination", () => {
-    it("normalizes Linter's completed output last, once, and only when enabled", async () => {
+    it("leaves indentation to external formatters even with a legacy cleanup setting", async () => {
         const f = formatterFixture()
         const gate = deferred()
         f.app.plugins.plugins["prettier-format"] = { async format() {
@@ -132,41 +132,23 @@ describe("formatter coordination", () => {
         expect(f.editor.getValue()).toBe("- root\n      - child")
         expect(f.editor.cm.dispatch).not.toHaveBeenCalled()
 
-        f.plugin.settings.normalizeListIndent = true
+        Object.assign(f.plugin.settings, { normalizeListIndent: true })
         const second = f.plugin.formatThenRunPrettierAndLinter()
         await vi.runAllTimersAsync()
         await second
-        expect(f.editor.getValue()).toBe("- root\n\t- child")
-        expect(f.editor.cm.dispatch).toHaveBeenCalledTimes(1)
-    })
-
-    it.each(["navigate", "unload", "disable"])("skips final indentation cleanup after %s during Linter", async (action) => {
-        const f = formatterFixture()
-        f.plugin.settings.normalizeListIndent = true
-        f.plugin.settings.runPrettierAfterFormatting = false
-        f.setContent("- root\n      - child")
-        const gate = deferred()
-        f.app.plugins.plugins["obsidian-linter"] = { runLinterEditor: () => gate.promise }
-        const pending = f.plugin.formatThenRunPrettierAndLinter()
-        await vi.advanceTimersByTimeAsync(10)
-        if (action === "navigate") f.switchFile()
-        else if (action === "disable") f.disable()
-        else f.plugin.onunload()
-        gate.resolve()
-        await pending
         expect(f.editor.getValue()).toBe("- root\n      - child")
         expect(f.editor.cm.dispatch).not.toHaveBeenCalled()
     })
 
-    it("normalizes without external formatters and leaves a second no-diff run alone", async () => {
+    it("does not normalize indentation without external formatters", async () => {
         const f = fixture()
         f.plugin.settings.replaceUrlWithTitle = false
-        f.plugin.settings.normalizeListIndent = true
+        Object.assign(f.plugin.settings, { normalizeListIndent: true })
         f.setContent("- root\n      - child")
         await f.plugin.formatThenRunPrettierAndLinter()
-        expect(f.editor.getValue()).toBe("- root\n\t- child")
+        expect(f.editor.getValue()).toBe("- root\n      - child")
         await f.plugin.formatThenRunPrettierAndLinter()
-        expect(f.editor.cm.dispatch).toHaveBeenCalledTimes(1)
+        expect(f.editor.cm.dispatch).not.toHaveBeenCalled()
     })
 
     it("rejects a formatter that cannot report completion", async () => {

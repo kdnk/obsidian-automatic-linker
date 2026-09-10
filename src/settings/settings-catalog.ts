@@ -25,7 +25,6 @@ export type AutomaticLinkerSettings = {
     runLinterAfterFormatting: boolean
     runPrettierAfterFormatting: boolean
     formatDelayMs: number
-    normalizeListIndent: boolean
 }
 
 export type SettingControl = "toggle" | "text" | "textarea"
@@ -69,19 +68,9 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     runLinterAfterFormatting: false,
     runPrettierAfterFormatting: false,
     formatDelayMs: 1,
-    normalizeListIndent: false,
 }
 
 export const SETTINGS_CATALOG = [
-    {
-        key: "normalizeListIndent",
-        group: "Formatting Workflow",
-        name: "Normalize list indentation to tabs",
-        description:
-            "After the save/format workflow (including Prettier and Linter), convert contiguous list indentation to tabs at 4-column tab stops and discard leftover spaces. This can make nesting shallower. Preserves body text and skips code, quotes, and ambiguous indented runs after blank or prose lines. Disabled by default.",
-        control: "toggle",
-        refreshesIndex: false,
-    },
     {
         key: "formatOnSave",
         group: "Formatting Workflow",

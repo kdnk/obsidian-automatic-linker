@@ -21,7 +21,6 @@ describe("SETTINGS_CATALOG", () => {
             {
                 group: "Formatting Workflow",
                 keys: [
-                    "normalizeListIndent",
                     "formatOnSave",
                     "formatDelayMs",
                     "runPrettierAfterFormatting",
