@@ -40,6 +40,7 @@ import { buildCandidateTrie, CandidateData, TrieNode } from "./trie"
 import { updateEditor } from "./update-editor"
 import { runAsyncSafely, sleep } from "./plugin-compat"
 import { formatterSaveConflicts, runFormatter } from "./formatter-integrations"
+import { normalizeListIndent } from "./list-indent"
 
 interface FormattingTarget {
     file: TFile
@@ -277,6 +278,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
             await sleep(this.settings.formatDelayMs ?? 100)
             if (!this.canFormatTarget(target)) return
             await runFormatter(this.app, "obsidian-linter", target.editor)
+        }
+        if (this.settings.normalizeListIndent && this.canFormatTarget(target)) {
+            const contentStart = getFrontMatterInfo(target.editor.getValue()).contentStart
+            normalizeListIndent(target.editor, contentStart)
         }
     }
 
