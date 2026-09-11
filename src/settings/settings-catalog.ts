@@ -95,7 +95,7 @@ export const SETTINGS_CATALOG = [
         group: "Formatting Workflow",
         name: "Run Prettier after formatting",
         description:
-            "Run Prettier after link formatting and wait for completion before Linter. Requires a compatible prettier-format plugin. Turn off Prettier's own Format on save when Automatic Linker handles saving.",
+            "Run Prettier after link formatting and wait for completion before Linter. Requires a compatible prettier-format plugin. Automatic Linker coordinates saving; current Prettier versions do not need a separate save hook.",
         control: "toggle",
         refreshesIndex: false,
     },

@@ -1,4 +1,4 @@
-import { App, Editor } from "obsidian"
+import { App, Editor, TFile } from "obsidian"
 import { AutomaticLinkerSettings } from "./settings/settings-info"
 
 type FormatterId = "prettier-format" | "obsidian-linter"
@@ -6,6 +6,7 @@ type FormatterId = "prettier-format" | "obsidian-linter"
 interface FormatterPlugin {
     format?: () => unknown
     runLinterEditor?: (editor: Editor) => unknown
+    shouldIgnoreFile?: (file: TFile) => boolean
     settings?: { formatOnSave?: boolean, lintOnSave?: boolean }
 }
 
@@ -20,11 +21,17 @@ function getFormatter(app: App, id: FormatterId): FormatterPlugin | undefined {
 
 const names = { "prettier-format": "Prettier", "obsidian-linter": "Obsidian Linter" }
 
-export async function runFormatter(app: App, id: FormatterId, editor: Editor): Promise<void> {
+export async function runFormatter(app: App, id: FormatterId, editor: Editor, file?: TFile): Promise<void> {
     const plugin = getFormatter(app, id)
     const method = id === "prettier-format" ? plugin?.format : plugin?.runLinterEditor
     if (typeof method !== "function") {
         throw new Error(`${names[id]} integration is unavailable. Enable a compatible plugin or disable its Automatic Linker integration.`)
+    }
+    // Linter's editor API leaves exclusion checks to its callers (including its
+    // own save hook). Older integrations may not expose the predicate.
+    if (id === "obsidian-linter" && typeof plugin?.shouldIgnoreFile === "function") {
+        const target = file ?? app.workspace.getActiveFile()
+        if (target && plugin.shouldIgnoreFile(target)) return
     }
     // Commands return an availability boolean, not the formatter's Promise.
     // Verified with prettier-format 0.2.0 and obsidian-linter 1.32.0.
