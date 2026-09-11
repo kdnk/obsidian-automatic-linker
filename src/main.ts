@@ -54,6 +54,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
     private candidateMap: Map<string, CandidateData> | null = null
     // Preserved callback for the original save command
     private originalSaveCallback: (checking: boolean) => boolean | void
+    private saveCallback: (checking: boolean) => boolean | void
     private urlTitleMap: Map<string, string> = new Map()
     // Cache of frontmatter values that affect the Trie
     private frontmatterCache: Map<string, string> = new Map()
@@ -276,7 +277,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         if (this.settings.runLinterAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
             if (!this.canFormatTarget(target)) return
-            await runFormatter(this.app, "obsidian-linter", target.editor)
+            await runFormatter(this.app, "obsidian-linter", target.editor, target.file)
         }
     }
 
@@ -384,6 +385,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
     onload() {
         runAsyncSafely(async () => {
             await this.loadSettings()
+            if (this.unloaded) return
             this.initializePlugin()
         })
     }
@@ -509,14 +511,13 @@ export default class AutomaticLinkerPlugin extends Plugin {
         // Optionally, override the default save command to run modifyLinks (throttled).
         const saveCommandDefinition = this.app?.commands?.commands?.["editor:save-file"]
         const saveCallback = saveCommandDefinition?.checkCallback
-        if (typeof saveCallback === "function") {
-            // Preserve the original save callback to call it after modifying links.
-            this.originalSaveCallback = saveCallback
-        }
+        if (!saveCommandDefinition || typeof saveCallback !== "function") return
+        this.originalSaveCallback = saveCallback
 
-        saveCommandDefinition.checkCallback = (checking: boolean) => {
-            if (checking) {
-                return saveCallback?.(checking)
+        this.saveCallback = (checking: boolean) => {
+            // Another plugin may still retain this wrapper after we unload.
+            if (checking || this.unloaded) {
+                return saveCallback(checking)
             }
             else {
                 if (!this.settings.formatOnSave) return
@@ -528,14 +529,15 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 })
             }
         }
+        saveCommandDefinition.checkCallback = this.saveCallback
     }
 
     onunload() {
         this.unloaded = true
         this.pendingFormattingTarget = null
-        // Restore original save command callback
+        // Leave later wrappers installed; our inactive wrapper delegates through.
         const saveCommandDefinition = this.app?.commands?.commands?.["editor:save-file"]
-        if (saveCommandDefinition && this.originalSaveCallback) {
+        if (saveCommandDefinition?.checkCallback === this.saveCallback && this.originalSaveCallback) {
             saveCommandDefinition.checkCallback = this.originalSaveCallback
         }
     }

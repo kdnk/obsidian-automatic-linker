@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { DEFAULT_SETTINGS } from "../settings/settings-info"
 import AutomaticLinkerPlugin from "../main"
 import { EditorState, TransactionSpec } from "@codemirror/state"
+import { runFormatter } from "../formatter-integrations"
 
 const requestMock = vi.hoisted(() => vi.fn())
 const notices = vi.hoisted(() => [] as string[])
@@ -113,6 +114,135 @@ function formatterFixture() {
     f.setContent("before")
     return f
 }
+
+describe("save callback lifecycle", () => {
+    function initialize(plugin: AutomaticLinkerPlugin) {
+        ;(plugin as unknown as { initializePlugin: () => void }).initializePlugin()
+    }
+
+    it("keeps a later wrapper installed and delegates through the unloaded linker", async () => {
+        vi.useFakeTimers()
+        const f = fixture()
+        f.plugin.settings.formatOnSave = true
+        f.plugin.settings.replaceUrlWithTitle = false
+        initialize(f.plugin)
+        const previous = f.save.checkCallback
+        const wrapper = vi.fn((checking: boolean) => previous(checking))
+        f.save.checkCallback = wrapper
+
+        f.plugin.onunload()
+        expect(f.save.checkCallback).toBe(wrapper)
+        expect(f.save.checkCallback(false)).toBe(true)
+        await vi.runAllTimersAsync()
+        expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(false)
+        expect(f.editor.setValue).not.toHaveBeenCalled()
+    })
+
+    it.each(["older first", "newer first"])("preserves one active linker and native save after unloading %s", async (order) => {
+        vi.useFakeTimers()
+        const f = fixture()
+        f.plugin.settings.formatOnSave = true
+        f.plugin.settings.replaceUrlWithTitle = false
+        initialize(f.plugin)
+        const newer = new AutomaticLinkerPlugin(f.app as never, {} as never)
+        newer.settings = { ...f.plugin.settings }
+        initialize(newer)
+        const first = order === "older first" ? f.plugin : newer
+        const second = order === "older first" ? newer : f.plugin
+
+        first.onunload()
+        f.save.checkCallback(false)
+        await vi.runAllTimersAsync()
+        expect(f.editor.setValue).toHaveBeenCalledTimes(1)
+        expect(f.originalSave).not.toHaveBeenCalled()
+
+        second.onunload()
+        expect(f.save.checkCallback(false)).toBe(true)
+        await vi.runAllTimersAsync()
+        expect(f.editor.setValue).toHaveBeenCalledTimes(1)
+        expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(false)
+    })
+
+    it("forwards availability checks through stale wrappers without formatting", async () => {
+        vi.useFakeTimers()
+        const f = fixture()
+        f.originalSave.mockReturnValue(false)
+        initialize(f.plugin)
+        const callback = f.save.checkCallback
+        f.plugin.onunload()
+        expect(callback(true)).toBe(false)
+        await vi.runAllTimersAsync()
+        expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(true)
+        expect(f.editor.setValue).not.toHaveBeenCalled()
+    })
+
+    it("does not require a native save command to initialize or unload", () => {
+        const f = fixture()
+        Reflect.deleteProperty(f.app.commands.commands, "editor:save-file")
+        expect(() => initialize(f.plugin)).not.toThrow()
+        expect(() => f.plugin.onunload()).not.toThrow()
+    })
+
+    it("does not install a save callback when unloaded while settings are loading", async () => {
+        const f = fixture()
+        const gate = deferred()
+        vi.spyOn(f.plugin, "loadSettings").mockReturnValue(gate.promise)
+        f.plugin.onload()
+        f.plugin.onunload()
+        gate.resolve()
+        await gate.promise
+        await Promise.resolve()
+        expect(f.save.checkCallback).toBe(f.originalSave)
+    })
+})
+
+describe("Linter ignore integration", () => {
+    it.each(["templates/A.md", "archive/private.md"])("leaves a Linter-excluded file unchanged: %s", async (path) => {
+        const f = fixture()
+        f.file.path = path
+        const linter = {
+            ignoredPaths: ["templates/A.md", "archive/private.md"],
+            shouldIgnoreFile(file: typeof f.file) { return this.ignoredPaths.includes(file.path) },
+            async runLinterEditor(editor: typeof f.editor) { editor.setValue("linted") },
+        }
+        f.app.plugins.plugins["obsidian-linter"] = linter
+
+        await runFormatter(f.app as never, "obsidian-linter", f.editor as never)
+        expect(f.editor.getValue()).toBe("https://example.com")
+    })
+
+    it("checks the captured file passed by the caller", async () => {
+        const f = fixture()
+        f.app.plugins.plugins["obsidian-linter"] = {
+            shouldIgnoreFile(file: typeof f.file) { return file.path === "templates/captured.md" },
+            async runLinterEditor(editor: typeof f.editor) { editor.setValue("linted") },
+        }
+
+        await runFormatter(f.app as never, "obsidian-linter", f.editor as never, { path: "templates/captured.md" } as never)
+        expect(f.editor.getValue()).toBe("https://example.com")
+    })
+
+    it.each([true, false])("awaits non-ignored Linter completion with ignore API present: %s", async (hasIgnoreApi) => {
+        const f = fixture()
+        const gate = deferred()
+        f.app.plugins.plugins["obsidian-linter"] = {
+            ...(hasIgnoreApi ? { shouldIgnoreFile: () => false } : {}),
+            async runLinterEditor(editor: typeof f.editor) {
+                await gate.promise
+                editor.setValue("linted")
+            },
+        }
+        let completed = false
+        const pending = runFormatter(f.app as never, "obsidian-linter", f.editor as never).then(() => {
+            completed = true
+        })
+        await Promise.resolve()
+        expect(completed).toBe(false)
+        gate.resolve()
+        await pending
+        expect(f.editor.getValue()).toBe("linted")
+    })
+})
 
 describe("formatter coordination", () => {
     it("leaves indentation to external formatters even with a legacy cleanup setting", async () => {
