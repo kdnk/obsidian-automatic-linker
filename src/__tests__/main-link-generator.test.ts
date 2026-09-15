@@ -38,6 +38,82 @@ vi.mock("obsidian", () => ({
 
 describe("AutomaticLinkerPlugin link generator", () => {
     it.each([
+        { name: "exact-case link", body: "Topic", resolution: "target", expected: "[[Topic]]" },
+        { name: "case-insensitive link", body: "topic", resolution: "target", expected: "[[topic]]" },
+        { name: "conflicting shortened link", body: "Topic", resolution: "other", expected: "[[pages/Topic]]" },
+        { name: "failed resolution check", body: "Topic", resolution: "error", expected: "[[pages/Topic]]" },
+    ])("omits the configured new-note folder for a $name only when it resolves to the target", async ({ body, resolution, expected }) => {
+        const { default: AutomaticLinkerPlugin } = await import("../main")
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const targetFile = new MockTFile("pages/Topic.md")
+        const otherFile = new MockTFile("Topic.md")
+        const app = {
+            fileManager: {
+                generateMarkdownLink: vi.fn(() => "[[pages/Topic]]"),
+            },
+            metadataCache: {
+                getFirstLinkpathDest: vi.fn((linkPath: string, sourcePath: string) => {
+                    if (resolution === "error") throw new Error("resolution failed")
+                    if (linkPath !== body || sourcePath !== "current-file.md") return null
+                    return resolution === "target" ? targetFile : otherFile
+                }),
+            },
+            vault: {
+                getAbstractFileByPath: vi.fn((filePath: string) => {
+                    if (filePath === targetFile.path) return targetFile
+                    return null
+                }),
+                getConfig: vi.fn(() => "pages"),
+            },
+        }
+        const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
+        plugin.settings = {
+            ...DEFAULT_SETTINGS,
+            ignoreCase: true,
+            respectNewFileFolderPath: true,
+        }
+        ;(plugin as unknown as { trie: typeof trie }).trie = trie
+        ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
+
+        expect(plugin.modifyLinks(body, "current-file.md")).toBe(expected)
+    })
+
+    it("preserves aliases and table escaping when omitting the new-note folder", async () => {
+        const { default: AutomaticLinkerPlugin } = await import("../main")
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic", aliases: ["subject"] }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const targetFile = new MockTFile("pages/Topic.md")
+        const app = {
+            fileManager: {
+                generateMarkdownLink: vi.fn(() => "[[pages/Topic|subject]]"),
+            },
+            metadataCache: {
+                getFirstLinkpathDest: vi.fn(() => targetFile),
+            },
+            vault: {
+                getAbstractFileByPath: vi.fn(() => targetFile),
+                getConfig: vi.fn(() => "pages"),
+            },
+        }
+        const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
+        plugin.settings = {
+            ...DEFAULT_SETTINGS,
+            ignoreCase: true,
+            respectNewFileFolderPath: true,
+        }
+        ;(plugin as unknown as { trie: typeof trie }).trie = trie
+        ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
+
+        expect(plugin.modifyLinks("| subject |", "current-file.md"))
+            .toBe("| [[Topic\\|subject]] |")
+    })
+
+    it.each([
         { name: "base-directory file", path: "pages/Topic", body: "Topic", baseDir: "pages", aliases: [], duplicate: false },
         { name: "base-directory file with a root duplicate", path: "pages/Topic", body: "pages/Topic", baseDir: "pages", aliases: [], duplicate: true },
         { name: "case-insensitive root file", path: "TypeScript", body: "typescript", baseDir: undefined, aliases: [], duplicate: false },
