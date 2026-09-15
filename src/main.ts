@@ -95,7 +95,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
                         !linkPath.includes("/") && targetBasename !== linkPath ? linkPath : ""
                     )
                     const link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", displayAlias)
-                    return escapeLinkForMarkdownTable(link, isInTable)
+                    const escapedLink = escapeLinkForMarkdownTable(link, isInTable)
+                    const isShortenedTarget = targetPath !== linkPath
+                        && targetPath?.toLowerCase().endsWith(`/${linkPath.toLowerCase()}`)
+                    if (link.startsWith("[[") && isShortenedTarget) {
+                        try {
+                            const shortenedTarget = this.app.metadataCache?.getFirstLinkpathDest(linkPath, sourcePath)
+                            if (shortenedTarget === targetFile) {
+                                return defaultLinkGenerator({ linkPath, sourcePath, alias, isInTable })
+                            }
+                        }
+                        catch {
+                            return escapedLink
+                        }
+                    }
+                    return escapedLink
                 }
                 catch (error) {
                     // Fall back to default format if API fails
