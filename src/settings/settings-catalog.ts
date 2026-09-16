@@ -4,6 +4,7 @@ export type AutomaticLinkerSettings = {
     formatOnSave: boolean
     showNotice: boolean
     respectNewFileFolderPath: boolean
+    normalizeExistingWikilinks: boolean
     includeAliases: boolean
     proximityBasedLinking: boolean
     ignoreDateFormats: boolean
@@ -47,6 +48,7 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     formatOnSave: false,
     showNotice: false,
     respectNewFileFolderPath: true,
+    normalizeExistingWikilinks: true,
     includeAliases: true,
     proximityBasedLinking: true,
     ignoreDateFormats: true,
@@ -116,6 +118,15 @@ export const SETTINGS_CATALOG = [
             "When enabled, the plugin will use Obsidian's 'Folder to create new notes in' setting as the base directory for omitting folder prefixes in links.",
         control: "toggle",
         refreshesIndex: true,
+    },
+    {
+        key: "normalizeExistingWikilinks",
+        group: "Link Behavior",
+        name: "Normalize existing wikilinks",
+        description:
+            "When enabled, formatting also normalizes existing wikilinks, such as converting [[pages/Topic|Topic]] to [[Topic]] when the shorter link resolves safely.",
+        control: "toggle",
+        refreshesIndex: false,
     },
     {
         key: "proximityBasedLinking",

@@ -118,24 +118,13 @@ describe("AutomaticLinkerPlugin link generator", () => {
         ;(plugin as unknown as { trie: typeof trie }).trie = trie
         ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
 
-        const normalizeExistingWikilinks = { normalizeExistingWikilinks: true }
-        const result = plugin.modifyLinks(
-            input,
-            "journals/2026-09-16.md",
-            undefined,
-            normalizeExistingWikilinks,
-        )
+        const result = plugin.modifyLinks(input, "journals/2026-09-16.md")
 
         expect(result).toBe(expected)
-        expect(plugin.modifyLinks(
-            result,
-            "journals/2026-09-16.md",
-            undefined,
-            normalizeExistingWikilinks,
-        )).toBe(expected)
+        expect(plugin.modifyLinks(result, "journals/2026-09-16.md")).toBe(expected)
     })
 
-    it("does not normalize an existing wikilink outside an explicit format-file run", async () => {
+    it("leaves existing wikilinks unchanged when normalization is disabled", async () => {
         const { default: AutomaticLinkerPlugin } = await import("../main")
         const { candidateMap, trie } = buildCandidateTrieForTest({
             files: [{ path: "pages/1on1" }],
@@ -155,11 +144,17 @@ describe("AutomaticLinkerPlugin link generator", () => {
             ...DEFAULT_SETTINGS,
             ignoreCase: true,
             respectNewFileFolderPath: true,
-        }
+            normalizeExistingWikilinks: false,
+        } as typeof plugin.settings
         ;(plugin as unknown as { trie: typeof trie }).trie = trie
         ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
 
-        expect(plugin.modifyLinks("[[pages/1on1]]", "current-file.md"))
+        expect(plugin.modifyLinks(
+            "[[pages/1on1]]",
+            "current-file.md",
+            undefined,
+            { normalizeExistingWikilinks: true },
+        ))
             .toBe("[[pages/1on1]]")
     })
 
@@ -366,8 +361,14 @@ describe("AutomaticLinkerPlugin link generator", () => {
             settings,
         })
         const replaceSelection = vi.fn()
+        const typeScriptFile = new MockTFile("notes/TypeScript.md")
+        const existingFile = new MockTFile("pages/Existing.md")
         const app = {
-            metadataCache: { getFileCache: () => ({ frontmatter: {} }) },
+            metadataCache: {
+                getFileCache: () => ({ frontmatter: {} }),
+                getFirstLinkpathDest: vi.fn((linkPath: string) =>
+                    linkPath === "Existing" ? existingFile : typeScriptFile),
+            },
             workspace: {
                 getActiveFile: vi.fn(() => ({ path: "current-file.md" })),
                 activeEditor: {
@@ -383,12 +384,14 @@ describe("AutomaticLinkerPlugin link generator", () => {
             vault: {
                 getConfig: vi.fn(() => "pages"),
                 getAbstractFileByPath: vi.fn((path: string) => {
-                    if (path === "notes/TypeScript.md") return { path: "notes/TypeScript.md" }
+                    if (path === typeScriptFile.path) return typeScriptFile
+                    if (path === existingFile.path) return existingFile
                     return null
                 }),
             },
             fileManager: {
-                generateMarkdownLink: vi.fn(() => "[[notes/TypeScript|TypeScript]]"),
+                generateMarkdownLink: vi.fn((file: MockTFile, _source: string, _subpath: string, alias: string) =>
+                    `[[${file.path.slice(0, -3)}${alias ? `|${alias}` : ""}]]`),
             },
         }
         const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
@@ -406,7 +409,7 @@ describe("AutomaticLinkerPlugin link generator", () => {
         await plugin.mofifyLinksSelection()
 
         expect(replaceSelection).toHaveBeenCalledWith(
-            "[[notes/TypeScript|TypeScript]] [[pages/Existing]] https://github.com/openai/openai/issues/1",
+            "[[notes/TypeScript|TypeScript]] [[Existing]] https://github.com/openai/openai/issues/1",
         )
     })
 })

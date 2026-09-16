@@ -1,5 +1,9 @@
 import { CandidateData, TrieNode } from "../trie"
-import { mapMarkdownProse, segmentMarkdown } from "../markdown-segments"
+import {
+    mapMarkdownProse,
+    segmentMarkdown,
+    SegmentMarkdownOptions,
+} from "../markdown-segments"
 import {
     buildFallbackIndex,
     extractLinkParts,
@@ -182,18 +186,14 @@ export const defaultLinkGenerator: LinkGenerator = ({
     return escapeLinkForMarkdownTable(`[[${linkContent}]]`, isInTable)
 }
 
-const normalizeExistingBaseDirWikilinks = (
+export const normalizeExistingBaseDirWikilinks = (
     body: string,
     filePath: string,
     candidateMap: Map<string, CandidateData>,
     linkGenerator: LinkGenerator,
     settings: ReplaceLinksSettings,
-    markdownOptions: {
-        protectHeadings?: boolean
-        protectCallouts?: boolean
-        protectTableRows?: boolean
-        protectUrls?: boolean
-    },
+    markdownOptions: SegmentMarkdownOptions,
+    forceIsInTable?: boolean,
 ): string => {
     if (!settings.baseDir) return body
 
@@ -203,7 +203,8 @@ const normalizeExistingBaseDirWikilinks = (
             return segment.text
         }
 
-        const isInTable = isIndexInsideMarkdownTable(body, segment.start)
+        const isInTable = forceIsInTable
+            ?? isIndexInsideMarkdownTable(body, segment.start)
         const linkContent = segment.text.slice(2, -2)
         const escapedAliasSeparator = isInTable ? linkContent.indexOf("\\|") : -1
         const plainAliasSeparator = linkContent.indexOf("|")

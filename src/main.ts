@@ -136,7 +136,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         fileContent: string,
         filePath: string,
         frontmatter?: Record<string, unknown>,
-        { normalizeExistingWikilinks = false }: ModifyLinksOptions = {},
+        { normalizeExistingWikilinks = true }: ModifyLinksOptions = {},
     ): string {
         if (!this.trie || !this.candidateMap) {
             return formatMarkdownDocument({
@@ -258,7 +258,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
     async formatThenRunPrettierAndLinter(
         target = this.captureFormattingTarget(),
-        { normalizeExistingWikilinks = false }: ModifyLinksOptions = {},
+        { normalizeExistingWikilinks = true }: ModifyLinksOptions = {},
     ) {
         if (!target || !this.canFormatTarget(target)) return
         // All integrations use active-editor APIs. Serialize the whole workflow,
@@ -566,7 +566,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 if (!target) return
                 runAsyncSafely(async () => {
                     await sleep(this.settings.formatDelayMs ?? 100)
-                    await this.formatThenRunPrettierAndLinter(target)
+                    await this.formatThenRunPrettierAndLinter(target, {
+                        normalizeExistingWikilinks: this.settings.normalizeExistingWikilinks,
+                    })
                 })
             }
         }

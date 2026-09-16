@@ -31,6 +31,7 @@ describe("SETTINGS_CATALOG", () => {
                 group: "Link Behavior",
                 keys: [
                     "respectNewFileFolderPath",
+                    "normalizeExistingWikilinks",
                     "proximityBasedLinking",
                     "includeAliases",
                     "removeAliasInDirs",
@@ -84,6 +85,11 @@ describe("SETTINGS_CATALOG", () => {
         }, [])
 
         expect(actualGroups).toEqual(expectedGroups)
+    })
+
+    it("normalizes existing wikilinks by default", () => {
+        expect((DEFAULT_SETTINGS as Record<string, unknown>).normalizeExistingWikilinks)
+            .toBe(true)
     })
 
     it("marks only the URL textarea settings for explicit sizing", () => {
