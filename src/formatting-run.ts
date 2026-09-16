@@ -29,6 +29,7 @@ export interface FormattingRunOptions {
     candidateIndex?: CandidateIndex
     urlTitleMap?: Map<string, string>
     linkGenerator?: LinkGenerator
+    normalizeExistingWikilinks?: boolean
 }
 
 export { projectReplaceLinksSettings as toReplaceLinksSettings } from "./settings/settings-catalog"
@@ -51,6 +52,7 @@ export const formatMarkdownBody = ({
     candidateIndex,
     urlTitleMap = new Map(),
     linkGenerator,
+    normalizeExistingWikilinks = false,
 }: Omit<FormattingRunOptions, "content"> & { body: string }): string => {
     if (isLinkingOff(frontmatter)) return body
 
@@ -73,6 +75,7 @@ export const formatMarkdownBody = ({
             },
             settings: projectReplaceLinksSettings(settings, baseDir),
             linkGenerator,
+            normalizeExistingWikilinks: normalizeExistingWikilinks && !!linkGenerator,
         })
     }
 

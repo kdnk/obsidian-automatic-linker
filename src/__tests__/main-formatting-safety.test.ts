@@ -115,6 +115,23 @@ function formatterFixture() {
     return f
 }
 
+describe("format-file command", () => {
+    it("explicitly enables existing wikilink normalization", async () => {
+        const f = fixture()
+        const format = vi.spyOn(f.plugin, "formatThenRunPrettierAndLinter").mockResolvedValue()
+        ;(f.plugin as unknown as { initializePlugin: () => void }).initializePlugin()
+        const command = (f.plugin as unknown as {
+            commands: Array<{ id: string, editorCallback: () => Promise<void> }>
+        }).commands.find(({ id }) => id === "format-file")
+
+        await command?.editorCallback()
+
+        expect(format).toHaveBeenCalledExactlyOnceWith(undefined, {
+            normalizeExistingWikilinks: true,
+        })
+    })
+})
+
 describe("save callback lifecycle", () => {
     function initialize(plugin: AutomaticLinkerPlugin) {
         ;(plugin as unknown as { initializePlugin: () => void }).initializePlugin()
@@ -361,6 +378,29 @@ describe("formatter coordination", () => {
         await vi.runAllTimersAsync()
         await Promise.all([first, second, third])
         expect(events).toEqual(["prettier start", "prettier end", "lint", "prettier start", "prettier end", "lint"])
+    })
+
+    it("retains a queued format-file normalization request when a save request follows it", async () => {
+        const f = formatterFixture()
+        const gate = deferred()
+        const modifyLinks = vi.spyOn(f.plugin, "modifyLinks")
+        f.app.plugins.plugins["prettier-format"] = { async format() {
+            await gate.promise
+        } }
+        f.app.plugins.plugins["obsidian-linter"] = { async runLinterEditor() {} }
+
+        const first = f.plugin.formatThenRunPrettierAndLinter()
+        await vi.advanceTimersByTimeAsync(10)
+        const formatFile = f.plugin.formatThenRunPrettierAndLinter(undefined, {
+            normalizeExistingWikilinks: true,
+        })
+        const save = f.plugin.formatThenRunPrettierAndLinter()
+        gate.resolve()
+        await vi.runAllTimersAsync()
+        await Promise.all([first, formatFile, save])
+
+        expect(modifyLinks.mock.calls.map(call => call[3]?.normalizeExistingWikilinks))
+            .toEqual([false, true])
     })
 
     it("cancels downstream formatting after navigation during Prettier", async () => {
