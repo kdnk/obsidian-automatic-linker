@@ -163,6 +163,102 @@ describe("formatMarkdownBody", () => {
 })
 
 describe("formatMarkdownSelection", () => {
+    it("normalizes a fully selected existing wikilink", () => {
+        const candidateIndex = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const body = "before [[pages/Topic|Topic]] after"
+        const start = body.indexOf("[[")
+        const end = body.indexOf("]]", start) + 2
+
+        expect(formatMarkdownSelection({
+            body,
+            selection: { start, end },
+            filePath: "current.md",
+            settings: {
+                ...DEFAULT_SETTINGS,
+                normalizeExistingWikilinks: true,
+            } as typeof DEFAULT_SETTINGS,
+            baseDir: "pages",
+            candidateIndex,
+            linkGenerator: ({ linkPath, alias }) => `[[${linkPath}${alias ? `|${alias}` : ""}]]`,
+        })).toBe("[[Topic]]")
+    })
+
+    it("preserves a partially selected existing wikilink", () => {
+        const candidateIndex = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const body = "[[pages/Topic|Topic]]"
+
+        expect(formatMarkdownSelection({
+            body,
+            selection: { start: 2, end: body.length - 2 },
+            filePath: "current.md",
+            settings: DEFAULT_SETTINGS,
+            baseDir: "pages",
+            candidateIndex,
+            linkGenerator: ({ linkPath }) => `[[${linkPath}]]`,
+        })).toBe("pages/Topic|Topic")
+    })
+
+    it("preserves a fully selected existing wikilink when normalization is disabled", () => {
+        const candidateIndex = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const body = "[[pages/Topic|Topic]]"
+
+        expect(formatMarkdownSelection({
+            body,
+            filePath: "current.md",
+            settings: { ...DEFAULT_SETTINGS, normalizeExistingWikilinks: false },
+            baseDir: "pages",
+            candidateIndex,
+            linkGenerator: ({ linkPath }) => `[[${linkPath}]]`,
+        })).toBe(body)
+    })
+
+    it("normalizes a fully selected wikilink inside a Markdown table", () => {
+        const candidateIndex = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const body = "| [[pages/Topic\\|meeting]] |"
+        const start = body.indexOf("[[")
+        const end = body.indexOf("]]", start) + 2
+
+        expect(formatMarkdownSelection({
+            body,
+            selection: { start, end },
+            filePath: "current.md",
+            settings: DEFAULT_SETTINGS,
+            baseDir: "pages",
+            candidateIndex,
+            linkGenerator: ({ linkPath, alias, isInTable }) =>
+                `[[${linkPath}${alias ? `${isInTable ? "\\|" : "|"}${alias}` : ""}]]`,
+        })).toBe("[[Topic\\|meeting]]")
+    })
+
+    it("byte-preserves a fully selected unresolved wikilink", () => {
+        const candidateIndex = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const body = "[[pages/Cafe\u0301]]"
+
+        expect(formatMarkdownSelection({
+            body,
+            filePath: "current.md",
+            settings: DEFAULT_SETTINGS,
+            baseDir: "pages",
+            candidateIndex,
+            linkGenerator: ({ linkPath }) => `[[${linkPath}]]`,
+        })).toBe(body)
+    })
+
     it("escapes aliases when only a table cell is selected", () => {
         const candidateIndex = buildCandidateTrieForTest({
             files: [{ path: "notes/TypeScript" }],

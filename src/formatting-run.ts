@@ -4,6 +4,7 @@ import { isIndexInsideMarkdownTable } from "./replace-links/candidate-scanner"
 import {
     defaultLinkGenerator,
     LinkGenerator,
+    normalizeExistingBaseDirWikilinks,
     replaceLinks,
 } from "./replace-links/replace-links"
 import { replaceUrlWithTitle } from "./replace-url-with-title"
@@ -75,7 +76,9 @@ export const formatMarkdownBody = ({
             },
             settings: projectReplaceLinksSettings(settings, baseDir),
             linkGenerator,
-            normalizeExistingWikilinks: normalizeExistingWikilinks && !!linkGenerator,
+            normalizeExistingWikilinks: normalizeExistingWikilinks
+                && settings.normalizeExistingWikilinks
+                && !!linkGenerator,
         })
     }
 
@@ -90,7 +93,7 @@ export const formatMarkdownSelection = ({
     settings,
     baseDir,
     candidateIndex,
-    linkGenerator = defaultLinkGenerator,
+    linkGenerator,
 }: Omit<FormattingRunOptions, "content" | "urlTitleMap"> & {
     /** Full document body, so protection rules can see outside the selection. */
     body: string
@@ -102,17 +105,38 @@ export const formatMarkdownSelection = ({
     }
 
     const replacementSettings = projectReplaceLinksSettings(settings, baseDir)
-    return segmentMarkdown(body, {
+    const effectiveLinkGenerator = linkGenerator ?? defaultLinkGenerator
+    const canNormalizeExistingWikilinks = settings.normalizeExistingWikilinks
+        && !!linkGenerator
+    const markdownOptions = {
         protectHeadings: settings.ignoreHeadings,
         protectCallouts: true,
         protectTableRows: settings.ignoreMarkdownTables,
         protectUrls: true,
-    }).map((segment) => {
+    }
+    return segmentMarkdown(body, markdownOptions).map((segment) => {
         const start = Math.max(segment.start, selection.start)
         const end = Math.min(segment.end, selection.end)
         if (start >= end) return ""
         const selectedText = body.slice(start, end)
-        if (segment.kind === "protected") return selectedText
+        if (segment.kind === "protected") {
+            const containsWholeWikilink = segment.protectedKind === "wikilink"
+                && segment.start >= selection.start
+                && segment.end <= selection.end
+            if (!canNormalizeExistingWikilinks || !containsWholeWikilink) {
+                return selectedText
+            }
+
+            return normalizeExistingBaseDirWikilinks(
+                segment.text,
+                filePath.replace(/\.md$/, ""),
+                candidateIndex.candidateMap,
+                effectiveLinkGenerator,
+                replacementSettings,
+                markdownOptions,
+                isIndexInsideMarkdownTable(body, segment.start),
+            )
+        }
 
         return selectedText.replace(/[^\n]+/g, (line, offset: number) => replaceLinks({
             body: line,
@@ -122,7 +146,7 @@ export const formatMarkdownSelection = ({
                 candidateMap: candidateIndex.candidateMap,
             },
             settings: replacementSettings,
-            linkGenerator: params => linkGenerator({
+            linkGenerator: params => effectiveLinkGenerator({
                 ...params,
                 isInTable: isIndexInsideMarkdownTable(body, start + offset),
             }),

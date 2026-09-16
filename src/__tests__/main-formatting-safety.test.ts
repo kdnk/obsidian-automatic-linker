@@ -137,6 +137,29 @@ describe("save callback lifecycle", () => {
         ;(plugin as unknown as { initializePlugin: () => void }).initializePlugin()
     }
 
+    it("enables existing wikilink normalization when formatting on save", async () => {
+        vi.useFakeTimers()
+        const f = fixture()
+        f.plugin.settings = {
+            ...f.plugin.settings,
+            formatOnSave: true,
+            replaceUrlWithTitle: false,
+            normalizeExistingWikilinks: true,
+        } as typeof f.plugin.settings
+        const format = vi.spyOn(f.plugin, "formatThenRunPrettierAndLinter").mockResolvedValue()
+        initialize(f.plugin)
+
+        f.save.checkCallback(false)
+        await vi.runAllTimersAsync()
+
+        expect(format).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+            path: "A.md",
+            editor: f.editor,
+        }), {
+            normalizeExistingWikilinks: true,
+        })
+    })
+
     it("keeps a later wrapper installed and delegates through the unloaded linker", async () => {
         vi.useFakeTimers()
         const f = fixture()
@@ -400,7 +423,7 @@ describe("formatter coordination", () => {
         await Promise.all([first, formatFile, save])
 
         expect(modifyLinks.mock.calls.map(call => call[3]?.normalizeExistingWikilinks))
-            .toEqual([false, true])
+            .toEqual([true, true])
     })
 
     it("cancels downstream formatting after navigation during Prettier", async () => {
