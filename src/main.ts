@@ -47,6 +47,15 @@ interface FormattingTarget {
     editor: Editor
 }
 
+interface FormattingRequest {
+    target: FormattingTarget
+    normalizeExistingWikilinks: boolean
+}
+
+interface ModifyLinksOptions {
+    normalizeExistingWikilinks?: boolean
+}
+
 export default class AutomaticLinkerPlugin extends Plugin {
     settings: AutomaticLinkerSettings
     // Pre-built Trie for link candidate lookup
@@ -59,7 +68,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
     // Cache of frontmatter values that affect the Trie
     private frontmatterCache: Map<string, string> = new Map()
     private formattingTask: Promise<void> | null = null
-    private pendingFormattingTarget: FormattingTarget | null = null
+    private pendingFormattingRequest: FormattingRequest | null = null
     private unloaded = false
     private warnedSaveConflicts = ""
 
@@ -81,6 +90,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
         return ({
             linkPath,
             targetPath,
+            subpath,
+            originalLink,
             alias,
             isInTable,
         }: LinkGeneratorParams): string => {
@@ -94,7 +105,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                     const displayAlias = alias ?? (
                         !linkPath.includes("/") && targetBasename !== linkPath ? linkPath : ""
                     )
-                    const link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, "", displayAlias)
+                    const link = this.app.fileManager.generateMarkdownLink(targetFile, sourcePath, subpath ?? "", displayAlias)
                     const escapedLink = escapeLinkForMarkdownTable(link, isInTable)
                     const isShortenedTarget = targetPath !== linkPath
                         && targetPath?.toLowerCase().endsWith(`/${linkPath.toLowerCase()}`)
@@ -102,7 +113,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                         try {
                             const shortenedTarget = this.app.metadataCache?.getFirstLinkpathDest(linkPath, sourcePath)
                             if (shortenedTarget === targetFile) {
-                                return defaultLinkGenerator({ linkPath, sourcePath, alias, isInTable })
+                                return defaultLinkGenerator({ linkPath, subpath, sourcePath, alias, isInTable })
                             }
                         }
                         catch {
@@ -117,7 +128,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 }
             }
 
-            return defaultLinkGenerator({ linkPath, sourcePath, alias, isInTable })
+            return originalLink ?? defaultLinkGenerator({ linkPath, subpath, sourcePath, alias, isInTable })
         }
     }
 
@@ -125,6 +136,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         fileContent: string,
         filePath: string,
         frontmatter?: Record<string, unknown>,
+        { normalizeExistingWikilinks = false }: ModifyLinksOptions = {},
     ): string {
         if (!this.trie || !this.candidateMap) {
             return formatMarkdownDocument({
@@ -158,6 +170,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             candidateIndex,
             urlTitleMap: this.urlTitleMap,
             linkGenerator: candidateIndex ? this.createLinkGenerator(filePath) : undefined,
+            normalizeExistingWikilinks,
         })
 
         if (this.settings.debug) {
@@ -181,17 +194,17 @@ export default class AutomaticLinkerPlugin extends Plugin {
             && !isLinkingOff(this.app.metadataCache.getFileCache(target.file)?.frontmatter)
     }
 
-    private modifyLinksForTarget(target: FormattingTarget) {
+    private modifyLinksForTarget(target: FormattingTarget, normalizeExistingWikilinks = false) {
         if (!this.canFormatTarget(target)) return
         const metadata = this.app.metadataCache.getFileCache(target.file)?.frontmatter
         const oldText = target.editor.getValue()
-        const newText = this.modifyLinks(oldText, target.path, metadata)
+        const newText = this.modifyLinks(oldText, target.path, metadata, { normalizeExistingWikilinks })
         updateEditor(oldText, newText, target.editor)
     }
 
     modifyLinksForActiveFile() {
         const target = this.captureFormattingTarget()
-        if (target) this.modifyLinksForTarget(target)
+        if (target) this.modifyLinksForTarget(target, true)
     }
 
     async modifyLinksForVault() {
@@ -243,17 +256,29 @@ export default class AutomaticLinkerPlugin extends Plugin {
         }
     }
 
-    async formatThenRunPrettierAndLinter(target = this.captureFormattingTarget()) {
+    async formatThenRunPrettierAndLinter(
+        target = this.captureFormattingTarget(),
+        { normalizeExistingWikilinks = false }: ModifyLinksOptions = {},
+    ) {
         if (!target || !this.canFormatTarget(target)) return
         // All integrations use active-editor APIs. Serialize the whole workflow,
         // including URL fetching, and retain only the latest trailing request.
-        this.pendingFormattingTarget = target
+        const pendingRequest = this.pendingFormattingRequest
+        const samePendingTarget = pendingRequest
+            && pendingRequest.target.file === target.file
+            && pendingRequest.target.path === target.path
+            && pendingRequest.target.editor === target.editor
+        this.pendingFormattingRequest = {
+            target,
+            normalizeExistingWikilinks: normalizeExistingWikilinks
+                || !!(samePendingTarget && pendingRequest.normalizeExistingWikilinks),
+        }
         if (!this.formattingTask) {
             this.formattingTask = Promise.resolve().then(async () => {
                 try {
-                    while (this.pendingFormattingTarget && !this.unloaded) {
-                        const next = this.pendingFormattingTarget
-                        this.pendingFormattingTarget = null
+                    while (this.pendingFormattingRequest && !this.unloaded) {
+                        const next = this.pendingFormattingRequest
+                        this.pendingFormattingRequest = null
                         await this.formatTarget(next)
                     }
                 }
@@ -263,14 +288,14 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 }
                 finally {
                     this.formattingTask = null
-                    this.pendingFormattingTarget = null
+                    this.pendingFormattingRequest = null
                 }
             })
         }
         await this.formattingTask
     }
 
-    private async formatTarget(target: FormattingTarget) {
+    private async formatTarget({ target, normalizeExistingWikilinks }: FormattingRequest) {
         if (!this.canFormatTarget(target)) return
         const conflicts = formatterSaveConflicts(this.app, this.settings).join(" and ")
         if (conflicts && conflicts !== this.warnedSaveConflicts) {
@@ -281,7 +306,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             await this.buildUrlTitleMap(target)
         }
         if (!this.canFormatTarget(target)) return
-        this.modifyLinksForTarget(target)
+        this.modifyLinksForTarget(target, normalizeExistingWikilinks)
 
         if (this.settings.runPrettierAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
@@ -434,7 +459,9 @@ export default class AutomaticLinkerPlugin extends Plugin {
             icon: "wand-sparkles",
             editorCallback: async () => {
                 try {
-                    await this.formatThenRunPrettierAndLinter()
+                    await this.formatThenRunPrettierAndLinter(undefined, {
+                        normalizeExistingWikilinks: true,
+                    })
                 }
                 catch (error) {
                     console.error(error)
@@ -548,7 +575,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
     onunload() {
         this.unloaded = true
-        this.pendingFormattingTarget = null
+        this.pendingFormattingRequest = null
         // Leave later wrappers installed; our inactive wrapper delegates through.
         const saveCommandDefinition = this.app?.commands?.commands?.["editor:save-file"]
         if (saveCommandDefinition?.checkCallback === this.saveCallback && this.originalSaveCallback) {

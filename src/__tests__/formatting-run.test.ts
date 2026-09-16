@@ -144,6 +144,22 @@ describe("formatMarkdownBody", () => {
 
         expect(result).toBe("[[notes/TypeScript|TypeScript]]")
     })
+
+    it("does not shorten existing wikilinks without a resolver-backed link generator", () => {
+        const candidateIndex = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+
+        expect(formatMarkdownBody({
+            body: "[[pages/Topic]]",
+            filePath: "current-file.md",
+            settings: { ...DEFAULT_SETTINGS, ignoreCase: true },
+            baseDir: "pages",
+            candidateIndex,
+            normalizeExistingWikilinks: true,
+        })).toBe("[[pages/Topic]]")
+    })
 })
 
 describe("formatMarkdownSelection", () => {

@@ -81,6 +81,162 @@ describe("AutomaticLinkerPlugin link generator", () => {
         expect(plugin.modifyLinks(body, "current-file.md")).toBe(expected)
     })
 
+    it.each([
+        { input: "[[pages/1on1]]", expected: "[[1on1]]" },
+        { input: "[[pages/1on1|1on1]]", expected: "[[1on1]]" },
+        { input: "[[pages/1on1|meeting]]", expected: "[[1on1|meeting]]" },
+        { input: "[[pages/1on1#Agenda]]", expected: "[[1on1#Agenda]]" },
+        { input: "[[pages/1on1#^next-actions]]", expected: "[[1on1#^next-actions]]" },
+        { input: "| [[pages/1on1\\|meeting]] |", expected: "| [[1on1\\|meeting]] |" },
+        { input: "`[[pages/1on1]]`", expected: "`[[pages/1on1]]`" },
+    ])("normalizes an existing base-directory wikilink: $input", async ({ input, expected }) => {
+        const { default: AutomaticLinkerPlugin } = await import("../main")
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "pages/1on1" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const targetFile = new MockTFile("pages/1on1.md")
+        const app = {
+            fileManager: {
+                generateMarkdownLink: vi.fn((_file: MockTFile, _sourcePath: string, subpath: string, alias: string) =>
+                    `[[pages/1on1${subpath}${alias ? `|${alias}` : ""}]]`),
+            },
+            metadataCache: {
+                getFirstLinkpathDest: vi.fn(() => targetFile),
+            },
+            vault: {
+                getAbstractFileByPath: vi.fn(() => targetFile),
+                getConfig: vi.fn(() => "pages"),
+            },
+        }
+        const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
+        plugin.settings = {
+            ...DEFAULT_SETTINGS,
+            ignoreCase: true,
+            respectNewFileFolderPath: true,
+        }
+        ;(plugin as unknown as { trie: typeof trie }).trie = trie
+        ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
+
+        const normalizeExistingWikilinks = { normalizeExistingWikilinks: true }
+        const result = plugin.modifyLinks(
+            input,
+            "journals/2026-09-16.md",
+            undefined,
+            normalizeExistingWikilinks,
+        )
+
+        expect(result).toBe(expected)
+        expect(plugin.modifyLinks(
+            result,
+            "journals/2026-09-16.md",
+            undefined,
+            normalizeExistingWikilinks,
+        )).toBe(expected)
+    })
+
+    it("does not normalize an existing wikilink outside an explicit format-file run", async () => {
+        const { default: AutomaticLinkerPlugin } = await import("../main")
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "pages/1on1" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const targetFile = new MockTFile("pages/1on1.md")
+        const app = {
+            fileManager: { generateMarkdownLink: vi.fn(() => "[[pages/1on1]]") },
+            metadataCache: { getFirstLinkpathDest: vi.fn(() => targetFile) },
+            vault: {
+                getAbstractFileByPath: vi.fn(() => targetFile),
+                getConfig: vi.fn(() => "pages"),
+            },
+        }
+        const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
+        plugin.settings = {
+            ...DEFAULT_SETTINGS,
+            ignoreCase: true,
+            respectNewFileFolderPath: true,
+        }
+        ;(plugin as unknown as { trie: typeof trie }).trie = trie
+        ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
+
+        expect(plugin.modifyLinks("[[pages/1on1]]", "current-file.md"))
+            .toBe("[[pages/1on1]]")
+    })
+
+    it("keeps the canonical path when a shortened existing wikilink would resolve to another file", async () => {
+        const { default: AutomaticLinkerPlugin } = await import("../main")
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "pages/Topic" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const targetFile = new MockTFile("pages/Topic.md")
+        const otherFile = new MockTFile("Topic.md")
+        const app = {
+            fileManager: {
+                generateMarkdownLink: vi.fn(() => "[[pages/Topic]]"),
+            },
+            metadataCache: {
+                getFirstLinkpathDest: vi.fn(() => otherFile),
+            },
+            vault: {
+                getAbstractFileByPath: vi.fn(() => targetFile),
+                getConfig: vi.fn(() => "pages"),
+            },
+        }
+        const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
+        plugin.settings = {
+            ...DEFAULT_SETTINGS,
+            ignoreCase: true,
+            respectNewFileFolderPath: true,
+        }
+        ;(plugin as unknown as { trie: typeof trie }).trie = trie
+        ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
+
+        expect(plugin.modifyLinks(
+            "[[pages/Topic]]",
+            "current-file.md",
+            undefined,
+            { normalizeExistingWikilinks: true },
+        ))
+            .toBe("[[pages/Topic]]")
+    })
+
+    it("keeps an unresolved existing base-directory wikilink unchanged", async () => {
+        const { default: AutomaticLinkerPlugin } = await import("../main")
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "pages/Missing" }],
+            settings: { scoped: false, baseDir: "pages", ignoreCase: true },
+        })
+        const app = {
+            fileManager: {
+                generateMarkdownLink: vi.fn(),
+            },
+            metadataCache: {
+                getFirstLinkpathDest: vi.fn(() => null),
+            },
+            vault: {
+                getAbstractFileByPath: vi.fn(() => null),
+                getConfig: vi.fn(() => "pages"),
+            },
+        }
+        const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
+        plugin.settings = {
+            ...DEFAULT_SETTINGS,
+            ignoreCase: true,
+            respectNewFileFolderPath: true,
+        }
+        ;(plugin as unknown as { trie: typeof trie }).trie = trie
+        ;(plugin as unknown as { candidateMap: typeof candidateMap }).candidateMap = candidateMap
+
+        expect(plugin.modifyLinks(
+            "[[pages/Missing]]",
+            "journals/2026-09-16.md",
+            undefined,
+            { normalizeExistingWikilinks: true },
+        ))
+            .toBe("[[pages/Missing]]")
+    })
+
     it("preserves aliases and table escaping when omitting the new-note folder", async () => {
         const { default: AutomaticLinkerPlugin } = await import("../main")
         const { candidateMap, trie } = buildCandidateTrieForTest({
@@ -206,7 +362,7 @@ describe("AutomaticLinkerPlugin link generator", () => {
             ignoreCase: true,
         }
         const { candidateMap, trie } = buildCandidateTrieForTest({
-            files: [{ path: "notes/TypeScript" }],
+            files: [{ path: "notes/TypeScript" }, { path: "pages/Existing" }],
             settings,
         })
         const replaceSelection = vi.fn()
@@ -216,8 +372,8 @@ describe("AutomaticLinkerPlugin link generator", () => {
                 getActiveFile: vi.fn(() => ({ path: "current-file.md" })),
                 activeEditor: {
                     editor: {
-                        getValue: vi.fn(() => "TypeScript https://github.com/openai/openai/issues/1"),
-                        getSelection: vi.fn(() => "TypeScript https://github.com/openai/openai/issues/1"),
+                        getValue: vi.fn(() => "TypeScript [[pages/Existing]] https://github.com/openai/openai/issues/1"),
+                        getSelection: vi.fn(() => "TypeScript [[pages/Existing]] https://github.com/openai/openai/issues/1"),
                         getCursor: vi.fn(() => ({ line: 0, ch: 0 })),
                         posToOffset: vi.fn(() => 0),
                         replaceSelection,
@@ -250,7 +406,7 @@ describe("AutomaticLinkerPlugin link generator", () => {
         await plugin.mofifyLinksSelection()
 
         expect(replaceSelection).toHaveBeenCalledWith(
-            "[[notes/TypeScript|TypeScript]] https://github.com/openai/openai/issues/1",
+            "[[notes/TypeScript|TypeScript]] [[pages/Existing]] https://github.com/openai/openai/issues/1",
         )
     })
 })

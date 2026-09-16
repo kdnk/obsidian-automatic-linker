@@ -1,5 +1,5 @@
 import { CandidateData, TrieNode } from "../trie"
-import { mapMarkdownProse } from "../markdown-segments"
+import { mapMarkdownProse, segmentMarkdown } from "../markdown-segments"
 import {
     buildFallbackIndex,
     extractLinkParts,
@@ -34,6 +34,10 @@ export interface LinkGeneratorParams {
     linkPath: string
     /** Canonical vault-relative file path without the .md extension. */
     targetPath?: string
+    /** Heading or block-reference suffix, including the leading #. */
+    subpath?: string
+    /** Existing link text to preserve if its canonical target can no longer be resolved. */
+    originalLink?: string
     sourcePath: string
     alias?: string
     isInTable?: boolean
@@ -46,6 +50,7 @@ export interface ReplaceLinksOptions {
     linkResolverContext: LinkResolverContext
     settings?: ReplaceLinksSettings
     linkGenerator?: LinkGenerator
+    normalizeExistingWikilinks?: boolean
 }
 
 // Helper function to check if a path should have its alias removed
@@ -164,16 +169,78 @@ export const escapeLinkForMarkdownTable = (
 
 export const defaultLinkGenerator: LinkGenerator = ({
     linkPath,
+    subpath = "",
     alias,
     isInTable = false,
 }: LinkGeneratorParams): string => {
-    let linkContent = linkPath
+    let linkContent = `${linkPath}${subpath}`
 
     if (alias) {
-        linkContent = `${linkPath}|${alias}`
+        linkContent = `${linkContent}|${alias}`
     }
 
     return escapeLinkForMarkdownTable(`[[${linkContent}]]`, isInTable)
+}
+
+const normalizeExistingBaseDirWikilinks = (
+    body: string,
+    filePath: string,
+    candidateMap: Map<string, CandidateData>,
+    linkGenerator: LinkGenerator,
+    settings: ReplaceLinksSettings,
+    markdownOptions: {
+        protectHeadings?: boolean
+        protectCallouts?: boolean
+        protectTableRows?: boolean
+        protectUrls?: boolean
+    },
+): string => {
+    if (!settings.baseDir) return body
+
+    const basePrefix = `${settings.baseDir}/`
+    return segmentMarkdown(body, markdownOptions).map((segment) => {
+        if (segment.kind !== "protected" || segment.protectedKind !== "wikilink") {
+            return segment.text
+        }
+
+        const isInTable = isIndexInsideMarkdownTable(body, segment.start)
+        const linkContent = segment.text.slice(2, -2)
+        const escapedAliasSeparator = isInTable ? linkContent.indexOf("\\|") : -1
+        const plainAliasSeparator = linkContent.indexOf("|")
+        const aliasSeparator = escapedAliasSeparator >= 0
+            ? escapedAliasSeparator
+            : plainAliasSeparator
+        const aliasSeparatorLength = escapedAliasSeparator >= 0 ? 2 : 1
+        const targetWithSubpath = aliasSeparator >= 0
+            ? linkContent.slice(0, aliasSeparator)
+            : linkContent
+        const subpathStart = targetWithSubpath.indexOf("#")
+        const targetPath = subpathStart >= 0
+            ? targetWithSubpath.slice(0, subpathStart)
+            : targetWithSubpath
+        const subpath = subpathStart >= 0
+            ? targetWithSubpath.slice(subpathStart)
+            : undefined
+        if (!targetPath.startsWith(basePrefix)) return segment.text
+
+        if (!candidateMap.has(targetPath)) return segment.text
+
+        const linkPath = targetPath.slice(basePrefix.length)
+        const originalAlias = aliasSeparator >= 0
+            ? linkContent.slice(aliasSeparator + aliasSeparatorLength)
+            : undefined
+        const alias = originalAlias === linkPath ? undefined : originalAlias
+
+        return linkGenerator({
+            linkPath,
+            targetPath,
+            subpath,
+            originalLink: segment.text,
+            sourcePath: filePath,
+            alias,
+            isInTable,
+        })
+    }).join("")
 }
 
 // Processing functions for different text types
@@ -272,9 +339,28 @@ export const replaceLinks = ({
         ignoreDateFormats: true,
     },
     linkGenerator = defaultLinkGenerator,
+    normalizeExistingWikilinks = false,
 }: ReplaceLinksOptions): string => {
     // Normalize the body text to NFC
     body = body.normalize("NFC")
+
+    const markdownOptions = {
+        protectHeadings: settings.ignoreHeadings,
+        protectCallouts: true,
+        protectTableRows: settings.ignoreMarkdownTables,
+        protectUrls: true,
+    }
+
+    if (normalizeExistingWikilinks) {
+        body = normalizeExistingBaseDirWikilinks(
+            body,
+            filePath,
+            candidateMap,
+            linkGenerator,
+            settings,
+            markdownOptions,
+        )
+    }
 
     // If the body consists solely of a protected link, return it unchanged
     if (isProtectedLink(body)) {
@@ -286,13 +372,6 @@ export const replaceLinks = ({
 
     // Get the current namespace
     const currentNamespace = getCurrentNamespace(filePath, settings.baseDir)
-
-    const markdownOptions = {
-        protectHeadings: settings.ignoreHeadings,
-        protectCallouts: true,
-        protectTableRows: settings.ignoreMarkdownTables,
-        protectUrls: true,
-    }
 
     // Process segments of text
     const processTextSegment = (
