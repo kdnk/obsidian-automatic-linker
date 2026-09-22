@@ -316,7 +316,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         if (this.settings.runLinterAfterFormatting) {
             await sleep(this.settings.formatDelayMs ?? 100)
             if (!this.canFormatTarget(target)) return
-            await runFormatter(this.app, "obsidian-linter", target.editor, target.file)
+            await runFormatter(this.app, "obsidian-linter-plus", target.editor, target.file)
         }
     }
 

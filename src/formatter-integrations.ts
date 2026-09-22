@@ -1,7 +1,9 @@
 import { App, Editor, TFile } from "obsidian"
 import { AutomaticLinkerSettings } from "./settings/settings-info"
 
-type FormatterId = "prettier-format" | "obsidian-linter"
+type FormatterId = "prettier-format" | "obsidian-linter" | "obsidian-linter-plus"
+
+const linterFormatterId = "obsidian-linter-plus"
 
 interface FormatterPlugin {
     format?: () => unknown
@@ -16,10 +18,14 @@ function getFormatter(app: App, id: FormatterId): FormatterPlugin | undefined {
     const registry = (app as unknown as {
         plugins?: { plugins?: Record<string, FormatterPlugin | undefined> }
     }).plugins?.plugins
-    return registry?.[id]
+    return registry?.[id] ?? (id === linterFormatterId ? registry?.["obsidian-linter"] : undefined)
 }
 
-const names = { "prettier-format": "Prettier", "obsidian-linter": "Obsidian Linter" }
+const names: Record<FormatterId, string> = {
+    "prettier-format": "Prettier",
+    "obsidian-linter": "Obsidian Linter",
+    "obsidian-linter-plus": "Obsidian Linter Plus",
+}
 
 export async function runFormatter(app: App, id: FormatterId, editor: Editor, file?: TFile): Promise<void> {
     const plugin = getFormatter(app, id)
@@ -29,12 +35,12 @@ export async function runFormatter(app: App, id: FormatterId, editor: Editor, fi
     }
     // Linter's editor API leaves exclusion checks to its callers (including its
     // own save hook). Older integrations may not expose the predicate.
-    if (id === "obsidian-linter" && typeof plugin?.shouldIgnoreFile === "function") {
+    if (id !== "prettier-format" && typeof plugin?.shouldIgnoreFile === "function") {
         const target = file ?? app.workspace.getActiveFile()
         if (target && plugin.shouldIgnoreFile(target)) return
     }
     // Commands return an availability boolean, not the formatter's Promise.
-    // Verified with prettier-format 0.2.0 and obsidian-linter 1.32.0.
+    // Verified with prettier-format 0.2.0 and Linter 1.32.0.
     const completion = method.call(plugin, editor)
     if (!completion || typeof (completion as PromiseLike<unknown>).then !== "function") {
         throw new Error(`${names[id]} did not return a completion Promise. Stopping the formatting chain to avoid overlapping edits.`)
@@ -48,8 +54,8 @@ export function formatterSaveConflicts(app: App, settings: AutomaticLinkerSettin
     if (settings.runPrettierAfterFormatting && getFormatter(app, "prettier-format")?.settings?.formatOnSave) {
         conflicts.push(names["prettier-format"])
     }
-    if (settings.runLinterAfterFormatting && getFormatter(app, "obsidian-linter")?.settings?.lintOnSave) {
-        conflicts.push(names["obsidian-linter"])
+    if (settings.runLinterAfterFormatting && getFormatter(app, linterFormatterId)?.settings?.lintOnSave) {
+        conflicts.push(names[linterFormatterId])
     }
     return conflicts
 }

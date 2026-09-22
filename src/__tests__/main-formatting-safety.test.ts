@@ -237,6 +237,27 @@ describe("save callback lifecycle", () => {
 })
 
 describe("Linter ignore integration", () => {
+    it("prefers Obsidian Linter Plus when both plugin IDs are installed", async () => {
+        const f = fixture()
+        const legacy = vi.fn()
+        const plus = vi.fn()
+        f.app.plugins.plugins["obsidian-linter"] = {
+            async runLinterEditor() {
+                legacy()
+            },
+        }
+        f.app.plugins.plugins["obsidian-linter-plus"] = {
+            async runLinterEditor() {
+                plus()
+            },
+        }
+
+        await runFormatter(f.app as never, "obsidian-linter-plus", f.editor as never)
+
+        expect(plus).toHaveBeenCalledOnce()
+        expect(legacy).not.toHaveBeenCalled()
+    })
+
     it.each(["templates/A.md", "archive/private.md"])("leaves a Linter-excluded file unchanged: %s", async (path) => {
         const f = fixture()
         f.file.path = path
@@ -723,7 +744,7 @@ describe("formatting target validation", () => {
         f.app.plugins.plugins["prettier-format"] = { async format() {
             events.push("prettier")
         } }
-        f.app.plugins.plugins["obsidian-linter"] = { async runLinterEditor() {
+        f.app.plugins.plugins["obsidian-linter-plus"] = { async runLinterEditor() {
             events.push("linter")
         } }
         const pending = f.plugin.formatThenRunPrettierAndLinter()
