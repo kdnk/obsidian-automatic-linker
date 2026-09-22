@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Tag whose release should be created or updated
+        required: true
+        type: string
 
 jobs:
   build:
@@ -43,8 +49,12 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="${GITHUB_REF#refs/tags/}"
+          tag="${{ inputs.tag || github.ref_name }}"
 
-          gh release create "$tag" \
-            --title="$tag" \
-            main.js manifest.json styles.css
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" --clobber main.js manifest.json styles.css
+          else
+            gh release create "$tag" \
+              --title="$tag" \
+              main.js manifest.json styles.css
+          fi
