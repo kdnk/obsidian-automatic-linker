@@ -187,16 +187,17 @@ export default class AutomaticLinkerPlugin extends Plugin {
     }
 
     private canFormatTarget(target: FormattingTarget): boolean {
+        // Linker opt-outs do not disable external formatter integrations.
         return !this.unloaded
             && this.app.workspace.getActiveFile() === target.file
             && target.file.path === target.path
             && this.getEditor() === target.editor
-            && !isLinkingOff(this.app.metadataCache.getFileCache(target.file)?.frontmatter)
     }
 
     private modifyLinksForTarget(target: FormattingTarget, normalizeExistingWikilinks = false) {
         if (!this.canFormatTarget(target)) return
         const metadata = this.app.metadataCache.getFileCache(target.file)?.frontmatter
+        if (isLinkingOff(metadata)) return
         const oldText = target.editor.getValue()
         const newText = this.modifyLinks(oldText, target.path, metadata, { normalizeExistingWikilinks })
         updateEditor(oldText, newText, target.editor)
@@ -232,7 +233,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
         const urls = listupAllUrls(body, this.settings.replaceUrlWithTitleIgnoreDomains)
         for (const url of urls) {
-            if (target && !this.canFormatTarget(target)) return
+            if (target && (!this.canFormatTarget(target)
+                || isLinkingOff(this.app.metadataCache.getFileCache(target.file)?.frontmatter))) return
             if (this.urlTitleMap.has(url)) continue
 
             try {

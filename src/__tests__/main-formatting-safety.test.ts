@@ -77,7 +77,7 @@ function fixture() {
     return {
         plugin, app, editor, view, file, save, originalSave,
         setContent: (value: string) => { content = value },
-        disable: () => { frontmatter = { "automatic-linker-off": true } },
+        disable: (key = "automatic-linker-off") => { frontmatter = { [key]: true } },
         switchFile: () => { app.workspace.getActiveFile.mockReturnValue({ path: "B.md" }) },
     }
 }
@@ -594,15 +594,100 @@ describe("formatting safety", () => {
         expect(f.editor.getValue()).toBe("https://github.com/a/b/issues/1")
     })
 
-    it("skips fetching, formatting and integrations for disabled notes", async () => {
-        const f = fixture()
+    it.each(["automatic-linker-off", "automatic-linker-disabled"])(
+        "runs enabled integrations on save while skipping linker work for %s", async (key) => {
+            vi.useFakeTimers()
+            const f = fixture()
+            f.disable(key)
+            f.plugin.settings.formatOnSave = true
+            f.plugin.settings.runPrettierAfterFormatting = true
+            f.plugin.settings.runLinterAfterFormatting = true
+            const events: string[] = []
+            const modifyLinks = vi.spyOn(f.plugin, "modifyLinks")
+            f.app.plugins.plugins["prettier-format"] = { async format() {
+                events.push("prettier")
+                f.setContent("prettier output")
+            } }
+            f.app.plugins.plugins["obsidian-linter-plus"] = { async runLinterEditor(editor: typeof f.editor) {
+                events.push(editor.getValue())
+                editor.setValue("linted output")
+            } }
+            ;(f.plugin as unknown as { initializePlugin: () => void }).initializePlugin()
+
+            f.save.checkCallback(false)
+            await vi.runAllTimersAsync()
+
+            expect(events).toEqual(["prettier", "prettier output"])
+            expect(f.editor.getValue()).toBe("linted output")
+            expect(requestMock).not.toHaveBeenCalled()
+            expect(modifyLinks).not.toHaveBeenCalled()
+        },
+    )
+
+    it.each([[false, false], [true, false], [false, true], [true, true]])(
+        "respects individual integration settings on disabled notes: prettier=%s linter=%s",
+        async (prettierEnabled, linterEnabled) => {
+            const f = formatterFixture()
+            f.disable()
+            f.plugin.settings.runPrettierAfterFormatting = prettierEnabled
+            f.plugin.settings.runLinterAfterFormatting = linterEnabled
+            const prettier = vi.fn(async () => {})
+            const linter = vi.fn(async () => {})
+            f.app.plugins.plugins["prettier-format"] = { format: prettier }
+            f.app.plugins.plugins["obsidian-linter"] = { runLinterEditor: linter }
+
+            const pending = f.plugin.formatThenRunPrettierAndLinter()
+            await vi.runAllTimersAsync()
+            await pending
+
+            expect(prettier).toHaveBeenCalledTimes(Number(prettierEnabled))
+            expect(linter).toHaveBeenCalledTimes(Number(linterEnabled))
+            expect(f.editor.setValue).not.toHaveBeenCalled()
+        },
+    )
+
+    it("respects Linter exclusions on linker-disabled notes", async () => {
+        const f = formatterFixture()
         f.disable()
+        const prettier = vi.fn(async () => {})
+        const linter = vi.fn(async () => {})
+        const shouldIgnoreFile = vi.fn(() => true)
+        f.app.plugins.plugins["prettier-format"] = { format: prettier }
+        f.app.plugins.plugins["obsidian-linter"] = { runLinterEditor: linter, shouldIgnoreFile }
+
+        const pending = f.plugin.formatThenRunPrettierAndLinter()
+        await vi.runAllTimersAsync()
+        await pending
+
+        expect(prettier).toHaveBeenCalledOnce()
+        expect(shouldIgnoreFile).toHaveBeenCalledExactlyOnceWith(f.file)
+        expect(linter).not.toHaveBeenCalled()
+    })
+
+    it("continues integrations when linking is disabled during URL fetching", async () => {
+        const f = fixture()
+        f.plugin.settings.runPrettierAfterFormatting = true
         f.plugin.settings.runLinterAfterFormatting = true
-        requestMock.mockResolvedValue("<title>Example</title>")
-        await f.plugin.formatThenRunPrettierAndLinter()
-        expect(requestMock).not.toHaveBeenCalled()
-        expect(f.editor.setValue).not.toHaveBeenCalled()
-        expect(f.app.commands.executeCommandById).not.toHaveBeenCalled()
+        f.plugin.settings.formatDelayMs = 0
+        f.setContent("https://example.com https://other.example.com")
+        const modifyLinks = vi.spyOn(f.plugin, "modifyLinks")
+        const events: string[] = []
+        f.app.plugins.plugins["prettier-format"] = { async format() {
+            events.push("prettier")
+        } }
+        f.app.plugins.plugins["obsidian-linter"] = { async runLinterEditor() {
+            events.push("linter")
+        } }
+        const finish = deferredTitle()
+        const pending = f.plugin.formatThenRunPrettierAndLinter()
+        await vi.waitFor(() => expect(requestMock).toHaveBeenCalled())
+        f.disable()
+        finish()
+        await pending
+
+        expect(requestMock).toHaveBeenCalledTimes(1)
+        expect(modifyLinks).not.toHaveBeenCalled()
+        expect(events).toEqual(["prettier", "linter"])
     })
 
     it("skips selection formatting in disabled notes", async () => {
@@ -712,7 +797,7 @@ describe("URL title domain exclusions", () => {
 })
 
 describe("formatting target validation", () => {
-    it.each(["editor", "rename", "disable"])("cancels pending formatting on %s changes", async (change) => {
+    it.each(["editor", "rename", "disable"])("skips pending link updates on %s changes", async (change) => {
         const f = fixture()
         const finish = deferredTitle()
         const pending = f.plugin.formatThenRunPrettierAndLinter()
