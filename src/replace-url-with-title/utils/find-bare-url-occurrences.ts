@@ -35,8 +35,13 @@ const isIgnoredUrl = (url: string, ignoredDomains: string[]): boolean => {
 
     try {
         const hostname = new URL(url).hostname
-        return ignoredDomains.some(domain =>
-            hostname === domain || hostname.endsWith(`.${domain}`))
+        return ignoredDomains.some(domain => {
+            if (domain.startsWith("*.")) {
+                return hostname.endsWith(`.${domain.slice(2)}`)
+            }
+
+            return hostname === domain || hostname.endsWith(`.${domain}`)
+        })
     }
     catch {
         return true

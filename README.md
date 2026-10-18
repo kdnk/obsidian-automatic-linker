@@ -129,7 +129,7 @@ The integration uses guarded completion-returning plugin methods, verified with 
 - **JIRA URLs**: Add custom JIRA domains.
 - **Format Linear URLs on save**: Convert Linear issue URLs to readable links.
 - **Replace URL with title**: Replace bare URLs with Markdown links using fetched page titles.
-- **Ignore domains**: Exclude configured domains and their subdomains from URL title replacement, including URLs whose titles have already been cached.
+- **Ignore domains**: Exclude configured domains and their subdomains from URL title replacement, including URLs whose titles have already been cached. Prefix a domain with `*.` to exclude one or more subdomains without excluding the apex domain. For example, `google.com` excludes `google.com` and its subdomains, while `*.google.com` excludes `mail.google.com` but not `google.com`.
 
 ### Diagnostics
 

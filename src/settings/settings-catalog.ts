@@ -289,7 +289,7 @@ export const SETTINGS_CATALOG = [
         group: "URL Formatting",
         name: "Ignore domains",
         description:
-            "Ignore domains for replacing URLs with titles, one per line (e.g. x.com)",
+            "Ignore domains for replacing URLs with titles, one per line. A domain also ignores its subdomains (e.g. google.com). Prefix a domain with *. to ignore only its subdomains (e.g. *.google.com).",
         control: "textarea",
         placeholder: "",
         multiline: true,
