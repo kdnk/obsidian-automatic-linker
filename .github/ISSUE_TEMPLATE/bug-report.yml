@@ -1,0 +1,100 @@
+name: Bug report
+description: Report a problem with Automatic Linker.
+title: "[Bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Please search existing issues before submitting a report. Remove private information from examples, logs, and screenshots.
+
+  - type: textarea
+    id: current-behavior
+    attributes:
+      label: Current behavior
+      description: Describe the bug and what Automatic Linker does.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected behavior
+      description: Describe what you expected Automatic Linker to do.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Include the command or action that triggers the problem, such as saving a note or formatting a selection.
+      placeholder: |
+        1. Create the notes shown in the example below.
+        2. Open the current note and enter the example text.
+        3. Run Automatic Linker: Format file.
+        4. Observe the result.
+    validations:
+      required: true
+
+  - type: textarea
+    id: minimal-example
+    attributes:
+      label: Minimal example
+      description: For linking or formatting problems, include the current file path, relevant vault file paths, text before formatting, actual and expected text, and relevant frontmatter. Use code blocks to preserve formatting.
+      placeholder: |
+        Current file path: notes/current.md
+        Relevant vault file paths: notes/current.md, topics/Example.md
+
+        Text before formatting:
+        Example
+
+        Actual text after formatting:
+        Example
+
+        Expected text after formatting:
+        [[topics/Example]]
+
+        Relevant frontmatter:
+        None
+
+  - type: textarea
+    id: settings-and-integrations
+    attributes:
+      label: Settings and integrations
+      description: Include relevant Automatic Linker settings or a screenshot. For path resolution, include Obsidian's "Folder to create new notes in" setting. If Prettier, Linter, or another plugin is involved, include its version and relevant settings.
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - macOS
+        - Windows
+        - Linux
+        - Android
+        - iOS
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: obsidian-version
+    attributes:
+      label: Obsidian version
+      description: Find the version in Settings under About.
+    validations:
+      required: true
+
+  - type: input
+    id: automatic-linker-version
+    attributes:
+      label: Automatic Linker version
+      description: Find the version in Settings under Community plugins.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional context
+      description: Add relevant logs, screenshots, or other details. If you selected Other, include the platform here.

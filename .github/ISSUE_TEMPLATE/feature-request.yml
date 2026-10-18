@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest a feature or improvement for Automatic Linker.
+title: "[FR] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Please search existing issues before submitting a request.
+
+  - type: textarea
+    id: feature-description
+    attributes:
+      label: Feature description
+      description: Describe the feature or improvement you would like.
+    validations:
+      required: true
+
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Motivation
+      description: What problem would this solve? Describe your workflow and who would benefit.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-behavior
+    attributes:
+      label: Proposed behavior or example
+      description: Describe how the feature could work. For linking or formatting changes, include a minimal before-and-after example with the current file path, relevant vault file paths, and any settings or frontmatter needed to explain the request.
+
+  - type: textarea
+    id: alternatives-and-context
+    attributes:
+      label: Alternatives and additional context
+      description: Describe alternatives you have tried or considered. Add related issues, screenshots, or other context.
