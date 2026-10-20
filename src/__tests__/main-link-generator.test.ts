@@ -122,6 +122,12 @@ describe("AutomaticLinkerPlugin link generator", () => {
 
         expect(result).toBe(expected)
         expect(plugin.modifyLinks(result, "journals/2026-09-16.md")).toBe(expected)
+        expect(await plugin.formatText(input, new MockTFile("journals/2026-09-16.md") as never, {
+            normalizeExistingWikilinks: true,
+        })).toBe(expected)
+        expect(await plugin.formatText(input, new MockTFile("journals/2026-09-16.md") as never, {
+            normalizeExistingWikilinks: false,
+        })).toBe(input)
     })
 
     it("leaves existing wikilinks unchanged when normalization is disabled", async () => {

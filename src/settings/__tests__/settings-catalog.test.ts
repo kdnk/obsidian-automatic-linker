@@ -22,9 +22,6 @@ describe("SETTINGS_CATALOG", () => {
                 group: "Formatting Workflow",
                 keys: [
                     "formatOnSave",
-                    "formatDelayMs",
-                    "runPrettierAfterFormatting",
-                    "runLinterAfterFormatting",
                 ],
             },
             {

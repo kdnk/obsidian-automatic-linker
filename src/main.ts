@@ -5,6 +5,7 @@ import {
     MarkdownView,
     Notice,
     parseFrontMatterAliases,
+    parseYaml,
     Plugin,
     PluginManifest,
     request,
@@ -38,8 +39,7 @@ import {
 } from "./settings/settings-info"
 import { buildCandidateTrie, CandidateData, TrieNode } from "./trie"
 import { updateEditor } from "./update-editor"
-import { runAsyncSafely, sleep } from "./plugin-compat"
-import { formatterSaveConflicts, runFormatter } from "./formatter-integrations"
+import { runAsyncSafely } from "./plugin-compat"
 
 interface FormattingTarget {
     file: TFile
@@ -54,6 +54,7 @@ interface FormattingRequest {
 
 interface ModifyLinksOptions {
     normalizeExistingWikilinks?: boolean
+    urlTitleMap?: Map<string, string>
 }
 
 export default class AutomaticLinkerPlugin extends Plugin {
@@ -70,7 +71,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
     private formattingTask: Promise<void> | null = null
     private pendingFormattingRequest: FormattingRequest | null = null
     private unloaded = false
-    private warnedSaveConflicts = ""
 
     constructor(app: App, pluginManifest: PluginManifest) {
         super(app, pluginManifest)
@@ -136,7 +136,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         fileContent: string,
         filePath: string,
         frontmatter?: Record<string, unknown>,
-        { normalizeExistingWikilinks = true }: ModifyLinksOptions = {},
+        { normalizeExistingWikilinks = true, urlTitleMap = this.urlTitleMap }: ModifyLinksOptions = {},
     ): string {
         if (!this.trie || !this.candidateMap) {
             return formatMarkdownDocument({
@@ -145,7 +145,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 contentStart: getFrontMatterInfo(fileContent).contentStart,
                 frontmatter,
                 settings: this.settings,
-                urlTitleMap: this.urlTitleMap,
+                urlTitleMap,
             })
         }
 
@@ -168,7 +168,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             settings: this.settings,
             baseDir,
             candidateIndex,
-            urlTitleMap: this.urlTitleMap,
+            urlTitleMap,
             linkGenerator: candidateIndex ? this.createLinkGenerator(filePath) : undefined,
             normalizeExistingWikilinks,
         })
@@ -187,25 +187,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
     }
 
     private canFormatTarget(target: FormattingTarget): boolean {
-        // Linker opt-outs do not disable external formatter integrations.
         return !this.unloaded
             && this.app.workspace.getActiveFile() === target.file
             && target.file.path === target.path
             && this.getEditor() === target.editor
-    }
-
-    private modifyLinksForTarget(target: FormattingTarget, normalizeExistingWikilinks = false) {
-        if (!this.canFormatTarget(target)) return
-        const metadata = this.app.metadataCache.getFileCache(target.file)?.frontmatter
-        if (isLinkingOff(metadata)) return
-        const oldText = target.editor.getValue()
-        const newText = this.modifyLinks(oldText, target.path, metadata, { normalizeExistingWikilinks })
-        updateEditor(oldText, newText, target.editor)
-    }
-
-    modifyLinksForActiveFile() {
-        const target = this.captureFormattingTarget()
-        if (target) this.modifyLinksForTarget(target, true)
     }
 
     async modifyLinksForVault() {
@@ -219,52 +204,52 @@ export default class AutomaticLinkerPlugin extends Plugin {
         }
     }
 
-    async buildUrlTitleMap(target?: FormattingTarget) {
-        const activeFile = target?.file ?? this.app.workspace.getActiveFile()
-        if (!activeFile) return
-        const metadata = this.app.metadataCache.getFileCache(activeFile)?.frontmatter
-        if (isLinkingOff(metadata) || isUrlTitleReplacementOff(metadata)) return
+    isFormatOnSaveEnabled(): boolean {
+        return !this.unloaded && this.settings?.formatOnSave === true
+    }
 
-        const fileContent = target
-            ? target.editor.getValue()
-            : await this.app.vault.read(activeFile)
-        const { contentStart } = getFrontMatterInfo(fileContent)
-        const body = fileContent.slice(contentStart)
+    async formatText(
+        text: string,
+        file: TFile,
+        options: Pick<ModifyLinksOptions, "normalizeExistingWikilinks"> = {},
+    ): Promise<string> {
+        const { frontmatter: yaml, contentStart } = getFrontMatterInfo(text)
+        const parsed: unknown = yaml ? parseYaml(yaml) : undefined
+        const frontmatter = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+            ? parsed as Record<string, unknown>
+            : undefined
+        if (isLinkingOff(frontmatter) || this.settings.excludeDirsFromAutoLinking.some(
+            directory => file.path === directory || file.path.startsWith(directory + "/"),
+        )) return text
 
-        const urls = listupAllUrls(body, this.settings.replaceUrlWithTitleIgnoreDomains)
-        for (const url of urls) {
-            if (target && (!this.canFormatTarget(target)
-                || isLinkingOff(this.app.metadataCache.getFileCache(target.file)?.frontmatter))) return
-            if (this.urlTitleMap.has(url)) continue
-
-            try {
-                const response = await request(url)
-                const title = getTitleFromHtml(response)
-
-                if (title) {
-                    this.urlTitleMap.set(url, title)
+        const urlTitleMap = new Map(this.urlTitleMap)
+        if (this.settings.replaceUrlWithTitle && !isUrlTitleReplacementOff(frontmatter)) {
+            const body = text.slice(contentStart)
+            const urls = listupAllUrls(body, this.settings.replaceUrlWithTitleIgnoreDomains)
+            for (const url of urls) {
+                if (urlTitleMap.has(url)) continue
+                try {
+                    const title = getTitleFromHtml(await request(url))
+                    if (title) {
+                        urlTitleMap.set(url, title)
+                        this.urlTitleMap.set(url, title)
+                    }
                 }
-                else {
+                catch (error) {
                     if (this.settings.debug) {
-                        console.warn(`Automatic Linker: No title found for URL: ${url}`)
+                        console.warn(`Automatic Linker: Failed to fetch URL title for: ${url}`, error)
                     }
                 }
             }
-            catch (error) {
-                if (this.settings.debug) {
-                    console.warn(`Automatic Linker: Failed to fetch URL title for: ${url}`, error)
-                }
-            }
         }
+        return this.modifyLinks(text, file.path, frontmatter, { ...options, urlTitleMap })
     }
 
-    async formatThenRunPrettierAndLinter(
+    async formatActiveFile(
         target = this.captureFormattingTarget(),
         { normalizeExistingWikilinks = true }: ModifyLinksOptions = {},
     ) {
         if (!target || !this.canFormatTarget(target)) return
-        // All integrations use active-editor APIs. Serialize the whole workflow,
-        // including URL fetching, and retain only the latest trailing request.
         const pendingRequest = this.pendingFormattingRequest
         const samePendingTarget = pendingRequest
             && pendingRequest.target.file === target.file
@@ -299,27 +284,10 @@ export default class AutomaticLinkerPlugin extends Plugin {
 
     private async formatTarget({ target, normalizeExistingWikilinks }: FormattingRequest) {
         if (!this.canFormatTarget(target)) return
-        const conflicts = formatterSaveConflicts(this.app, this.settings).join(" and ")
-        if (conflicts && conflicts !== this.warnedSaveConflicts) {
-            new Notice(`Automatic Linker: ${conflicts} also format on save. Turn off their own save triggers to avoid duplicate runs; keep the Automatic Linker integrations enabled.`, 10000)
-        }
-        this.warnedSaveConflicts = conflicts
-        if (this.settings.replaceUrlWithTitle) {
-            await this.buildUrlTitleMap(target)
-        }
-        if (!this.canFormatTarget(target)) return
-        this.modifyLinksForTarget(target, normalizeExistingWikilinks)
-
-        if (this.settings.runPrettierAfterFormatting) {
-            await sleep(this.settings.formatDelayMs ?? 100)
-            if (!this.canFormatTarget(target)) return
-            await runFormatter(this.app, "prettier-format", target.editor)
-        }
-        if (this.settings.runLinterAfterFormatting) {
-            await sleep(this.settings.formatDelayMs ?? 100)
-            if (!this.canFormatTarget(target)) return
-            await runFormatter(this.app, "obsidian-linter-plus", target.editor, target.file)
-        }
+        const oldText = target.editor.getValue()
+        const newText = await this.formatText(oldText, target.file, { normalizeExistingWikilinks })
+        if (!this.canFormatTarget(target) || target.editor.getValue() !== oldText) return
+        updateEditor(oldText, newText, target.editor)
     }
 
     async mofifyLinksSelection() {
@@ -461,7 +429,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
             icon: "wand-sparkles",
             editorCallback: async () => {
                 try {
-                    await this.formatThenRunPrettierAndLinter(undefined, {
+                    await this.formatActiveFile(undefined, {
                         normalizeExistingWikilinks: true,
                     })
                 }
@@ -551,30 +519,41 @@ export default class AutomaticLinkerPlugin extends Plugin {
             },
         })
 
-        // Optionally, override the default save command to run modifyLinks (throttled).
         const saveCommandDefinition = this.app?.commands?.commands?.["editor:save-file"]
         const saveCallback = saveCommandDefinition?.checkCallback
         if (!saveCommandDefinition || typeof saveCallback !== "function") return
         this.originalSaveCallback = saveCallback
 
         this.saveCallback = (checking: boolean) => {
-            // Another plugin may still retain this wrapper after we unload.
-            if (checking || this.unloaded) {
+            if (checking || this.unloaded || !this.isFormatOnSaveEnabled() || this.bulletOwnsSave()) {
                 return saveCallback(checking)
             }
-            else {
-                if (!this.settings.formatOnSave) return
-                const target = this.captureFormattingTarget()
-                if (!target) return
-                runAsyncSafely(async () => {
-                    await sleep(this.settings.formatDelayMs ?? 100)
-                    await this.formatThenRunPrettierAndLinter(target, {
+            const target = this.captureFormattingTarget()
+            if (!target) return saveCallback(checking)
+            runAsyncSafely(async () => {
+                try {
+                    await this.formatActiveFile(target, {
                         normalizeExistingWikilinks: this.settings.normalizeExistingWikilinks,
                     })
-                })
-            }
+                }
+                finally {
+                    saveCallback(false)
+                }
+            })
+            return true
         }
         saveCommandDefinition.checkCallback = this.saveCallback
+    }
+
+    private bulletOwnsSave(): boolean {
+        const registry = (this.app as unknown as {
+            plugins?: { plugins?: Record<string, unknown> }
+        }).plugins?.plugins
+        const bullet = registry?.bullet
+        return !!bullet && typeof bullet === "object"
+            && "ownsExplicitSaveFormatting" in bullet
+            && typeof bullet.ownsExplicitSaveFormatting === "function"
+            && bullet.ownsExplicitSaveFormatting() === true
     }
 
     onunload() {

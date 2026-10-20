@@ -16,11 +16,12 @@ vi.mock("obsidian", () => ({
     Editor: class {},
     getFrontMatterInfo: (content: string) => {
         const frontmatter = content.match(/^---\n[\s\S]*?\n---\n?/)
-        return { contentStart: frontmatter?.[0].length ?? 0 }
+        return { contentStart: frontmatter?.[0].length ?? 0, frontmatter: "automatic-linker-disable-url-title: true" }
     },
     MarkdownView: class {},
     Notice: class {},
     parseFrontMatterAliases: () => [],
+    parseYaml: () => ({ "automatic-linker-disable-url-title": true }),
     Plugin: class {
         app: unknown
 
@@ -72,7 +73,8 @@ describe("AutomaticLinkerPlugin URL title frontmatter opt-out", () => {
             replaceUrlWithTitle: true,
         }
 
-        await plugin.buildUrlTitleMap()
+        expect(await plugin.formatText("---\nautomatic-linker-disable-url-title: true\n---\nhttps://example.com", activeFile as never))
+            .toBe("---\nautomatic-linker-disable-url-title: true\n---\nhttps://example.com")
 
         expect(requestMock).not.toHaveBeenCalled()
     })

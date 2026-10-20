@@ -89,20 +89,13 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 ### Formatting Workflow
 
-- **Format on save**: Automatically format links when saving files.
-- **Format delay (ms)**: Delay formatting stages by the configured number of milliseconds. This is not a completion timeout: each formatter's completion is awaited separately.
-- **Run Prettier after formatting**: Run Prettier after link formatting, and wait for it to finish before starting Linter.
-- **Run Obsidian Linter after formatting**: Run Obsidian Linter after link formatting and Prettier have completed.
+**Format on save** converts links when you explicitly save a note. Automatic Linker then invokes Obsidian's native save action. With this setting disabled, saving delegates directly to Obsidian.
 
-Formatting preserves frontmatter exactly. If you switch to another note or editor while formatting waits for page titles or integrations, the pending operation stops before applying further changes. Text you add to the same editor while titles are fetched is preserved.
+When Bullet owns save formatting, Automatic Linker delegates saving to Bullet. Bullet awaits Automatic Linker's text transform before running its own formatter stages. Automatic Linker no longer runs Prettier or Linter.
 
-List indentation is owned by the formatter, not Automatic Linker. The former **Normalize list indentation to tabs** setting has been removed; saved values are ignored. Use the kdnk Prettier fork's indentation repair when available. Install and verify that formatter before upgrading from a configuration that relies on Automatic Linker's old cleanup option.
+Formatting preserves frontmatter exactly. Switching notes, renaming the file, changing editors, typing during title lookup, or unloading the plugin discards the pending editor update. Repeated requests are combined into one trailing run with the latest text.
 
-When Automatic Linker handles formatting on save, disable **Format on save** in Prettier and **Lint on save** in Linter, while leaving the desired integrations enabled here. Otherwise those plugins also run independently and can overlap with this workflow. Automatic Linker warns about this configuration but never changes another plugin's settings.
-
-Formatting requests are serialized. Repeated requests during a run are combined into one trailing run against the latest requested target. An error aborts that batch, including queued requests; a later request can retry. Unloading Automatic Linker discards queued work and prevents further stages; it cannot cancel an external formatter that is already running. It also cannot serialize a formatter started independently by another plugin or command.
-
-The integration uses guarded completion-returning plugin methods, verified with **prettier-format 0.2.0** and **Obsidian Linter 1.32.0**. Missing or incompatible methods stop the chain with a notice; there is no fire-and-forget command fallback. Linter's completion covers its editor formatting, not subsequent metadata-triggered custom commands. The plugins retain their own formatting rules: this coordination does not fix how Prettier interprets mixed indentation, or change tabs/spaces settings.
+For plugin integrations, `isFormatOnSaveEnabled()` reports the linker save setting. `formatText(text, file, options)` returns a promise of transformed Markdown without changing an editor. The transform reads opt-outs from the supplied text, respects excluded folders, and fetches URL titles. Set `normalizeExistingWikilinks` in `options` to control existing-link normalization, subject to the linker's setting.
 
 ### Link Behavior
 
@@ -225,16 +218,6 @@ Features:
 - Preserves relative indentation structure
 - Gets full lines even if partially selected
 
-## Integration with Obsidian Linter
-
-To avoid conflicts when using both plugins:
-
-1. **Disable** "Lint on Save" in Obsidian Linter settings
-2. **Enable** "Format on Save" in Automatic Linker settings
-3. **Enable** "Run Obsidian Linter after formatting" in Automatic Linker settings
-
-This ensures Automatic Linker runs first, followed by Linter.
-
 ## Frontmatter Options
 
 Add these to individual note frontmatter:
@@ -324,13 +307,9 @@ src/
 - Ensure "Proximity-based Linking" is enabled in settings
 - Check that files are within Obsidian's configured "Folder to create new notes in" directory if the "Respect 'Folder to create new notes in' setting" option is enabled
 
-**Conflicts with Obsidian Linter:**
-- Follow the integration guide above to run plugins in sequence
-
 **Performance issues:**
 - Disable debug mode if enabled
 - Consider excluding large directories from auto-linking
-- Increase format delay if formatting happens too frequently
 
 ## Credits
 

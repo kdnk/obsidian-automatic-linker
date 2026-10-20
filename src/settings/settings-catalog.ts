@@ -23,12 +23,9 @@ export type AutomaticLinkerSettings = {
     preventSelfLinking: boolean
     removeAliasInDirs: string[]
     ignoreMarkdownTables: boolean
-    runLinterAfterFormatting: boolean
-    runPrettierAfterFormatting: boolean
-    formatDelayMs: number
 }
 
-export type SettingControl = "toggle" | "text" | "textarea"
+export type SettingControl = "toggle" | "textarea"
 
 export interface SettingCatalogEntry<K extends keyof AutomaticLinkerSettings = keyof AutomaticLinkerSettings> {
     key: K
@@ -67,9 +64,6 @@ export const DEFAULT_SETTINGS: AutomaticLinkerSettings = {
     preventSelfLinking: false,
     removeAliasInDirs: [],
     ignoreMarkdownTables: false,
-    runLinterAfterFormatting: false,
-    runPrettierAfterFormatting: false,
-    formatDelayMs: 1,
 }
 
 export const SETTINGS_CATALOG = [
@@ -79,34 +73,6 @@ export const SETTINGS_CATALOG = [
         name: "Format on save",
         description:
             "When enabled, the file will be automatically formatted (links replaced) when saving.",
-        control: "toggle",
-        refreshesIndex: false,
-    },
-    {
-        key: "formatDelayMs",
-        group: "Formatting Workflow",
-        name: "Format delay (ms)",
-        description:
-            "Delay in milliseconds before formatting stages. Formatter completion is awaited separately; this delay is not a completion timeout.",
-        control: "text",
-        placeholder: "e.g. 100",
-        refreshesIndex: false,
-    },
-    {
-        key: "runPrettierAfterFormatting",
-        group: "Formatting Workflow",
-        name: "Run Prettier after formatting",
-        description:
-            "Run Prettier after link formatting and wait for completion before Linter. Requires a compatible prettier-format plugin. Automatic Linker coordinates saving; current Prettier versions do not need a separate save hook.",
-        control: "toggle",
-        refreshesIndex: false,
-    },
-    {
-        key: "runLinterAfterFormatting",
-        group: "Formatting Workflow",
-        name: "Run Obsidian Linter after formatting",
-        description:
-            "Run Obsidian Linter after link formatting and Prettier have completed. Requires a compatible Obsidian Linter plugin. Turn off Linter's own Lint on save when Automatic Linker handles saving.",
         control: "toggle",
         refreshesIndex: false,
     },

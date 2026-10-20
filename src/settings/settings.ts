@@ -20,32 +20,9 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
     ) {
         this.plugin.settings[key] = value
         await this.plugin.saveData(this.plugin.settings)
-        if (key === "replaceUrlWithTitleIgnoreDomains") {
-            await this.plugin.buildUrlTitleMap()
-        }
         if (settingRefreshesIndex(key)) {
             this.plugin.refreshFileDataAndTrie()
         }
-    }
-
-    private parseTextValue<K extends keyof AutomaticLinkerSettings>(
-        key: K,
-        currentValue: AutomaticLinkerSettings[K],
-        nextValue: string,
-    ): AutomaticLinkerSettings[K] | null {
-        if (typeof currentValue !== "number") {
-            return null
-        }
-
-        const parsedValue = parseInt(nextValue)
-        if (isNaN(parsedValue)) {
-            return null
-        }
-        if (key === "formatDelayMs" && parsedValue < 0) {
-            return null
-        }
-
-        return parsedValue as AutomaticLinkerSettings[K]
     }
 
     private renderSetting(containerEl: HTMLElement, entry: SettingCatalogEntry) {
@@ -60,25 +37,6 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                     .setValue(Boolean(value))
                     .onChange(async (nextValue) => {
                         await this.setSettingValue(entry.key, nextValue as never)
-                    })
-            })
-            return
-        }
-
-        if (entry.control === "text") {
-            setting.addText((text) => {
-                text.setPlaceholder(entry.placeholder ?? "")
-                    .setValue(String(value))
-                    .onChange(async (nextValue) => {
-                        const parsedValue = this.parseTextValue(
-                            entry.key,
-                            value,
-                            nextValue,
-                        )
-                        if (parsedValue === null) {
-                            return
-                        }
-                        await this.setSettingValue(entry.key, parsedValue)
                     })
             })
             return
