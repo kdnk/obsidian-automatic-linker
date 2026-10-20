@@ -93,7 +93,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 When Bullet owns save formatting, Automatic Linker delegates saving to Bullet. Bullet awaits Automatic Linker's text transform before running its own formatter stages. Automatic Linker no longer runs Prettier or Linter.
 
-Formatting preserves frontmatter exactly. Switching notes, renaming the file, changing editors, typing during title lookup, or unloading the plugin discards the pending editor update. Repeated requests are combined into one trailing run with the latest text.
+Formatting preserves frontmatter exactly. Standalone commands preserve text typed during title lookup and apply fetched titles to the latest editor text. New URLs wait until the next formatting request for title lookup. Switching notes, renaming the file, changing editors, or unloading the plugin discards the pending editor update. Repeated requests are combined into one trailing run with the latest text.
 
 For plugin integrations, `isFormatOnSaveEnabled()` reports the linker save setting. `formatText(text, file, options)` returns a promise of transformed Markdown without changing an editor. The transform reads opt-outs from the supplied text, respects excluded folders, and fetches URL titles. Set `normalizeExistingWikilinks` in `options` to control existing-link normalization, subject to the linker's setting.
 

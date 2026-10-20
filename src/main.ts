@@ -285,9 +285,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
     private async formatTarget({ target, normalizeExistingWikilinks }: FormattingRequest) {
         if (!this.canFormatTarget(target)) return
         const oldText = target.editor.getValue()
-        const newText = await this.formatText(oldText, target.file, { normalizeExistingWikilinks })
-        if (!this.canFormatTarget(target) || target.editor.getValue() !== oldText) return
-        updateEditor(oldText, newText, target.editor)
+        let newText = await this.formatText(oldText, target.file, { normalizeExistingWikilinks })
+        if (!this.canFormatTarget(target)) return
+        const currentText = target.editor.getValue()
+        if (currentText !== oldText) {
+            const { frontmatter: yaml } = getFrontMatterInfo(currentText)
+            const parsed: unknown = yaml ? parseYaml(yaml) : undefined
+            const frontmatter = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+                ? parsed as Record<string, unknown>
+                : undefined
+            if (this.settings.excludeDirsFromAutoLinking.some(
+                directory => target.path === directory || target.path.startsWith(directory + "/"),
+            )) return
+            newText = this.modifyLinks(currentText, target.path, frontmatter, { normalizeExistingWikilinks })
+        }
+        if (newText !== currentText) updateEditor(currentText, newText, target.editor)
     }
 
     async mofifyLinksSelection() {

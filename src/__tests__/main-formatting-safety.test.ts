@@ -128,6 +128,17 @@ describe("text formatting API", () => {
         expect(f.app.vault.read).not.toHaveBeenCalled()
     })
 
+    it("keeps the supplied text snapshot separate from typing during title lookup", async () => {
+        const f = fixture()
+        const finish = deferredTitle()
+        const pending = f.plugin.formatText("https://example.com", f.file as never)
+        await vi.waitFor(() => expect(requestMock).toHaveBeenCalledTimes(1))
+        f.setContent("https://example.com typed")
+        finish()
+        expect(await pending).toBe("[Example](https://example.com)")
+        expect(f.editor.getValue()).toBe("https://example.com typed")
+    })
+
     it.each(["automatic-linker-off", "automatic-linker-disabled"])(
         "reads %s from the supplied frontmatter instead of metadata cache", async (key) => {
             const f = fixture()
@@ -198,7 +209,7 @@ describe("standalone link commands", () => {
         expect(formatter).not.toHaveBeenCalled()
     })
 
-    it.each(["file", "editor", "rename", "typing", "unload"])(
+    it.each(["file", "editor", "rename", "unload"])(
         "discards pending editor writes after %s changes", async (change) => {
             const f = fixture()
             const finish = deferredTitle()
@@ -207,14 +218,53 @@ describe("standalone link commands", () => {
             if (change === "file") f.switchFile()
             if (change === "editor") f.app.workspace.getActiveViewOfType.mockReturnValue({ ...f.view, editor: { ...f.editor } })
             if (change === "rename") f.file.path = "renamed.md"
-            if (change === "typing") f.setContent("https://example.com typed")
             if (change === "unload") f.plugin.onunload()
             finish()
             await pending
-            expect(f.editor.getValue()).toBe(change === "typing" ? "https://example.com typed" : "https://example.com")
+            expect(f.editor.getValue()).toBe("https://example.com")
             expect(f.editor.setValue).not.toHaveBeenCalled()
         },
     )
+
+    it("formats the latest editor text with fetched titles while preserving typing", async () => {
+        const f = fixture()
+        const finish = deferredTitle()
+        const pending = f.plugin.formatActiveFile()
+        await vi.waitFor(() => expect(requestMock).toHaveBeenCalledTimes(1))
+        f.setContent("https://example.com typed https://new.test")
+        finish()
+        await pending
+        expect(f.editor.getValue()).toBe("[Example](https://example.com) typed https://new.test")
+        expect(requestMock).toHaveBeenCalledExactlyOnceWith("https://example.com")
+    })
+
+    it.each(["automatic-linker-off", "automatic-linker-disabled", "automatic-linker-disable-url-title"])(
+        "honors %s added during title lookup", async (key) => {
+            const f = fixture()
+            const finish = deferredTitle()
+            const pending = f.plugin.formatActiveFile()
+            await vi.waitFor(() => expect(requestMock).toHaveBeenCalledTimes(1))
+            f.disable(key)
+            finish()
+            await pending
+            expect(f.editor.getValue()).toBe(`---\n${key}: true\n---\nhttps://example.com`)
+            expect(requestMock).toHaveBeenCalledTimes(1)
+        },
+    )
+
+    it("honors folder exclusions added while typing during title lookup", async () => {
+        const f = fixture()
+        f.file.path = "templates/A.md"
+        const finish = deferredTitle()
+        const pending = f.plugin.formatActiveFile()
+        await vi.waitFor(() => expect(requestMock).toHaveBeenCalledTimes(1))
+        f.plugin.settings.excludeDirsFromAutoLinking = ["templates"]
+        f.setContent("https://example.com typed")
+        finish()
+        await pending
+        expect(f.editor.getValue()).toBe("https://example.com typed")
+        expect(requestMock).toHaveBeenCalledTimes(1)
+    })
 
     it("coalesces repeated requests into one trailing run with fresh text", async () => {
         const f = fixture()
@@ -292,6 +342,19 @@ describe("save callback ownership", () => {
         await vi.waitFor(() => expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(false))
         expect(f.editor.getValue()).toBe("https://example.com")
         expect(notices).toEqual(["Automatic Linker: bad YAML"])
+    })
+
+    it("saves converted links and text typed during title lookup without Bullet", async () => {
+        const f = fixture()
+        f.plugin.settings.formatOnSave = true
+        const finish = deferredTitle()
+        initialize(f.plugin)
+        f.save.checkCallback(false)
+        await vi.waitFor(() => expect(requestMock).toHaveBeenCalledTimes(1))
+        f.setContent("https://example.com typed")
+        finish()
+        await vi.waitFor(() => expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(false))
+        expect(f.editor.getValue()).toBe("[Example](https://example.com) typed")
     })
 
     it("saves each explicit request when runs are coalesced", async () => {
