@@ -53,8 +53,19 @@ function fixture() {
         posToOffset: () => 0,
         replaceSelection: vi.fn(),
     }
-    const view = { file, editor }
-    const originalSave = vi.fn((_checking: boolean) => true)
+    const persisted = new Map<string, string>()
+    const view = {
+        file,
+        editor,
+        containerEl: { isConnected: true },
+        save: vi.fn(async () => {
+            persisted.set(view.file.path, view.editor.getValue())
+        }),
+    }
+    const originalSave = vi.fn((checking: boolean) => {
+        if (!checking) void app.workspace.getActiveViewOfType().save()
+        return true
+    })
     const save = { checkCallback: originalSave }
     const app = {
         plugins: { plugins: {} as Record<string, unknown> },
@@ -80,7 +91,7 @@ function fixture() {
     const plugin = new AutomaticLinkerPlugin(app as never, {} as never)
     plugin.settings = { ...DEFAULT_SETTINGS }
     return {
-        plugin, app, editor, view, file, save, originalSave,
+        plugin, app, editor, view, file, save, originalSave, persisted,
         setContent: (value: string) => { content = value },
         disable: (key = "automatic-linker-off") => {
             frontmatter = { [key]: true }
@@ -111,10 +122,12 @@ function initialize(plugin: AutomaticLinkerPlugin) {
 
 function deferred<T>() {
     let resolve!: (value: T) => void
-    const promise = new Promise<T>((complete) => {
+    let reject!: (error: Error) => void
+    const promise = new Promise<T>((complete, fail) => {
         resolve = complete
+        reject = fail
     })
-    return { promise, resolve }
+    return { promise, resolve, reject }
 }
 
 describe("text formatting API", () => {
@@ -369,6 +382,89 @@ describe("save callback ownership", () => {
         finish()
         await vi.waitFor(() => expect(f.originalSave).toHaveBeenCalledTimes(3))
         expect(f.editor.getValue()).toBe("[Example](https://example.com)")
+    })
+
+    it.each(["success", "failure", "unload"])("saves the source pane after switching notes during %s", async (action) => {
+        const f = fixture()
+        f.plugin.settings.formatOnSave = true
+        const gate = deferred<string>()
+        vi.spyOn(f.plugin, "formatText").mockReturnValue(gate.promise)
+        vi.spyOn(console, "error").mockImplementation(() => {})
+        initialize(f.plugin)
+        f.save.checkCallback(false)
+        await vi.waitFor(() => expect(f.plugin.formatText).toHaveBeenCalledTimes(1))
+        const destinationEditor = { ...f.editor, getValue: () => "destination unsaved" }
+        const destination = {
+            ...f.view,
+            file: { path: "B.md" },
+            editor: destinationEditor,
+            save: vi.fn(async () => { f.persisted.set("B.md", destinationEditor.getValue()) }),
+        }
+        f.app.workspace.getActiveViewOfType.mockReturnValue(destination)
+        f.app.workspace.getActiveFile.mockReturnValue(destination.file)
+        if (action === "unload") f.plugin.onunload()
+        if (action === "failure") gate.reject(new Error("bad YAML"))
+        else gate.resolve("linked source")
+        await vi.waitFor(() => expect([...f.persisted]).toEqual([["A.md", "https://example.com"]]))
+        expect(destinationEditor.getValue()).toBe("destination unsaved")
+        expect(f.originalSave).not.toHaveBeenCalled()
+    })
+
+    it("keeps queued intents tied to their note when a view navigates", async () => {
+        const f = fixture()
+        f.plugin.settings.formatOnSave = true
+        const gate = deferred<string>()
+        vi.spyOn(f.plugin, "formatText").mockReturnValueOnce(gate.promise).mockResolvedValue("linked destination")
+        initialize(f.plugin)
+        f.save.checkCallback(false)
+        await vi.waitFor(() => expect(f.plugin.formatText).toHaveBeenCalledTimes(1))
+        f.save.checkCallback(false)
+        await f.view.save()
+        f.view.file = { path: "B.md" }
+        f.app.workspace.getActiveFile.mockReturnValue(f.view.file)
+        f.setContent("destination unsaved")
+        f.save.checkCallback(false)
+        gate.resolve("stale source")
+        await vi.waitFor(() => expect([...f.persisted]).toEqual([
+            ["A.md", "https://example.com"],
+            ["B.md", "linked destination"],
+        ]))
+        expect(f.originalSave).toHaveBeenCalledTimes(1)
+    })
+
+    it("does not flush a detached source view or the newly active destination", async () => {
+        const f = fixture()
+        f.plugin.settings.formatOnSave = true
+        const gate = deferred<string>()
+        vi.spyOn(f.plugin, "formatText").mockReturnValue(gate.promise)
+        initialize(f.plugin)
+        f.save.checkCallback(false)
+        await vi.waitFor(() => expect(f.plugin.formatText).toHaveBeenCalledTimes(1))
+        await f.view.save()
+        f.view.containerEl.isConnected = false
+        f.app.workspace.getActiveViewOfType.mockReturnValue({ ...f.view, file: { path: "B.md" } })
+        f.app.workspace.getActiveFile.mockReturnValue({ path: "B.md" })
+        gate.resolve("stale source")
+        await new Promise(resolve => setImmediate(resolve))
+        expect([...f.persisted]).toEqual([["A.md", "https://example.com"]])
+        expect(f.originalSave).not.toHaveBeenCalled()
+    })
+
+    it("reports a rejected source save without an unhandled rejection", async () => {
+        const f = fixture()
+        f.plugin.settings.formatOnSave = true
+        const gate = deferred<string>()
+        vi.spyOn(f.plugin, "formatText").mockReturnValue(gate.promise)
+        f.view.save.mockRejectedValueOnce(new Error("disk full"))
+        initialize(f.plugin)
+        f.save.checkCallback(false)
+        await vi.waitFor(() => expect(f.plugin.formatText).toHaveBeenCalledTimes(1))
+        f.app.workspace.getActiveViewOfType.mockReturnValue({ ...f.view, file: { path: "B.md" } })
+        f.app.workspace.getActiveFile.mockReturnValue({ path: "B.md" })
+        gate.resolve("stale source")
+        await vi.waitFor(() => expect(notices).toEqual(["Automatic Linker could not save A.md. disk full"]))
+        expect([...f.persisted]).toEqual([])
+        expect(f.editor.getValue()).toBe("https://example.com")
     })
 
     it("keeps a later wrapper installed and delegates through an unloaded linker", () => {

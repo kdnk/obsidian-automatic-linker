@@ -89,7 +89,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 ### Formatting Workflow
 
-**Format on save** converts links when you explicitly save a note. Automatic Linker then invokes Obsidian's native save action. With this setting disabled, saving delegates directly to Obsidian.
+**Format on save** converts links when you explicitly save a note. Automatic Linker then saves the note that received the save command, even if another pane becomes active during link conversion. With this setting disabled, saving delegates directly to Obsidian.
 
 When Bullet owns save formatting, Automatic Linker delegates saving to Bullet. Bullet awaits Automatic Linker's text transform before running its own formatter stages. Automatic Linker no longer runs Prettier or Linter.
 

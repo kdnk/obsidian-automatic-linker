@@ -541,7 +541,8 @@ export default class AutomaticLinkerPlugin extends Plugin {
                 return saveCallback(checking)
             }
             const target = this.captureFormattingTarget()
-            if (!target) return saveCallback(checking)
+            const sourceView = this.app.workspace.getActiveViewOfType(MarkdownView)
+            if (!target || !sourceView) return saveCallback(checking)
             runAsyncSafely(async () => {
                 try {
                     await this.formatActiveFile(target, {
@@ -549,7 +550,21 @@ export default class AutomaticLinkerPlugin extends Plugin {
                     })
                 }
                 finally {
-                    saveCallback(false)
+                    if (sourceView.file === target.file
+                        && sourceView.editor === target.editor
+                        && sourceView.containerEl.isConnected) {
+                        try {
+                            if (this.app.workspace.getActiveViewOfType(MarkdownView) === sourceView) {
+                                saveCallback(false)
+                            }
+                            else if ("save" in sourceView && typeof sourceView.save === "function") {
+                                await sourceView.save()
+                            }
+                        }
+                        catch (error) {
+                            new Notice(`Automatic Linker could not save ${target.file.path}. ${error instanceof Error ? error.message : String(error)}`)
+                        }
+                    }
                 }
             })
             return true
