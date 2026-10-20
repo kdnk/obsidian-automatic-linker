@@ -537,7 +537,7 @@ export default class AutomaticLinkerPlugin extends Plugin {
         this.originalSaveCallback = saveCallback
 
         this.saveCallback = (checking: boolean) => {
-            if (checking || this.unloaded || !this.isFormatOnSaveEnabled() || this.bulletOwnsSave()) {
+            if (checking || this.unloaded || !this.isFormatOnSaveEnabled() || this.isBulletEnabled()) {
                 return saveCallback(checking)
             }
             const target = this.captureFormattingTarget()
@@ -572,15 +572,12 @@ export default class AutomaticLinkerPlugin extends Plugin {
         saveCommandDefinition.checkCallback = this.saveCallback
     }
 
-    private bulletOwnsSave(): boolean {
+    private isBulletEnabled(): boolean {
         const registry = (this.app as unknown as {
             plugins?: { plugins?: Record<string, unknown> }
         }).plugins?.plugins
         const bullet = registry?.bullet
         return !!bullet && typeof bullet === "object"
-            && "ownsExplicitSaveFormatting" in bullet
-            && typeof bullet.ownsExplicitSaveFormatting === "function"
-            && bullet.ownsExplicitSaveFormatting() === true
     }
 
     onunload() {

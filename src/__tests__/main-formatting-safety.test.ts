@@ -131,8 +131,9 @@ function deferred<T>() {
 }
 
 describe("text formatting API", () => {
-    it("formats supplied text with title lookup without reading or writing an editor", async () => {
+    it("formats supplied text with Bullet enabled without reading or writing an editor", async () => {
         const f = fixture()
+        f.app.plugins.plugins.bullet = {}
         requestMock.mockResolvedValue("<title>Example</title>")
         const result = await f.plugin.formatText("https://example.com", f.file as never)
         expect(result).toBe("[Example](https://example.com)")
@@ -207,10 +208,11 @@ describe("text formatting API", () => {
 })
 
 describe("standalone link commands", () => {
-    it("runs format-file as link-only even when formatter plugins are installed", async () => {
+    it("runs format-file as link-only with Bullet and formatter plugins enabled", async () => {
         const f = fixture()
         requestMock.mockResolvedValue("<title>Example</title>")
         const formatter = vi.fn()
+        f.app.plugins.plugins.bullet = {}
         f.app.plugins.plugins["prettier-format"] = { format: formatter }
         f.app.plugins.plugins["obsidian-linter-plus"] = { runLinterEditor: formatter }
         initialize(f.plugin)
@@ -220,6 +222,20 @@ describe("standalone link commands", () => {
         await command?.editorCallback()
         expect(f.editor.getValue()).toBe("[Example](https://example.com)")
         expect(formatter).not.toHaveBeenCalled()
+    })
+
+    it("runs format-selection with Bullet enabled", async () => {
+        const f = fixture()
+        f.app.plugins.plugins.bullet = {}
+        f.setContent("A")
+        f.editor.getSelection = () => "A"
+        f.plugin.refreshFileDataAndTrie()
+        initialize(f.plugin)
+        const command = (f.plugin as unknown as {
+            commands: Array<{ id: string, editorCallback: () => Promise<void> }>
+        }).commands.find(({ id }) => id === "format-selection")
+        await command?.editorCallback()
+        expect(f.editor.replaceSelection).toHaveBeenCalledWith("[[A]]")
     })
 
     it.each(["file", "editor", "rename", "unload"])(
@@ -313,36 +329,57 @@ describe("save callback ownership", () => {
         expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(false)
     })
 
-    it.each(["linker first", "bullet first"])("delegates to Bullet with %s", (order) => {
-        const f = fixture()
-        f.plugin.settings.formatOnSave = true
-        const events: string[] = []
-        const installBullet = () => {
-            const previous = f.save.checkCallback
-            f.save.checkCallback = vi.fn((checking: boolean) => {
-                if (!checking) events.push("bullet")
-                return previous(checking)
-            })
-            f.app.plugins.plugins.bullet = { ownsExplicitSaveFormatting: () => true }
-        }
-        if (order === "bullet first") installBullet()
-        initialize(f.plugin)
-        if (order === "linker first") installBullet()
-        expect(f.save.checkCallback(false)).toBe(true)
-        expect(events).toEqual(["bullet"])
-        expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(false)
-        expect(requestMock).not.toHaveBeenCalled()
+    describe.each(["linker first", "bullet first"])("with %s", (order) => {
+        it.each([
+            ["without a formatting API", {}],
+            ["with save ownership disabled", { ownsExplicitSaveFormatting: () => false }],
+            ["without consulting Bullet settings", Object.defineProperty({}, "settings", {
+                get: () => { throw new Error("Bullet settings must not be read") },
+            })],
+        ])("saves unchanged text while Bullet is enabled %s", (_description, bullet) => {
+            const f = fixture()
+            f.plugin.settings.formatOnSave = true
+            const events: string[] = []
+            const installBullet = () => {
+                const previous = f.save.checkCallback
+                f.save.checkCallback = vi.fn((checking: boolean) => {
+                    if (!checking) events.push("bullet")
+                    return previous(checking)
+                })
+                f.app.plugins.plugins.bullet = bullet
+            }
+            if (order === "bullet first") installBullet()
+            initialize(f.plugin)
+            if (order === "linker first") installBullet()
+            expect(f.save.checkCallback(false)).toBe(true)
+            expect(events).toEqual(["bullet"])
+            expect([...f.persisted]).toEqual([["A.md", "https://example.com"]])
+            expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(false)
+            expect(requestMock).not.toHaveBeenCalled()
+        })
     })
 
-    it("resumes standalone linking when Bullet ownership is disabled", async () => {
+    it("checks Bullet presence again after disabling and re-enabling Bullet", async () => {
         const f = fixture()
         f.plugin.settings.formatOnSave = true
-        f.app.plugins.plugins.bullet = { ownsExplicitSaveFormatting: () => false }
+        f.app.plugins.plugins.bullet = {}
         requestMock.mockResolvedValue("<title>Example</title>")
         initialize(f.plugin)
         expect(f.save.checkCallback(false)).toBe(true)
-        await vi.waitFor(() => expect(f.originalSave).toHaveBeenCalledExactlyOnceWith(false))
-        expect(f.editor.getValue()).toBe("[Example](https://example.com)")
+        expect([...f.persisted]).toEqual([["A.md", "https://example.com"]])
+        expect(requestMock).not.toHaveBeenCalled()
+
+        delete f.app.plugins.plugins.bullet
+        expect(f.save.checkCallback(false)).toBe(true)
+        await vi.waitFor(() => expect(f.originalSave).toHaveBeenCalledTimes(2))
+        expect([...f.persisted]).toEqual([["A.md", "[Example](https://example.com)"]])
+
+        f.app.plugins.plugins.bullet = {}
+        f.setContent("https://example.com")
+        expect(f.save.checkCallback(false)).toBe(true)
+        expect([...f.persisted]).toEqual([["A.md", "https://example.com"]])
+        expect(f.originalSave).toHaveBeenCalledTimes(3)
+        expect(requestMock).toHaveBeenCalledTimes(1)
     })
 
     it("still saves original text after a formatting error", async () => {

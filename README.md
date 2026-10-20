@@ -91,7 +91,7 @@ Access these commands via the Command Palette (Cmd/Ctrl + P):
 
 **Format on save** converts links when you explicitly save a note. Automatic Linker then saves the note that received the save command, even if another pane becomes active during link conversion. With this setting disabled, saving delegates directly to Obsidian.
 
-When Bullet owns save formatting, Automatic Linker delegates saving to Bullet. Bullet awaits Automatic Linker's text transform before running its own formatter stages. Automatic Linker no longer runs Prettier or Linter.
+When Bullet is enabled, Automatic Linker skips its own automatic formatting on save, regardless of Bullet's formatting, save, or integration settings. Disabling Bullet restores Automatic Linker's configured format-on-save behavior. Manual formatting commands and the `formatText` integration API remain available while Bullet is enabled. Automatic Linker does not run Prettier or Linter.
 
 Formatting preserves frontmatter exactly. Standalone commands preserve text typed during title lookup and apply fetched titles to the latest editor text. New URLs wait until the next formatting request for title lookup. Switching notes, renaming the file, changing editors, or unloading the plugin discards the pending editor update. Repeated requests are combined into one trailing run with the latest text.
 
