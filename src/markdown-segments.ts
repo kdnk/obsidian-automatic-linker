@@ -148,7 +148,7 @@ const collectFencedCodeRanges = (text: string): ProtectedRange[] => {
 
 const buildProtectedPattern = (protectUrls: boolean): RegExp => {
     const parts = [
-        "(?<!`)(`+)(?!`)[\\s\\S]*?(?<!`)\\1(?!`)",
+        "`+",
         "\\[\\[[^\\]]+\\]\\]",
         "\\[[^\\]]+\\]\\([^)]+\\)",
         "\\[[^\\]]+\\]",
@@ -245,9 +245,28 @@ export const segmentMarkdown = (
             continue
         }
 
+        let matchEnd = match.index + match[0].length
+        if (match[0].startsWith("`")) {
+            const backtickRunPattern = /`+/g
+            backtickRunPattern.lastIndex = matchEnd
+            let closingMatch: RegExpExecArray | null
+            while ((closingMatch = backtickRunPattern.exec(text)) !== null) {
+                if (closingMatch[0].length === match[0].length) {
+                    break
+                }
+            }
+
+            if (!closingMatch) {
+                continue
+            }
+
+            matchEnd = closingMatch.index + closingMatch[0].length
+            protectedPattern.lastIndex = matchEnd
+        }
+
         ranges.push({
             start: match.index,
-            end: match.index + match[0].length,
+            end: matchEnd,
             protectedKind: getProtectedKind(match[0]),
         })
     }

@@ -1,4 +1,3 @@
-import { ChangeSpec } from "@codemirror/state"
 import { Editor } from "obsidian"
 import DiffMatchPatch from "diff-match-patch"
 
@@ -25,7 +24,7 @@ export function updateEditor(
                     {
                         from: editor.posToOffset(endOfDocument(curText)),
                         insert: value,
-                    } as ChangeSpec,
+                    },
                 ],
                 filter: false,
             })
@@ -44,7 +43,7 @@ export function updateEditor(
                         from: editor.posToOffset(start),
                         to: editor.posToOffset(end),
                         insert: "",
-                    } as ChangeSpec,
+                    },
                 ],
                 filter: false,
             })

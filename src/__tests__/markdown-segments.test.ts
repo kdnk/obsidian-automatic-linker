@@ -32,6 +32,37 @@ describe("segmentMarkdown", () => {
         ])
     })
 
+    it.each([
+        ["before `code`` after", []],
+        ["before ``code` after", []],
+        ["before ``code`inside`` after", ["``code`inside``"]],
+        ["before `code``inside` after", ["`code``inside`"]],
+        ["before ` unmatched ``code`` after", ["``code``"]],
+        ["before `` unmatched `code` after", ["`code`"]],
+        ["before `code\nnext line` after", ["`code\nnext line`"]],
+        ["before `one` `two` after", ["`one`", "`two`"]],
+    ])("only pairs complete backtick runs of equal length in %s", (text, expectedCode) => {
+        const segments = segmentMarkdown(text)
+
+        expect(segments.filter(segment => segment.protectedKind === "inline-code").map(segment => segment.text)).toEqual(expectedCode)
+        expect(segments.map(segment => segment.text).join("")).toBe(text)
+        for (const segment of segments) {
+            expect(text.slice(segment.start, segment.end)).toBe(segment.text)
+        }
+    })
+
+    it("keeps backticks inside earlier links within the link", () => {
+        const text = "before [[`one]] after `two`"
+
+        expect(segmentMarkdown(text).filter(segment => segment.kind === "protected").map(segment => ({
+            protectedKind: segment.protectedKind,
+            text: segment.text,
+        }))).toEqual([
+            { protectedKind: "wikilink", text: "[[`one]]" },
+            { protectedKind: "inline-code", text: "`two`" },
+        ])
+    })
+
     it("protects tilde fenced code blocks", () => {
         const text = "before\n~~~ts\nTypeScript\n~~~\nafter"
         const segments = segmentMarkdown(text)

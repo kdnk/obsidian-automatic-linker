@@ -1,4 +1,4 @@
-import { App, PluginSettingTab, Setting } from "obsidian"
+import { App, PluginSettingTab, Setting, SettingDefinitionGroup } from "obsidian"
 import AutomaticLinkerPlugin from "../main"
 import {
     AutomaticLinkerSettings,
@@ -25,10 +25,8 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
         }
     }
 
-    private renderSetting(containerEl: HTMLElement, entry: SettingCatalogEntry) {
-        const setting = new Setting(containerEl)
-            .setName(entry.name)
-            .setDesc(entry.description)
+    private renderSetting(setting: Setting, entry: SettingCatalogEntry) {
+        setting.setName(entry.name).setDesc(entry.description)
         const value = this.plugin.settings[entry.key]
 
         if (entry.control === "toggle") {
@@ -36,7 +34,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                 toggle
                     .setValue(Boolean(value))
                     .onChange(async (nextValue) => {
-                        await this.setSettingValue(entry.key, nextValue as never)
+                        await this.setSettingValue(entry.key, nextValue)
                     })
             })
             return
@@ -51,7 +49,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                         nextValue
                             .split("\n")
                             .map(item => item.trim())
-                            .filter(Boolean) as never,
+                            .filter(Boolean),
                     )
                 })
             if (entry.rows !== undefined) {
@@ -61,6 +59,23 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                 text.inputEl.cols = entry.cols
             }
         })
+    }
+
+    getSettingDefinitions(): SettingDefinitionGroup[] {
+        const groups = new Map<string, SettingDefinitionGroup>()
+        for (const entry of SETTINGS_CATALOG) {
+            let group = groups.get(entry.group)
+            if (!group) {
+                group = { type: "group", heading: entry.group, items: [] }
+                groups.set(entry.group, group)
+            }
+            group.items?.push({
+                name: entry.name,
+                desc: entry.description,
+                render: setting => this.renderSetting(setting, entry),
+            })
+        }
+        return [...groups.values()]
     }
 
     display(): void {
@@ -73,7 +88,7 @@ export class AutomaticLinkerPluginSettingsTab extends PluginSettingTab {
                 new Setting(containerEl).setName(entry.group).setHeading()
                 renderedGroups.add(entry.group)
             }
-            this.renderSetting(containerEl, entry)
+            this.renderSetting(new Setting(containerEl), entry)
         }
     }
 }

@@ -276,7 +276,7 @@ export const SETTINGS_CATALOG = [
         group: "Diagnostics",
         name: "Debug mode",
         description:
-            "When enabled, debug information will be logged to the console.",
+            "When enabled, notices show when document formatting starts and finishes.",
         control: "toggle",
         refreshesIndex: false,
     },

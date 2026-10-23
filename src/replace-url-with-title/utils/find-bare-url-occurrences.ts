@@ -60,10 +60,10 @@ export const findBareUrlOccurrences = (
         }
 
         // Keep the existing replacement behavior while inline code is being typed.
-        const unclosedBacktick = segment.text.search(/(?<!\\)`/)
-        if (unclosedBacktick !== -1) {
+        const unclosedBacktick = /(^|[^\\])`/.exec(segment.text)
+        if (unclosedBacktick) {
             protectedRanges.push({
-                start: segment.start + unclosedBacktick,
+                start: segment.start + unclosedBacktick.index + unclosedBacktick[1].length,
                 end: segment.end,
             })
         }

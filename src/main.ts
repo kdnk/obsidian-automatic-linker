@@ -150,9 +150,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
         }
 
         if (this.settings.debug) {
-            console.log("this.trie: ", this.trie)
-            console.log("this.candidateMap: ", this.candidateMap)
-            console.log(new Date().toISOString(), "modifyLinks started")
             new Notice(`Automatic Linker: ${new Date().toISOString()} modifyLinks started.`)
         }
 
@@ -174,7 +171,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
         })
 
         if (this.settings.debug) {
-            console.log(new Date().toISOString(), "modifyLinks finished")
             new Notice(`Automatic Linker: ${new Date().toISOString()} modifyLinks finished.`)
         }
         return fileContent
@@ -370,10 +366,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
         // Sort filenames in descending order (longer paths first)
         allFiles.sort((a, b) => b.path.length - a.path.length)
 
-        if (this.settings.debug) {
-            console.log("Automatic Linker: allFiles for Trie building: ", allFiles)
-        }
-
         // Build candidateMap and Trie using the helper function.
         const baseDir = this.settings.respectNewFileFolderPath ? this.app.vault.getConfig("newFileFolderPath") : undefined
         const { candidateMap, trie } = buildCandidateTrie(allFiles, baseDir, this.settings.ignoreCase ?? false)
@@ -384,9 +376,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
         if (this.settings.showNotice) {
             new Notice(`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`)
         }
-        if (this.settings.debug) {
-            console.log(`Automatic Linker: Loaded all markdown files. (${allFiles.length} files)`)
-        }
     }
 
     private refreshFileDataAndTrieOnFrontmatterChange(file: TFile) {
@@ -396,10 +385,6 @@ export default class AutomaticLinkerPlugin extends Plugin {
         // If the hash has changed, refresh the Trie
         if (currentHash !== cachedHash) {
             this.refreshFileDataAndTrie()
-
-            if (this.settings.debug) {
-                console.log(`Automatic Linker: Refreshing Trie due to frontmatter change in ${file.path}`)
-            }
         }
     }
 

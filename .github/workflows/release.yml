@@ -7,17 +7,31 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Tag whose release should be created or updated
+        description: Release tag (run this workflow from the same tag)
         required: true
         type: string
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
 
     steps:
+      - name: Validate release ref
+        run: |
+          if [ "$GITHUB_REF" != "refs/tags/$RELEASE_TAG" ]; then
+            echo "::error::Run this workflow from the release tag so provenance matches the built source."
+            exit 1
+          fi
+
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.sha }}
 
       - name: Use Node.js
         uses: actions/setup-node@v3
@@ -45,11 +59,19 @@ jobs:
         run: |
           pnpm run build
 
+      - name: Attest release assets
+        uses: actions/attest@v4
+        with:
+          subject-path: |
+            main.js
+            manifest.json
+            styles.css
+
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          tag="${{ inputs.tag || github.ref_name }}"
+          tag="$RELEASE_TAG"
 
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release upload "$tag" --clobber main.js manifest.json styles.css

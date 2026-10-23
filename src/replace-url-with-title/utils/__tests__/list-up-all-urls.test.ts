@@ -69,6 +69,14 @@ describe("listupAllUrls", () => {
         expect([...listupAllUrls("`code https://example.com")]).toEqual([])
     })
 
+    it("does not fetch URLs after an unclosed delimiter preceded by prose", () => {
+        expect([...listupAllUrls("before `code https://example.com")]).toEqual([])
+    })
+
+    it("finds URLs after an escaped backtick", () => {
+        expect([...listupAllUrls("before \\` https://example.com")]).toEqual(["https://example.com"])
+    })
+
     it("finds a bare URL immediately after an existing Markdown link", () => {
         expect([...listupAllUrls("[Docs](https://example.com/docs)https://example.com")])
             .toEqual(["https://example.com"])
