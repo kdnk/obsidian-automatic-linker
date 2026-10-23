@@ -148,7 +148,7 @@ const collectFencedCodeRanges = (text: string): ProtectedRange[] => {
 
 const buildProtectedPattern = (protectUrls: boolean): RegExp => {
     const parts = [
-        "`[^`]*`",
+        "(?<!`)(`+)(?!`)[\\s\\S]*?(?<!`)\\1(?!`)",
         "\\[\\[[^\\]]+\\]\\]",
         "\\[[^\\]]+\\]\\([^)]+\\)",
         "\\[[^\\]]+\\]",
@@ -158,14 +158,10 @@ const buildProtectedPattern = (protectUrls: boolean): RegExp => {
         parts.push(RAW_URL_SOURCE)
     }
 
-    return new RegExp(`(${parts.join("|")})`, "g")
+    return new RegExp(`(?:${parts.join("|")})`, "g")
 }
 
 const getProtectedKind = (text: string): MarkdownProtectedKind => {
-    if (text.startsWith("```") || text.startsWith("~~~")) {
-        return "fenced-code"
-    }
-
     if (text.startsWith("`")) {
         return "inline-code"
     }
@@ -198,13 +194,6 @@ const sortAndMergeRanges = (ranges: ProtectedRange[]): ProtectedRange[] => {
     }
 
     return merged
-}
-
-const isInsideRanges = (
-    index: number,
-    ranges: ProtectedRange[],
-): boolean => {
-    return ranges.some(range => index >= range.start && index < range.end)
 }
 
 export const segmentMarkdown = (
@@ -249,7 +238,10 @@ export const segmentMarkdown = (
     let match: RegExpExecArray | null
 
     while ((match = protectedPattern.exec(text)) !== null) {
-        if (isInsideRanges(match.index, ranges)) {
+        const matchStart = match.index
+        const containingRange = ranges.find(range => matchStart >= range.start && matchStart < range.end)
+        if (containingRange) {
+            protectedPattern.lastIndex = containingRange.end
             continue
         }
 

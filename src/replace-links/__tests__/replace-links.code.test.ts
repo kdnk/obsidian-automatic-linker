@@ -3,6 +3,40 @@ import { replaceLinks } from "../replace-links"
 import { buildCandidateTrieForTest } from "./test-helpers"
 
 describe("ignore code", () => {
+    it.each([
+        ["``code`` example", "``code`` [[example]]"],
+        ["~~~\n``\n~~~\n``code`` example", "~~~\n``\n~~~\n``code`` [[example]]"],
+        ["~~~\n`\n~~~\n`code` example", "~~~\n`\n~~~\n`code` [[example]]"],
+        ["before ```code``` example", "before ```code``` [[example]]"],
+        ["before ````code```` example", "before ````code```` [[example]]"],
+        ["``code ` example`` example", "``code ` example`` [[example]]"],
+        ["before ```code `` example``` example", "before ```code `` example``` [[example]]"],
+        ["``code ``` example`` example", "``code ``` example`` [[example]]"],
+        ["``code\nexample", "``[[code]]\n[[example]]"],
+        ["``code` example", "``[[code]]` [[example]]"],
+        ["``code``` example", "``[[code]]``` [[example]]"],
+        ["``code `example` example", "``[[code]] `example` [[example]]"],
+    ])("respects backtick delimiter runs in %s", (body, expected) => {
+        const settings = {
+            scoped: false,
+            baseDir: undefined,
+        }
+        const { candidateMap, trie } = buildCandidateTrieForTest({
+            files: [{ path: "example" }, { path: "code" }],
+            settings,
+        })
+        const result = replaceLinks({
+            body,
+            linkResolverContext: {
+                filePath: "journals/2022-01-01",
+                trie,
+                candidateMap,
+            },
+            settings,
+        })
+        expect(result).toBe(expected)
+    })
+
     it("inline code", () => {
         const settings = {
             scoped: false,

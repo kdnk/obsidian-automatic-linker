@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest"
 import { mapMarkdownProse, segmentMarkdown } from "../markdown-segments"
 
 describe("segmentMarkdown", () => {
-    it("round-trips prose and protected inline code", () => {
-        const text = "Use `TypeScript` with TypeScript"
+    it.each(["`TypeScript`", "``TypeScript``", "```TypeScript```"])("round-trips prose and protected inline code %s", (inlineCode) => {
+        const text = `Use ${inlineCode} with TypeScript`
         const segments = segmentMarkdown(text)
 
         expect(segments.map(segment => ({
@@ -12,7 +12,7 @@ describe("segmentMarkdown", () => {
             text: segment.text,
         }))).toEqual([
             { kind: "prose", protectedKind: undefined, text: "Use " },
-            { kind: "protected", protectedKind: "inline-code", text: "`TypeScript`" },
+            { kind: "protected", protectedKind: "inline-code", text: inlineCode },
             { kind: "prose", protectedKind: undefined, text: " with TypeScript" },
         ])
         expect(segments.map(segment => segment.text).join("")).toBe(text)

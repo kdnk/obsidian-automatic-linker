@@ -313,6 +313,58 @@ describe("standalone link commands", () => {
 })
 
 describe("save callback ownership", () => {
+    it.each([true, false])(
+        "preserves Markdown across consecutive saves with existing wikilink normalization %s", async (normalizeExistingWikilinks) => {
+            const f = fixture()
+            f.plugin.settings.formatOnSave = true
+            f.plugin.settings.normalizeExistingWikilinks = normalizeExistingWikilinks
+            f.plugin.settings.preventSelfLinking = false
+            const protectedMarkdown = [
+                "---",
+                "description: A",
+                "---",
+                "[[A]] [[A|alias A]] ![[A]] ![[A|alias A]]",
+                "`A`",
+                "```text",
+                "A [[A]] `A`",
+                "```",
+                "~~~text",
+                "A",
+                "~~~",
+            ].join("\n")
+            f.setContent(protectedMarkdown + "\nA")
+            f.plugin.refreshFileDataAndTrie()
+            initialize(f.plugin)
+
+            expect(f.save.checkCallback(false)).toBe(true)
+            await vi.waitFor(() => expect(f.originalSave).toHaveBeenCalledTimes(1))
+            const firstSave = protectedMarkdown + "\n[[A]]"
+            expect(f.editor.getValue()).toBe(firstSave)
+            expect(f.persisted.get("A.md")).toBe(firstSave)
+
+            f.setContent(firstSave + "\nEdited A")
+            expect(f.save.checkCallback(false)).toBe(true)
+            await vi.waitFor(() => expect(f.originalSave).toHaveBeenCalledTimes(2))
+            const secondSave = firstSave + "\nEdited [[A]]"
+            expect(f.editor.getValue()).toBe(secondSave)
+            expect(f.persisted.get("A.md")).toBe(secondSave)
+            expect(requestMock).not.toHaveBeenCalled()
+        },
+    )
+
+    it("preserves inline code delimited by multiple backticks on save", async () => {
+        const f = fixture()
+        f.plugin.settings.formatOnSave = true
+        f.setContent("``A ` A`` and A")
+        f.plugin.refreshFileDataAndTrie()
+        initialize(f.plugin)
+
+        f.save.checkCallback(false)
+        await vi.waitFor(() => expect(f.originalSave).toHaveBeenCalledTimes(1))
+
+        expect(f.persisted.get("A.md")).toBe("``A ` A`` and [[A]]")
+    })
+
     it("reports no ownership until settings finish loading", () => {
         const f = fixture()
         const plugin = new AutomaticLinkerPlugin(f.app as never, {} as never)
